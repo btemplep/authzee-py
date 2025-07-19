@@ -36,6 +36,7 @@ class StorageBackend:
     These are primarily used by compute to help keep state for running requests. 
 
         - ``create_flag`` - Create a new flag entry for storage.  This is needed for some compute backends to maintain state, especially over the network.
+            - Note that these start out in the unset state and can only be read or set.  They cannot be unset to avoid race conditions.
         - ``get_flag`` - Return flag by UUID. 
         - ``set_flag`` - Set a storage flag by UUID.
         - ``delete_flag`` - Delete a flag by UUID

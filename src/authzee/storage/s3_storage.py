@@ -493,8 +493,6 @@ class S3Storage(StorageBackend):
             next_page_ref=raw_grants_page.next_page_ref
         )
 
-        
-    
     
     async def create_flag(self) -> StorageFlag:
         """Create a new shared flag in the storage backend.

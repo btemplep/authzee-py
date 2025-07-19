@@ -15,7 +15,7 @@ class BackendLocality(Enum):
         - Compute resources are communicated to over the network.  They are external to the system running the ``authzee`` app.
         - Storage is reachable over the network. It is (or can be) external to the system running the ``authzee`` app.
     
-    The purpose of this enum is to help people identify incompatibilities in compute and storage backends for authzee. 
+    The purpose of this enum is to help identify incompatibilities in compute and storage backends for authzee. 
     See the ``authzee.compute_compatibility`` dictionary for the compatibility matrix. 
     Keys are the compute localities, and the values are sets of compatible storage localities.
     """
