@@ -32,6 +32,7 @@
         "jmes",
         "jmespath",
         "jsonpickle",
+        "jsonschema",
         "kwargs",
         "loguru",
         "lrange",

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Set, Type
 from pydantic import BaseModel
 
 from authzee.backend_locality import BackendLocality
-from authzee.compute.compute_backend import ComputeBackend
+from authzee.compute.compute_module import ComputeBackend
 from authzee.compute import general as gc
 from authzee.grant_effect import GrantEffect
 from authzee.grants_page import GrantsPage

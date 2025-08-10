@@ -1,5 +1,8 @@
+
 """Module for Authzee Exceptions
 """
+
+from typing import List
 
 
 class AuthzeeError(Exception):
@@ -8,51 +11,75 @@ class AuthzeeError(Exception):
     pass
 
 
-class BackendLocalityIncompatibility(AuthzeeError):
-    """The backend localities are not compatible.
+class SpecificationError(AuthzeeError):
+    """Base exception for errors defined in the Authzee specification.
+    
+    Includes a `response` field that always returns the currently running operations..
+    """
+    
+    def __init__(self, message: str, response: dict):
+        super().__init__(message)
+        self.response = response
 
-    See ``authzee.backend_locality.BackendLocality`` for more info.
+
+class ContextError(SpecificationError):
+    """Critical error when evaluating context."""
+    pass
+
+
+class DefinitionError(SpecificationError):
+    """Error when validating the identity and resource definitions."""
+    pass
+
+
+class GrantError(SpecificationError):
+    """Error when validating grants."""
+    pass
+
+
+class JMESPathError(SpecificationError):
+    """Critical error when evaluating JMESPath query."""
+    pass
+
+
+class RequestError(SpecificationError):
+    """Error when validating the request."""
+    pass
+
+
+class SDKError(AuthzeeError):
+    """Base exception for errors from the Authzee SDK that are **not** defined by the specification.
     """
     pass
 
 
-class StorageFlagNotFoundError(AuthzeeError):
-    """The flag with a specific UUID was not found in the storage backend.
+class LocalityIncompatibility(SDKError):
+    """The localities are not compatible.
+
+    See ``authzee.module_locality.ModuleLocality`` for more info.
     """
     pass
 
 
-class GrantDoesNotExistError(AuthzeeError):
-    """The Grant Does not exist.
+class GrantNotFoundError(SDKError):
+    """The Grant with a specific UUID was not found in the storage backend.
     """
     pass
 
 
-class GrantUUIDError(AuthzeeError):
-    """There was an error associated with a grant UUID
+class LatchNotFoundError(SDKError):
+    """The storage latch with a specific UUID was not found in the storage backend.
     """
     pass
 
 
-class IdentityRegistrationError(AuthzeeError):
-    """There was an error when registering the Identity Type.
+class StartError(SDKError):
+    """There was an error during initialization of the Authzee App and modules.
     """
     pass
 
 
-class InitializationError(AuthzeeError):
-    """There was an error during initialization of the Authzee App.
-    """
-    pass
-
-
-class InputVerificationError(AuthzeeError):
-    """The given inputs could not be verified.
-    """
-    pass
-
-
-class MethodNotImplementedError(AuthzeeError):
+class MethodNotImplementedError(SDKError):
     """The given method is not implemented for this class.
     """
 
@@ -60,15 +87,12 @@ class MethodNotImplementedError(AuthzeeError):
         super().__init__(msg, *args, **kwargs)
 
 
-class ParallelPaginationNotSupported(AuthzeeError):
+class ParallelPaginationNotSupported(SDKError):
     """Parallel pagination is not supported.
     """
     pass
 
-
-class ResourceAuthzRegistrationError(AuthzeeError):
-    """There was an error when registering the ResourceAuthz.
+class PageReferenceError(SDKError):
+    """The given page reference had an error when processing.
     """
     pass
-
-

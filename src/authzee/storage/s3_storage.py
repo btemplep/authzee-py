@@ -22,7 +22,7 @@ from authzee.page_refs_page import PageRefsPage
 from authzee.raw_grants_page import RawGrantsPage
 from authzee.resource_action import ResourceAction
 from authzee.resource_authz import ResourceAuthz
-from authzee.storage.storage_backend import StorageBackend
+from authzee.storage.storage_module import StorageModule
 from authzee.storage_flag import StorageFlag
 
 
@@ -31,7 +31,7 @@ class S3PageRef(BaseModel):
         s3_next_token: Union[str, None]
 
 
-class S3Storage(StorageBackend):
+class S3Storage(StorageModule):
     """AWS S3 storage backend.
 
     Store grants and flags as objects in an S3 bucket.
@@ -165,7 +165,7 @@ class S3Storage(StorageBackend):
         Raises
         ------
         authzee.exceptions.MethodNotImplementedError
-            ``StorageBackend`` sub-classes must implement this method.
+            ``StorageModule`` sub-classes must implement this method.
         """
         grant = self._check_uuid(grant=grant, generate_uuid=True)
         actions = [a.value for a in grant.actions]
@@ -208,7 +208,7 @@ class S3Storage(StorageBackend):
         Raises
         ------
         authzee.exceptions.MethodNotImplementedError
-            ``StorageBackend`` sub-classes *may* implement this method if ``async`` is supported.
+            ``StorageModule`` sub-classes *may* implement this method if ``async`` is supported.
         """
         key = f"{self._prefix}/grants/{effect}/by_uuid/{uuid}.json"
         grant = await self._get_grant(effect=effect, uuid=uuid)
@@ -302,7 +302,7 @@ class S3Storage(StorageBackend):
             The default is set on the storage backend. 
         page_ref : Optional[str], optional
             The reference to the next page that is returned in ``RawGrantsPage``, 
-            or one of the page references from ``StorageBackend.get_page_ref_page()`` (if parallel pagination is supported.) .
+            or one of the page references from ``StorageModule.get_page_ref_page()`` (if parallel pagination is supported.) .
             By default this will return the first page.
 
         Returns
@@ -313,7 +313,7 @@ class S3Storage(StorageBackend):
         Raises
         ------
         authzee.exceptions.MethodNotImplementedError
-            ``StorageBackend`` sub-classes must implement this method.
+            ``StorageModule`` sub-classes must implement this method.
         """
         prefix = f"{self._prefix}/grants/{effect}/"
         s3_ref = None
@@ -452,7 +452,7 @@ class S3Storage(StorageBackend):
         Raises
         ------
         authzee.exceptions.MethodNotImplementedError
-            ``StorageBackend`` sub-classes must implement this method.
+            ``StorageModule`` sub-classes must implement this method.
         """
         if (
             raw_grants_page.raw_grants is None
@@ -595,7 +595,7 @@ class S3Storage(StorageBackend):
         Raises
         ------
         authzee.exceptions.MethodNotImplementedError
-            ``StorageBackend`` sub-classes must implement this method.
+            ``StorageModule`` sub-classes must implement this method.
         """
         try:
             await self._s3_client.delete_object(

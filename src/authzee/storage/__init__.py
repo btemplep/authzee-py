@@ -1,11 +1,11 @@
 
 __all__ = [
-    "StorageBackend",
+    "StorageModule",
     "MemoryStorage",
     "ParallelMemoryStorage"
 ]
 
-from authzee.storage.storage_backend import StorageBackend
+from authzee.storage.storage_module import StorageModule
 
 from authzee.storage.memory_storage import MemoryStorage
 from authzee.storage.parallel_memory_storage import ParallelMemoryStorage

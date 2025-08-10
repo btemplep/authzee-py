@@ -15,11 +15,11 @@ from authzee.page_refs_page import PageRefsPage
 from authzee.raw_grants_page import RawGrantsPage
 from authzee.resource_action import ResourceAction
 from authzee.resource_authz import ResourceAuthz
-from authzee.storage.storage_backend import StorageBackend
+from authzee.storage.storage_module import StorageModule
 from authzee.storage_flag import StorageFlag
 
 
-class ParallelMemoryStorage(StorageBackend):
+class ParallelMemoryStorage(StorageModule):
     """Test parallel storage backend for memory. 
 
     Stores grants in python native data structures. 

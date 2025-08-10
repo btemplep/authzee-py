@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from authzee.backend_locality import BackendLocality
 from authzee.compute import general as gc
-from authzee.compute.compute_backend import ComputeBackend
+from authzee.compute.compute_module import ComputeBackend
 from authzee.grant import Grant
 from authzee.grant_effect import GrantEffect
 from authzee.grants_page import GrantsPage
@@ -21,7 +21,7 @@ from authzee.loop import get_event_loop, get_running_loop
 from authzee.raw_grants_page import RawGrantsPage
 from authzee.resource_action import ResourceAction
 from authzee.resource_authz import ResourceAuthz
-from authzee.storage.storage_backend import StorageBackend 
+from authzee.storage.storage_module import StorageModule 
 
 
 class ThreadedCompute(ComputeBackend):
@@ -72,7 +72,7 @@ class ThreadedCompute(ComputeBackend):
         identity_types: List[Type[BaseModel]],
         jmespath_options: Union[jmespath.Options, None],
         resource_authzs: List[ResourceAuthz],
-        storage_backend: StorageBackend,
+        storage_backend: StorageModule,
     ) -> None:
         """Initialize multiprocess backend.
 
@@ -86,7 +86,7 @@ class ThreadedCompute(ComputeBackend):
             Custom ``jmespath.Options`` registered with the ``Authzee`` app.
         resource_authzs : List[ResourceAuthz]
             ``ResourceAuthz`` s registered with the ``Authzee`` app.
-        storage_backend : StorageBackend
+        storage_backend : StorageModule
             Storage backend registered with the ``Authzee`` app.
         """
         await super().initialize(
@@ -802,7 +802,7 @@ def _executor_init(jmespath_options: jmespath.Options) -> None:
 
 
 def _executor_authorize_deny(
-    storage_backend: StorageBackend,
+    storage_backend: StorageModule,
     raw_grants_page: RawGrantsPage,
     jmespath_data: Dict[str, Any],
     cancel_event: Dict[str, bool]
@@ -831,7 +831,7 @@ def _executor_authorize_deny(
 
 
 def _executor_authorize_deny_ref(
-    storage_backend: StorageBackend,
+    storage_backend: StorageModule,
     raw_grants_kwargs: Dict[str, Any],
     jmespath_data: Dict[str, Any],
     cancel_event: Dict[str, bool]
@@ -862,7 +862,7 @@ def _executor_authorize_deny_ref(
 
 
 def _executor_authorize_allow(
-    storage_backend: StorageBackend,
+    storage_backend: StorageModule,
     raw_grants_page: RawGrantsPage,
     jmespath_data: Dict[str, Any],
     cancel_event: Dict[str, bool],
@@ -894,7 +894,7 @@ def _executor_authorize_allow(
 
 
 def _executor_authorize_allow_ref(
-    storage_backend: StorageBackend,
+    storage_backend: StorageModule,
     raw_grants_kwargs: Dict[str, Any],
     jmespath_data: Dict[str, Any],
     cancel_event: Dict[str, bool],
@@ -929,7 +929,7 @@ def _executor_authorize_allow_ref(
 
 
 def _executor_authorize_many(
-    storage_backend: StorageBackend,
+    storage_backend: StorageModule,
     raw_grants_page: RawGrantsPage,
     jmespath_data_entries: List[Dict[str, Any]]
 ) -> List[bool]:
@@ -947,7 +947,7 @@ def _executor_authorize_many(
 
 
 def _executor_authorize_many_ref(
-    storage_backend: StorageBackend,
+    storage_backend: StorageModule,
     raw_grants_kwargs: Dict[str, Any],
     jmespath_data_entries: List[Dict[str, Any]]
 ) -> List[bool]:
@@ -968,7 +968,7 @@ def _executor_authorize_many_ref(
 
 
 def _executor_matching_grants(
-    storage_backend: StorageBackend,
+    storage_backend: StorageModule,
     raw_grants_page: RawGrantsPage,
     jmespath_data: Dict[str, Any]
 ) -> List[Grant]:
@@ -986,7 +986,7 @@ def _executor_matching_grants(
 
 
 def _executor_matching_grants_ref(
-    storage_backend: StorageBackend,
+    storage_backend: StorageModule,
     raw_grants_kwargs: Dict[str, Any],
     jmespath_data: Dict[str, Any]
 ) -> List[Grant]:

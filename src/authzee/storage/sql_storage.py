@@ -24,7 +24,7 @@ from authzee.storage.sql_storage_models import (
     ResourceTypeDB,
     StorageFlagDB
 )
-from authzee.storage.storage_backend import StorageBackend
+from authzee.storage.storage_module import StorageModule
 from authzee.storage_flag import StorageFlag
 
 
@@ -33,7 +33,7 @@ class SQLNextPageRef(BaseModel):
     next_token: int
 
 
-class SQLStorage(StorageBackend):
+class SQLStorage(StorageModule):
     """Store Grants in SQL RDBMS. 
 
     Parameters
@@ -260,7 +260,7 @@ class SQLStorage(StorageBackend):
             The default is set on the storage backend. 
         page_ref : Optional[str], optional
             The reference to the next page that is returned in ``RawGrantsPage``, 
-            or one of the page references from ``StorageBackend.get_page_ref_page()`` (if parallel pagination is supported.) .
+            or one of the page references from ``StorageModule.get_page_ref_page()`` (if parallel pagination is supported.) .
             By default this will return the first page.
 
         Returns

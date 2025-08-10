@@ -7,7 +7,7 @@ __all__ = [
     "ThreadedCompute"
 ]
 
-from authzee.compute.compute_backend import ComputeBackend
+from authzee.compute.compute_module import ComputeBackend
 
 from authzee.compute.main_process_compute import MainProcessCompute
 from authzee.compute.multiprocess_compute import MultiprocessCompute

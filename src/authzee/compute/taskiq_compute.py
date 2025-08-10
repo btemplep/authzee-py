@@ -11,13 +11,13 @@ import taskiq
 
 from authzee import exceptions
 from authzee.backend_locality import BackendLocality
-from authzee.compute.compute_backend import ComputeBackend
+from authzee.compute.compute_module import ComputeBackend
 from authzee.compute import general as gc
 from authzee.grant_effect import GrantEffect
 from authzee.grants_page import GrantsPage
 from authzee.resource_action import ResourceAction
 from authzee.resource_authz import ResourceAuthz
-from authzee.storage.storage_backend import StorageBackend
+from authzee.storage.storage_module import StorageModule
 from authzee.storage_flag import StorageFlag
 
 
@@ -162,7 +162,7 @@ class TaskiqCompute(ComputeBackend):
         identity_types: List[Type[BaseModel]],
         jmespath_options: Union[jmespath.Options, None],
         resource_authzs: List[ResourceAuthz],
-        storage_backend: StorageBackend,
+        storage_backend: StorageModule,
     ) -> None:
         """Initialize the compute backend.
 
@@ -179,7 +179,7 @@ class TaskiqCompute(ComputeBackend):
             This is because custom versions of JMESPath functions are not restricted.
         resource_authzs : List[ResourceAuthz]
             ``ResourceAuthz`` s registered with the ``Authzee`` app.
-        storage_backend : StorageBackend
+        storage_backend : StorageModule
             Storage backend registered with the ``Authzee`` app.
         """
         await super().initialize(
@@ -447,7 +447,7 @@ async def _authorize_task(
 ) -> None:
     authorize_task: taskiq.AsyncTaskiqDecoratedTask = context.state.az_authorize_task
     jmespath_options: Union[jmespath.Options, None] = context.state.az_jmespath_options
-    storage_backend: StorageBackend = context.state.az_storage_backend
+    storage_backend: StorageModule = context.state.az_storage_backend
     check_interval: float = context.state.az_check_interval
     task_timeout: float = context.state.az_task_timeout
     kwargs = _kwargs_loads(kwp)
@@ -569,7 +569,7 @@ async def _authorize_many_task(
 ) -> List[Union[bool, None]]:
     authorize_many_task: taskiq.AsyncTaskiqDecoratedTask = context.state.az_authorize_many_task
     jmespath_options: Union[jmespath.Options, None] = context.state.az_jmespath_options
-    storage_backend: StorageBackend = context.state.az_storage_backend
+    storage_backend: StorageModule = context.state.az_storage_backend
     check_interval: float = context.state.az_check_interval
     task_timeout: float = context.state.az_task_timeout
     kwargs = _kwargs_loads(kwp)
@@ -701,7 +701,7 @@ async def _get_matching_grants_page_task(
     context: Annotated[taskiq.Context, taskiq.TaskiqDepends()]
 ) -> GrantsPage:
     jmespath_options: Union[jmespath.Options, None] = context.state.az_jmespath_options
-    storage_backend: StorageBackend = context.state.az_storage_backend
+    storage_backend: StorageModule = context.state.az_storage_backend
     kwargs = _kwargs_loads(kwp)
     effect: GrantEffect = kwargs['effect']
     resource_type: BaseModel = kwargs['resource_type']

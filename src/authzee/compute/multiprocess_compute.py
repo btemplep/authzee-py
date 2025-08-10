@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from authzee.backend_locality import BackendLocality
 from authzee.compute import general as gc
-from authzee.compute.compute_backend import ComputeBackend
+from authzee.compute.compute_module import ComputeBackend
 from authzee.compute.shared_mem_event import SharedMemEvent
 from authzee.grant import Grant
 from authzee.grant_effect import GrantEffect
@@ -22,7 +22,7 @@ from authzee.grants_page import GrantsPage
 from authzee.loop import get_event_loop, get_running_loop
 from authzee.resource_action import ResourceAction
 from authzee.resource_authz import ResourceAuthz
-from authzee.storage.storage_backend import StorageBackend 
+from authzee.storage.storage_module import StorageModule 
 
 
 class MultiprocessCompute(ComputeBackend):
@@ -66,7 +66,7 @@ class MultiprocessCompute(ComputeBackend):
         identity_types: List[Type[BaseModel]],
         jmespath_options: Union[jmespath.Options, None],
         resource_authzs: List[ResourceAuthz],
-        storage_backend: StorageBackend,
+        storage_backend: StorageModule,
     ) -> None:
         """Initialize multiprocess backend.
 
@@ -80,7 +80,7 @@ class MultiprocessCompute(ComputeBackend):
             Custom ``jmespath.Options`` registered with the ``Authzee`` app.
         resource_authzs : List[ResourceAuthz]
             ``ResourceAuthz`` s registered with the ``Authzee`` app.
-        storage_backend : StorageBackend
+        storage_backend : StorageModule
             Storage backend registered with the ``Authzee`` app.
         """
         await super().initialize(
@@ -465,7 +465,7 @@ class MultiprocessCompute(ComputeBackend):
 
  
 def _executor_init(
-    storage_type: Type[StorageBackend],
+    storage_type: Type[StorageModule],
     storage_kwargs: Dict[str, Any],
     initialize_kwargs: Dict[str, Any],
     jmespath_options: Union[jmespath.Options, None]

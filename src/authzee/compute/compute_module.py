@@ -6,56 +6,39 @@ import jmespath
 from pydantic import BaseModel
 
 from authzee import exceptions
-from authzee.backend_locality import BackendLocality
+from authzee.module_locality import ModuleLocality
 from authzee.grant_effect import GrantEffect
 from authzee.grants_page import GrantsPage
 from authzee.resource_action import ResourceAction
 from authzee.resource_authz import ResourceAuthz
-from authzee.storage.storage_backend import StorageBackend
+from authzee.storage.storage_module import StorageModule
 
 
-class ComputeBackend:
+class ComputeModule:
     """Base class for ``Authzee`` compute backend.
 
     Base classes must at least implement these async methods:
 
-        - ``initialize`` - Initialize the compute backend.
-        - ``shutdown`` - Preemptively cleanup compute backend resources.
+        - ``start`` - Initialize and start the compute module's runtime resources.
+        - ``shutdown`` - Shutdown and  cleanup compute module's runtime resources.
         - ``setup`` - One time setup for compute backend.
         - ``teardown`` - Remove resources created from ``setup()``.
-        - ``authorize`` - Figure out if the given given identities are authorized to perform the given action on the given resource.
-        - ``authorize_many`` - Figure out if the given given identities are authorized to perform the given action on the given resources.
-        - ``get_matching_grants_page`` - Get a page of matching grants. 
+        - ``get_grants_page_parallel`` - Retrieve several pages of grants at once from the storage module using parallel pagination.
+            - Only needed if parallel pagination is supported.
+        - ``audit_page`` - Run the Audit Workflow to produce a page of results.
+        - ``authorize`` - Run the Authorize Workflow 
     
 
-    No error checking should be needed for validation of resources, resource_types etc. That should all be handled by ``Authzee``.
-
-    Parameters
-    ----------
-    backend_locality : BackendLocality
-        The backend locality this instance of the compute backend supports.
-        See ``authzee.backend_locality.BackendLocality`` for more info on what the localites mean.
-        This parameter should not be exposed on the child class.
-    supports_parallel_paging : bool
-        Flag for if this compute backend supports parallel pagination if the storage backend does. 
-        If ``True``, the compute backend must support getting pages in parallel from the storage backend, 
-        and effectively using that functionality in the ``authorize``, ``authorize_many``, and ``get_matching_grants_page`` methods.
-        This parameter should not be exposed as a parameter on the child class.
-    use_parallel_paging: bool, default: True
-        Use parallel paging for storage operations if supported.
-        Sub-classes must check if this and ``supports_parallel_pagination`` are ``True`` to use parallel pagination when set.
+    No error checking should be needed for validation of resources, resource_types etc. That should all be handled by the ``Authzee`` class.
     """
 
-
     def __init__(
-        self,
-        backend_locality: BackendLocality,
-        supports_parallel_paging: bool,
-        use_parallel_paging: bool
+        self, 
+        storage_type,
+        storage_kwargs: Dict[str, Any]
     ):
-        self.backend_locality = backend_locality
-        self.supports_parallel_paging = supports_parallel_paging
-        self.use_parallel_paging = use_parallel_paging
+        pass
+
 
 
     async def initialize(
@@ -63,11 +46,13 @@ class ComputeBackend:
         identity_types: List[Type[BaseModel]],
         jmespath_options: Union[jmespath.Options, None],
         resource_authzs: List[ResourceAuthz],
-        storage_backend: StorageBackend,
+        storage_backend: StorageModule,
     ) -> None:
         """Initialize the compute backend.
 
         Should only be called by the ``Authzee`` app.
+
+        Sub classes must set the ``locality`` and ``parallel_paging_supported`` public vars.
 
         Parameters
         ----------
@@ -80,13 +65,15 @@ class ComputeBackend:
             This is because custom versions of JMESPath functions are not restricted.
         resource_authzs : List[ResourceAuthz]
             ``ResourceAuthz`` s registered with the ``Authzee`` app.
-        storage_backend : StorageBackend
+        storage_backend : StorageModule
             Storage backend registered with the ``Authzee`` app.
         """
         self._identity_types = identity_types
         self._jmespath_options = jmespath_options
         self._resource_authzs = resource_authzs
         self._storage_backend = storage_backend
+        self.locality = ModuleLocality.SYSTEM
+        self.parallel_paging_supported = ModuleLocality.SYSTEM
 
 
     async def shutdown(self) -> None:
