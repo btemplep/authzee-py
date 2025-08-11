@@ -123,14 +123,88 @@ class Authzee:
 
 
     def enact(self, new_grant: dict) -> dict:
+        """Create and store a new authorization grant.
+
+        Parameters
+        ----------
+        new_grant : dict
+            The grant definition to create.
+
+        Returns
+        -------
+        dict
+            The created grant with assigned UUID.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from authzee import Authzee
+
+            grant = {"identity": {...}, "resource": {...}, "action": "read"}
+            created_grant = authzee.enact(grant)
+        """
         return asyncio.run(self._authzee_async.enact(new_grant=new_grant))
 
 
     def repeal(self, grant_uuid: UUID) -> None:
+        """Remove an authorization grant by its UUID.
+
+        Parameters
+        ----------
+        grant_uuid : UUID
+            The unique identifier of the grant to remove.
+
+        Raises
+        ------
+        authzee.exceptions.GrantNotFoundError
+            No grant exists with the given UUID.
+        authzee.exceptions.GrantError
+            An error occurred while removing the grant.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from authzee import Authzee
+            from uuid import UUID
+            
+            grant_id = UUID('12345678-1234-5678-9012-123456789abc')
+            authzee.repeal(grant_id)
+        """
         asyncio.run(self._authzee_async.repeal(grant_uuid=grant_uuid))
-    
+
 
     def get_grant(self, grant_uuid: UUID) -> dict:
+        """Retrieve a specific grant by its UUID.
+
+        Parameters
+        ----------
+        grant_uuid : UUID
+            The unique identifier of the grant to retrieve.
+
+        Returns
+        -------
+        dict
+            The grant definition.
+
+        Raises
+        ------
+        authzee.exceptions.GrantNotFoundError
+            No grant exists with the given UUID.
+        authzee.exceptions.GrantError
+            An error occurred while retrieving the grant.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from authzee import Authzee
+            from uuid import UUID
+            
+            grant_id = UUID('12345678-1234-5678-9012-123456789abc')
+            grant = authzee.get_grant(grant_id)
+        """
         return asyncio.run(self._authzee_async.get_grant(grant_uuid=grant_uuid))
 
 
@@ -141,6 +215,40 @@ class Authzee:
         page_ref: str | None, 
         page_size: int | None
     ) -> dict:
+        """Retrieve a page of grants with optional filtering.
+
+        Parameters
+        ----------
+        effect : str or None
+            Filter grants by effect. None for no filtering.
+        action : str or None
+            Filter grants by action. None for no filtering.
+        page_ref : str or None
+            Reference to a specific page. None to start from beginning.
+        page_size : int or None
+            Number of grants per page. None to use default.
+
+        Returns
+        -------
+        dict
+            A page containing grants and pagination metadata.
+
+        Raises
+        ------
+        authzee.exceptions.PageReferenceError
+            Invalid page reference provided.
+        authzee.exceptions.GrantError
+            An error occurred while retrieving grants.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from authzee import Authzee
+
+            page = authzee.get_grants_page(effect="allow", action=None, 
+                                        page_ref=None, page_size=10)
+        """
         return asyncio.run(
             self._authzee_async.get_grants_page(
                 effect=effect,
@@ -158,6 +266,40 @@ class Authzee:
         page_ref: str | None, 
         page_size: int | None
     ) -> dict:
+        """Retrieve a page of grant page references with optional filtering.
+
+        Parameters
+        ----------
+        effect : str or None
+            Filter by effect. None for no filtering.
+        action : str or None
+            Filter by action. None for no filtering.
+        page_ref : str or None
+            Reference to a specific page. None to start from beginning.
+        page_size : int or None
+            Number of page references per page. None to use default.
+
+        Returns
+        -------
+        dict
+            A page containing grant page references and pagination metadata.
+
+        Raises
+        ------
+        authzee.exceptions.PageReferenceError
+            Invalid page reference provided.
+        authzee.exceptions.GrantError
+            An error occurred while retrieving page references.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from authzee import Authzee
+
+            refs_page = authzee.get_grant_page_refs_page(effect="allow", action=None,
+                                                    page_ref=None, page_size=5)
+        """
         return asyncio.run(
             self._authzee_async.get_grant_page_refs_page(
                 effect=effect,
@@ -176,6 +318,45 @@ class Authzee:
         page_size: int | None, 
         ref_page_size: int | None
     ) -> dict:
+        """Retrieve a page of grants using parallel pagination.
+
+        Parameters
+        ----------
+        effect : str or None
+            Filter by effect. None for no filtering.
+        action : str or None
+            Filter by action. None for no filtering.
+        page_ref : str or None
+            Reference to a specific page. None to start from beginning.
+        page_size : int or None
+            Number of grants per page. None to use default.
+        ref_page_size : int or None
+            Number of page references to process in parallel. None to use default.
+
+        Returns
+        -------
+        dict
+            A page containing grants and pagination metadata.
+
+        Raises
+        ------
+        authzee.exceptions.ParallelPaginationNotSupported
+            Storage module does not support parallel pagination.
+        authzee.exceptions.PageReferenceError
+            Invalid page reference provided.
+        authzee.exceptions.GrantError
+            An error occurred while retrieving grants.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from authzee import Authzee
+
+            page = authzee.get_grants_page_parallel(effect="allow", action=None,
+                                                page_ref=None, page_size=100,
+                                                ref_page_size=10)
+        """
         return asyncio.run(
             self._authzee_async.get_grants_page_parallel(
                 effect=effect,
@@ -195,6 +376,45 @@ class Authzee:
         parallel_paging: bool, 
         ref_page_size: int | None
     ) -> dict:
+        """Retrieve a page of grants that match an authorization request.
+
+        Parameters
+        ----------
+        request : dict
+            The authorization request to audit against.
+        page_ref : str or None
+            Reference to a specific page. None to start from beginning.
+        page_size : int or None
+            Number of grants per page. None to use default.
+        parallel_paging : bool
+            Whether to use parallel pagination for improved performance.
+        ref_page_size : int or None
+            Number of page references to process in parallel. None to use default.
+
+        Returns
+        -------
+        dict
+            A page containing matching grants and pagination metadata.
+
+        Raises
+        ------
+        authzee.exceptions.RequestError
+            Invalid authorization request provided.
+        authzee.exceptions.ParallelPaginationNotSupported
+            Parallel pagination requested but not supported.
+        authzee.exceptions.PageReferenceError
+            Invalid page reference provided.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from authzee import Authzee
+
+            request = {"identity": {...}, "resource": {...}, "action": "read"}
+            audit_page = authzee.audit_page(request, page_ref=None, page_size=50,
+                                        parallel_paging=True, ref_page_size=10)
+        """
         return asyncio.run(
             self._authzee_async.audit_page(
                 request=request,
@@ -213,6 +433,41 @@ class Authzee:
         parallel_paging: bool, 
         ref_page_size: int | None
     ) -> dict:
+        """Evaluate an authorization request against stored grants.
+
+        Parameters
+        ----------
+        request : dict
+            The authorization request to evaluate.
+        page_size : int or None
+            Number of grants per page during evaluation. None to use default.
+        parallel_paging : bool
+            Whether to use parallel pagination for improved performance.
+        ref_page_size : int or None
+            Number of page references to process in parallel. None to use default.
+
+        Returns
+        -------
+        dict
+            Authorization decision with effect and supporting information.
+
+        Raises
+        ------
+        authzee.exceptions.RequestError
+            Invalid authorization request provided.
+        authzee.exceptions.ParallelPaginationNotSupported
+            Parallel pagination requested but not supported.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from authzee import Authzee
+
+            request = {"identity": {...}, "resource": {...}, "action": "read"}
+            decision = authzee.authorize(request, page_size=100, 
+                                    parallel_paging=True, ref_page_size=10)
+        """
         return asyncio.run(
             self._authzee_async.authorize(
                 request=request,

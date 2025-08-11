@@ -58,7 +58,7 @@ class AuthzeeAsync:
         self.grants_page_size: int = grants_page_size
         self.grant_refs_page_size: int = grant_refs_page_size
         self.grant_schema = {}
-        self.error_schema = {}
+        self.errors_schema = {}
         self.request_schema = {}
         self.audit_schema = {}
         self.authorize_schema = {}
@@ -93,8 +93,9 @@ class AuthzeeAsync:
             identity_defs=self.identity_defs,
             resource_defs=self.resource_defs
         )
+        print(schemas.keys())
         self.grant_schema = schemas['grant']
-        self.error_schema = schemas['error']
+        self.errors_schema = schemas['errors']
         self.request_schema = schemas['request']
         self.audit_schema = schemas['audit']
         self.authorize_schema = schemas['authorize']
@@ -104,7 +105,7 @@ class AuthzeeAsync:
             identity_defs=self.identity_defs,
             resource_defs=self.resource_defs
         )
-        self._compute: StorageModule = self.compute_type(**self.compute_kwargs)
+        self._compute: ComputeModule = self.compute_type(**self.compute_kwargs)
         await self._compute.start(
             identity_defs=self.identity_defs,
             resource_defs=self.resource_defs,
@@ -171,14 +172,14 @@ class AuthzeeAsync:
 
     async def enact(self, new_grant: dict) -> dict:
         ng_copy = copy.deepcopy(new_grant)
-        ng_copy['grant_uuid'] = uuid4()
+        ng_copy['grant_uuid'] = str(uuid4())
         grant_val = core.validate_grants(
             grants=[ng_copy],
             schema=self.grant_schema
         )
         if grant_val['valid'] is False:
             raise exceptions.GrantError(
-                message="Error validating grant.",
+                message=f"Error validating grant. {grant_val}",
                 response=grant_val
             )
         

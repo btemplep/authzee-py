@@ -1,8 +1,25 @@
-
 """Module for Authzee Exceptions
 """
 
-from typing import List
+__all__ = [
+    "AuthzeeError",
+    "SpecificationError",
+    "ContextError",
+    "DefinitionError",
+    "GrantError",
+    "JMESPathError",
+    "RequestError",
+    "SDKError",
+    "LocalityIncompatibilityError",
+    "GrantNotFoundError",
+    "LatchNotFoundError",
+    "StartError",
+    "MethodNotImplementedError",
+    "ParallelPaginationNotSupported",
+    "PageReferenceError"
+]
+
+from uuid import UUID
 
 
 class AuthzeeError(Exception):
@@ -53,7 +70,7 @@ class SDKError(AuthzeeError):
     pass
 
 
-class LocalityIncompatibility(SDKError):
+class LocalityIncompatibilityError(SDKError):
     """The localities are not compatible.
 
     See ``authzee.module_locality.ModuleLocality`` for more info.
@@ -64,7 +81,10 @@ class LocalityIncompatibility(SDKError):
 class GrantNotFoundError(SDKError):
     """The Grant with a specific UUID was not found in the storage backend.
     """
-    pass
+    
+    def __init__(self, grant_uuid: UUID):
+        super().__init__(f"Grant with UUID '{grant_uuid}' was not found.")
+        self.grant_uuid = grant_uuid
 
 
 class LatchNotFoundError(SDKError):

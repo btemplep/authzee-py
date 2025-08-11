@@ -1,19 +1,32 @@
 
-
+import copy
 import datetime
 from typing import Any, Dict, List
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from authzee import exceptions
 from authzee.module_locality import ModuleLocality
+from authzee.storage.storage_module import StorageModule
 
 
 
-class StorageModule:
-    """Base class for Authzee Storage Modules. 
-    
-    The ``__init__`` method should take Storage module specific arguments and store them as necessary.
-    """   
+class InMemoryStorage(StorageModule):
+    """Storage module that uses the Authzee apps memory to as the storage medium.
+
+    Upon ``shutdown()`` or exit all storage is lost.
+    """
+
+    def __init__(self):
+        self._grant_lut: Dict[UUID, dict] = {}
+        self._grant_effect_lut: Dict[str, Dict[UUID, dict]] = {
+            "allow": [],
+            "deny": []
+        }
+        self._grant_action_lut: Dict[str, Dict[UUID, dict]] = {}
+        self._grant_both_lut: Dict[str, Dict[str, Dict[UUID, dict]]] = {
+            "allow": {},
+            "deny": {}
+        }
 
 
     async def start(
@@ -23,10 +36,6 @@ class StorageModule:
     ) -> None:
         """Initialize the storage module. 
 
-        Any initialization of runtime storage should take place here.
-        Also update locality and parallel paging if needed after calling this super. 
-        The default locality is process and parallel paging support is set to false.
-
         Parameters
         ----------
         identity_defs : List[dict[str]]
@@ -34,30 +43,19 @@ class StorageModule:
         resource_defs : List[dict[str]]
             ``ResourceAuthz`` instances that have been registered with Authzee.
         """
-        self.identity_defs = identity_defs
-        self.resource_defs = resource_defs
+        await super().start(
+            identity_defs=identity_defs,
+            resource_defs=resource_defs
+        )
         self.locality = ModuleLocality.PROCESS
-        self.parallel_paging_supported = False
-    
+        self.parallel_paging_supported = True
+        for rd in resource_defs:
+            for action in rd['actions']:
+                self._grant_action_lut[action] = {}
+                self._grant_both_lut['allow'][action] = {}
+                self._grant_both_lut['deny'][action] = {}
+        
 
-    async def shutdown(self) -> None:
-        """Early clean up of storage module resources.
-        """
-        pass
-
-
-    async def setup(self) -> None:
-        """One time setup for storage module resources.
-        """
-        pass
-
-    
-    async def teardown(self) -> None:
-        """Teardown and delete the results of ``setup()`` .
-        """
-        pass
-
-    
     async def enact(self, new_grant: dict) -> dict:
         """Add a grant. 
 
@@ -70,13 +68,17 @@ class StorageModule:
         -------
         dict
             The grant that has been added.
-
-        Raises
-        ------
-        authzee.exceptions.MethodNotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
         """
-        raise exceptions.MethodNotImplementedError()
+        grant = copy.deepcopy(new_grant)
+        grant_uuid = uuid4()
+        grant['grant_uuid'] = str(grant_uuid)
+        self._grant_lut[grant_uuid] = grant
+        self._grant_effect_lut[grant['effect']][grant_uuid] = grant
+        for action in grant['actions']:
+            self._grant_action_lut[action][grant_uuid] = grant
+            self._grant_both_lut[grant['effect']][action][grant_uuid] = grant
+
+        return copy.deepcopy(grant)
 
 
     async def repeal(self, grant_uuid: UUID) -> None:
@@ -89,12 +91,17 @@ class StorageModule:
 
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.GrantNotFoundError
             The grant with the given UUID could not be found.
         """
-        raise exceptions.MethodNotImplementedError()
+        if grant_uuid not in self._grant_lut:
+            raise exceptions.GrantNotFoundError(grant_uuid=grant_uuid)
+    
+        grant = self._grant_lut.pop(grant_uuid)
+        self._grant_effect_lut[grant['effect']].pop(grant_uuid)
+        for action in grant['actions']:
+            self._grant_action_lut[action].pop(grant_uuid)
+            self._grant_both_lut[grant['effect']][action].pop(grant_uuid)
     
 
     async def get_grant(self, grant_uuid: UUID) -> dict:
@@ -117,7 +124,10 @@ class StorageModule:
         authzee.exceptions.GrantNotFoundError
             The grant with the given UUID could not be found.
         """
-        raise exceptions.MethodNotImplementedError()
+        if grant_uuid not in self._grant_lut:
+            raise exceptions.GrantNotFoundError(grant_uuid=grant_uuid)
+
+        return copy.deepcopy(self._grant_lut[grant_uuid])
         
 
     async def get_grants_page(
