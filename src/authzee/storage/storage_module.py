@@ -73,10 +73,10 @@ class StorageModule:
 
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         """
-        raise exceptions.MethodNotImplementedError()
+        raise exceptions.NotImplementedError()
 
 
     async def repeal(self, grant_uuid: UUID) -> None:
@@ -89,12 +89,12 @@ class StorageModule:
 
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.GrantNotFoundError
             The grant with the given UUID could not be found.
         """
-        raise exceptions.MethodNotImplementedError()
+        raise exceptions.NotImplementedError()
     
 
     async def get_grant(self, grant_uuid: UUID) -> dict:
@@ -112,12 +112,12 @@ class StorageModule:
 
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.GrantNotFoundError
             The grant with the given UUID could not be found.
         """
-        raise exceptions.MethodNotImplementedError()
+        raise exceptions.NotImplementedError()
         
 
     async def get_grants_page(
@@ -125,32 +125,34 @@ class StorageModule:
         effect: str | None,
         action: str | None, 
         page_ref: str | None, 
-        page_size: int
+        grants_page_size: int
     ) -> dict:
         """Get a page of grants.
 
         Parameters
         ----------
-        effect : str, optional
-            Filter by grant effect. 
-        action : str, optional
-            Filter by grant action.
-        page_ref : str, optional
-            Reference to the page to retrieve.
-        page_size : int
-            Page size of grants.
+        effect : str | None
+            Filter by grant effect. None for no filter.
+        action : str | None
+            Filter by grant action. None for no filter.
+        page_ref : str | None
+            Page reference of the page to retrieve. None to get the first page.
+        grants_page_size : int
+            Number of grants to return. Not exact.
 
         Returns
         -------
         dict
-            Page of grants and next page ref.
+            Page of grants with the next page reference.
 
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.PageReferenceError
+            Invalid page reference provided.
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         """
-        raise exceptions.MethodNotImplementedError()
+        raise exceptions.NotImplementedError()
     
 
     async def get_grant_page_refs_page(
@@ -158,7 +160,8 @@ class StorageModule:
         effect: str | None, 
         action: str | None, 
         page_ref: str | None, 
-        page_size: int | None
+        grants_page_size: int,
+        refs_page_size: int
     ) -> dict:
         """Get a page of page references for parallel pagination. 
 
@@ -171,21 +174,23 @@ class StorageModule:
         page_ref : str, optional
             Reference to the page to retrieve.
         page_size : int
-            Page size of grants.
+            Page size for the page references themselves.
+        grants_page_size : int
+            Page size of grants for each page reference.
 
         Returns
         -------
         dict
-            Page of grants and next page ref.
+            Page of page references and next page ref.
 
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method if this storage module supports parallel pagination. 
             They must also set the ``supports_parallel_paging`` flag. 
         """
-        if self.supports_parallel_paging is True:
-            raise exceptions.MethodNotImplementedError(
+        if self.parallel_paging_supported is True:
+            raise exceptions.NotImplementedError(
                 (
                     "There is an error in the storage module!"
                     "This storage module has marked supports_parallel_paging as true "
@@ -208,18 +213,18 @@ class StorageModule:
         
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         """
-        pass
+        raise exceptions.NotImplementedError()
 
 
-    async def get_latch(self, uuid: UUID) -> dict:
+    async def get_latch(self, storage_latch_uuid: UUID) -> dict:
         """Retrieve latch by UUID.
 
         Parameters
         ----------
-        uuid : UUID
+        storage_latch_uuid : UUID
             Storage latch UUID.
 
         Returns
@@ -229,20 +234,20 @@ class StorageModule:
         
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.LatchNotFoundError
             The latch with the given UUID could not be found.
         """
-        pass
+        raise exceptions.NotImplementedError()
 
 
-    async def set_latch(self, uuid: UUID) -> dict:
+    async def set_latch(self, storage_latch_uuid: UUID) -> dict:
         """Set a latch for a given UUID. 
 
         Parameters
         ----------
-        uuid : UUID
+        storage_latch_uuid : UUID
             Storage latch UUID.
 
         Returns
@@ -252,15 +257,15 @@ class StorageModule:
         
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.LatchNotFoundError
             The latch with the given UUID could not be found.
         """
-        pass
+        raise exceptions.NotImplementedError()
 
 
-    async def delete_latch(self, latch_uuid: UUID) -> None:
+    async def delete_latch(self, storage_latch_uuid: UUID) -> None:
         """Delete a storage latch by UUID.
 
         Parameters
@@ -270,12 +275,12 @@ class StorageModule:
         
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.LatchNotFoundError
             The latch with the given UUID could not be found.
         """
-        pass
+        raise exceptions.NotImplementedError()
 
 
     async def cleanup_latches(self, before: datetime.datetime) -> None:
@@ -288,8 +293,7 @@ class StorageModule:
         
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         """
-        pass
-
+        raise exceptions.NotImplementedError()

@@ -1,3 +1,6 @@
+__all__ = [
+    "InMemoryStorage"
+]
 
 import copy
 import datetime
@@ -9,24 +12,24 @@ from authzee.module_locality import ModuleLocality
 from authzee.storage.storage_module import StorageModule
 
 
-
 class InMemoryStorage(StorageModule):
-    """Storage module that uses the Authzee apps memory to as the storage medium.
+    """Storage module that uses the Authzee app process's memory as the storage medium.
 
     Upon ``shutdown()`` or exit all storage is lost.
     """
 
     def __init__(self):
         self._grant_lut: Dict[UUID, dict] = {}
-        self._grant_effect_lut: Dict[str, Dict[UUID, dict]] = {
+        self._grant_effect_filter: Dict[str, List[dict]] = {
             "allow": [],
             "deny": []
         }
-        self._grant_action_lut: Dict[str, Dict[UUID, dict]] = {}
-        self._grant_both_lut: Dict[str, Dict[str, Dict[UUID, dict]]] = {
+        self._grant_action_filter: Dict[str, List[dict]] = {}
+        self._grant_both_filter: Dict[str, Dict[str, List[dict]]] = {
             "allow": {},
             "deny": {}
         }
+        self._latch_lut: Dict[UUID, dict] = {}
 
 
     async def start(
@@ -51,9 +54,22 @@ class InMemoryStorage(StorageModule):
         self.parallel_paging_supported = True
         for rd in resource_defs:
             for action in rd['actions']:
-                self._grant_action_lut[action] = {}
-                self._grant_both_lut['allow'][action] = {}
-                self._grant_both_lut['deny'][action] = {}
+                self._grant_action_filter[action] = []
+                self._grant_both_filter['allow'][action] = []
+                self._grant_both_filter['deny'][action] = []
+        
+        # For grants that match all actions, ie empty actions list
+        self._grant_action_filter[None] = []
+        self._grant_both_filter['allow'][None] = []
+        self._grant_both_filter['deny'][None] = []
+    
+
+    async def shutdown(self):
+        self._grant_lut = {}
+        self._grant_action_filter = {}
+        self._grant_effect_filter = {}
+        self._grant_both_filter = {}
+        self._latch_lut = {}
         
 
     async def enact(self, new_grant: dict) -> dict:
@@ -73,10 +89,14 @@ class InMemoryStorage(StorageModule):
         grant_uuid = uuid4()
         grant['grant_uuid'] = str(grant_uuid)
         self._grant_lut[grant_uuid] = grant
-        self._grant_effect_lut[grant['effect']][grant_uuid] = grant
-        for action in grant['actions']:
-            self._grant_action_lut[action][grant_uuid] = grant
-            self._grant_both_lut[grant['effect']][action][grant_uuid] = grant
+        self._grant_effect_filter[grant['effect']].append(grant)
+        actions = grant['actions']
+        if len(grant['actions']) == 0:
+            actions = [None]
+
+        for action in actions:
+            self._grant_action_filter[action].append(grant)
+            self._grant_both_filter[grant['effect']][action].append(grant)
 
         return copy.deepcopy(grant)
 
@@ -98,10 +118,15 @@ class InMemoryStorage(StorageModule):
             raise exceptions.GrantNotFoundError(grant_uuid=grant_uuid)
     
         grant = self._grant_lut.pop(grant_uuid)
-        self._grant_effect_lut[grant['effect']].pop(grant_uuid)
-        for action in grant['actions']:
-            self._grant_action_lut[action].pop(grant_uuid)
-            self._grant_both_lut[grant['effect']][action].pop(grant_uuid)
+        uuid_str = grant['grant_uuid']
+        self._grant_effect_filter[grant['effect']] = [g for g in self._grant_effect_filter[grant['effect']] if g['grant_uuid'] != uuid_str]
+        actions = grant['actions']
+        if len(grant['actions']) == 0:
+            actions = [None]
+
+        for action in actions:
+            self._grant_action_filter[action] = [g for g in self._grant_action_filter[action] if g['grant_uuid'] != uuid_str]
+            self._grant_both_filter[grant['effect']][action] = [g for g in self._grant_both_filter[grant['effect']][action] if g['grant_uuid'] != uuid_str]
     
 
     async def get_grant(self, grant_uuid: UUID) -> dict:
@@ -119,7 +144,7 @@ class InMemoryStorage(StorageModule):
 
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
+        authzee.exceptions.NotImplementedError
             ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.GrantNotFoundError
             The grant with the given UUID could not be found.
@@ -135,32 +160,58 @@ class InMemoryStorage(StorageModule):
         effect: str | None,
         action: str | None, 
         page_ref: str | None, 
-        page_size: int
+        grants_page_size: int
     ) -> dict:
         """Get a page of grants.
 
         Parameters
         ----------
-        effect : str, optional
-            Filter by grant effect. 
-        action : str, optional
-            Filter by grant action.
-        page_ref : str, optional
-            Reference to the page to retrieve.
-        page_size : int
-            Page size of grants.
+        effect : str | None
+            Filter by grant effect. None for no filter.
+        action : str | None
+            Filter by grant action. None for no filter.
+        page_ref : str | None
+            Page reference of the page to retrieve. None to get the first page.
+        grants_page_size : int
+            Number of grants to return. Not exact.
 
         Returns
         -------
         dict
-            Page of grants and next page ref.
-
-        Raises
-        ------
-        authzee.exceptions.MethodNotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
+            Page of grants with the next page reference.
         """
-        raise exceptions.MethodNotImplementedError()
+        # Get the appropriate grant list based on filters
+        if effect is not None and action is not None:
+            # Include grants that match the specific action AND grants that match any action (empty actions)
+            grants = self._grant_both_filter[effect][action] + self._grant_both_filter[effect][None]
+        elif effect is not None:
+            grants = self._grant_effect_filter[effect]
+        elif action is not None:
+            # Include grants that match the specific action AND grants that match any action (empty actions)
+            grants = self._grant_action_filter[action] + self._grant_action_filter[None]
+        else:
+            grants = list(self._grant_lut.values())
+
+        # Handle pagination
+        start_index = 0
+        if page_ref is not None:
+            try:
+                start_index = int(page_ref)
+            except ValueError:
+                start_index = 0
+
+        end_index = start_index + grants_page_size
+        page_grants = grants[start_index:end_index]
+        
+        # Determine next page reference
+        next_page_ref = None
+        if end_index < len(grants):
+            next_page_ref = str(end_index)
+
+        return {
+            "grants": copy.deepcopy(page_grants),
+            "next_page_ref": next_page_ref
+        }
     
 
     async def get_grant_page_refs_page(
@@ -168,44 +219,69 @@ class InMemoryStorage(StorageModule):
         effect: str | None, 
         action: str | None, 
         page_ref: str | None, 
-        page_size: int | None
+        grants_page_size: int,
+        refs_page_size: int
     ) -> dict:
         """Get a page of page references for parallel pagination. 
 
         Parameters
         ----------
-        effect : str, optional
-            Filter by grant effect. 
-        action : str, optional
-            Filter by grant action.
-        page_ref : str, optional
-            Reference to the page to retrieve.
-        page_size : int
-            Page size of grants.
+        effect : str | None
+            Filter by grant effect. None for no filter.
+        action : str | None
+            Filter by grant action. None for no filter.
+        page_ref : str | None
+            Page reference of the page to retrieve. None to get the first page.
+        grants_page_size : int
+            Number of grants per page. Not exact.
+        refs_page_size : int
+            Number of page reference to return. Not exact.
 
         Returns
         -------
         dict
-            Page of grants and next page ref.
-
-        Raises
-        ------
-        authzee.exceptions.MethodNotImplementedError
-            ``StorageModule`` sub-classes must implement this method if this storage module supports parallel pagination. 
-            They must also set the ``supports_parallel_paging`` flag. 
+            Page of page references with the next page reference.
         """
-        if self.supports_parallel_paging is True:
-            raise exceptions.MethodNotImplementedError(
-                (
-                    "There is an error in the storage module!"
-                    "This storage module has marked supports_parallel_paging as true "
-                    "but it has not implemented the required methods!"
-                )
-            )
+        # Get the appropriate grant list based on filters
+        if effect is not None and action is not None:
+            # Include grants that match the specific action AND grants that match any action (empty actions)
+            grants = self._grant_both_filter[effect][action] + self._grant_both_filter[effect][None]
+        elif effect is not None:
+            grants = self._grant_effect_filter[effect]
+        elif action is not None:
+            # Include grants that match the specific action AND grants that match any action (empty actions)
+            grants = self._grant_action_filter[action] + self._grant_action_filter[None]
         else:
-            raise exceptions.ParallelPaginationNotSupported(
-                "This storage module does not support parallel pagination."
-            )
+            grants = list(self._grant_lut.values())
+
+        # lesser of page * grants page size or total length
+        total_grants = len(grants)
+            
+        # Generate page references based on grants_page_size
+        page_refs = []
+        for i in range(0, total_grants, grants_page_size):
+            page_refs.append(str(i))
+
+        # Handle pagination of page references using page_size
+        start_index = 0
+        if page_ref is not None:
+            try:
+                start_index = int(page_ref)
+            except ValueError:
+                start_index = 0
+
+        end_index = start_index + refs_page_size
+        page_ref_page = page_refs[start_index:end_index]
+        
+        # Determine next page reference
+        next_page_ref = None
+        if end_index < len(page_refs):
+            next_page_ref = str(end_index)
+
+        return {
+            "page_refs": page_ref_page,
+            "next_page_ref": next_page_ref
+        }
     
     
     async def create_latch(self) -> dict:
@@ -214,22 +290,24 @@ class InMemoryStorage(StorageModule):
         Returns
         -------
         dict
-            New storage latch. 
-        
-        Raises
-        ------
-        authzee.exceptions.MethodNotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
+            New storage latch.
         """
-        pass
+        new_latch = {
+            "storage_latch_uuid": uuid4(),
+            "set": False,
+            "created_at": datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+        }
+        self._latch_lut[new_latch['storage_latch_uuid']] = new_latch
+
+        return copy.deepcopy(new_latch)
 
 
-    async def get_latch(self, uuid: UUID) -> dict:
+    async def get_latch(self, storage_latch_uuid: UUID) -> dict:
         """Retrieve latch by UUID.
 
         Parameters
         ----------
-        uuid : UUID
+        storage_latch_uuid : UUID
             Storage latch UUID.
 
         Returns
@@ -239,20 +317,21 @@ class InMemoryStorage(StorageModule):
         
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.LatchNotFoundError
             The latch with the given UUID could not be found.
         """
-        pass
+        if storage_latch_uuid not in self._latch_lut:
+            raise exceptions.LatchNotFoundError(storage_latch_uuid=storage_latch_uuid)
+        
+        return copy.deepcopy(self._latch_lut[storage_latch_uuid])
 
 
-    async def set_latch(self, uuid: UUID) -> dict:
+    async def set_latch(self, storage_latch_uuid: UUID) -> dict:
         """Set a latch for a given UUID. 
 
         Parameters
         ----------
-        uuid : UUID
+        storage_latch_uuid : UUID
             Storage latch UUID.
 
         Returns
@@ -262,30 +341,33 @@ class InMemoryStorage(StorageModule):
         
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.LatchNotFoundError
             The latch with the given UUID could not be found.
         """
-        pass
+        if storage_latch_uuid not in self._latch_lut:
+            raise exceptions.LatchNotFoundError(storage_latch_uuid=storage_latch_uuid)
+        
+        self._latch_lut[storage_latch_uuid]["set"] = True
+        return copy.deepcopy(self._latch_lut[storage_latch_uuid])
 
 
-    async def delete_latch(self, latch_uuid: UUID) -> None:
+    async def delete_latch(self, storage_latch_uuid: UUID) -> None:
         """Delete a storage latch by UUID.
 
         Parameters
         ----------
-        uuid : UUID
+        storage_latch_uuid : UUID
             Storage latch UUID.
         
         Raises
         ------
-        authzee.exceptions.MethodNotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
         authzee.exceptions.LatchNotFoundError
             The latch with the given UUID could not be found.
         """
-        pass
+        if storage_latch_uuid not in self._latch_lut:
+            raise exceptions.LatchNotFoundError(storage_latch_uuid=storage_latch_uuid)
+        
+        del self._latch_lut[storage_latch_uuid]
 
 
     async def cleanup_latches(self, before: datetime.datetime) -> None:
@@ -295,11 +377,12 @@ class InMemoryStorage(StorageModule):
         ----------
         before : datetime.datetime
             Delete latches created before this datetime.
-        
-        Raises
-        ------
-        authzee.exceptions.MethodNotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
         """
-        pass
-
+        latches_to_delete = []
+        for latch_uuid, latch in self._latch_lut.items():
+            created_at = datetime.datetime.fromisoformat(latch["created_at"])
+            if created_at < before:
+                latches_to_delete.append(latch_uuid)
+        
+        for latch_uuid in latches_to_delete:
+            del self._latch_lut[latch_uuid]

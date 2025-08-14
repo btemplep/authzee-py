@@ -14,7 +14,7 @@ __all__ = [
     "GrantNotFoundError",
     "LatchNotFoundError",
     "StartError",
-    "MethodNotImplementedError",
+    "NotImplementedError",
     "ParallelPaginationNotSupported",
     "PageReferenceError"
 ]
@@ -99,7 +99,7 @@ class StartError(SDKError):
     pass
 
 
-class MethodNotImplementedError(SDKError):
+class NotImplementedError(SDKError):
     """The given method is not implemented for this class.
     """
 
