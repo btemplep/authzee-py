@@ -1,7 +1,7 @@
 __all__ = [
     "StorageModule",
-    "InMemoryStorage"
+    "InProcessStorage"
 ]
 
 from authzee.storage.storage_module import StorageModule
-from authzee.storage.in_memory_storage import InMemoryStorage
+from authzee.storage.in_process_storage import InProcessStorage

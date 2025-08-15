@@ -462,7 +462,8 @@ class Authzee:
                         "grant": [],
                         "jmespath": [],
                         "request": []
-                    }
+                    },
+                    "next_page_ref": "page ref here"
                 }
         
         Raises
@@ -553,7 +554,7 @@ class Authzee:
         grants_page_size : int | None
             Number of grants per page to process. Not exact. If ``None`` uses authzee default.
         parallel_paging : bool
-            Enable parallel pagination. Used to control compute and storage. If ``None`` uses authzee default.
+            Enable parallel pagination. Used to control how compute and storage process pages. If ``None`` uses authzee default.
         refs_page_size : int | None
             Number of page reference to process.  Not exact.  If ``None`` uses authzee default.
 

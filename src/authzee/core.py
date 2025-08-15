@@ -757,7 +757,7 @@ def evaluate_one(
             "request": []
         }
     }
-    if request['action'] not in grant["actions"] and len(grant['actions']) > 0:
+    if request['action'] not in grant['actions'] and len(grant['actions']) > 0:
         return result
     
     c_val = grant['context_validation'] if request['context_validation'] == "grant" else request['context_validation']

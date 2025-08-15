@@ -1,5 +1,5 @@
 __all__ = [
-    "InMemoryStorage"
+    "InProcessStorage"
 ]
 
 import copy
@@ -12,7 +12,7 @@ from authzee.module_locality import ModuleLocality
 from authzee.storage.storage_module import StorageModule
 
 
-class InMemoryStorage(StorageModule):
+class InProcessStorage(StorageModule):
     """Storage module that uses the Authzee app process's memory as the storage medium.
 
     Upon ``shutdown()`` or exit all storage is lost.

@@ -26,16 +26,16 @@ class ComputeModule:
 
         Parameters
         ----------
-        identity_defs : List[Dict[str, Any]]
-            _description_
-        resource_defs : List[Dict[str, Any]]
-            _description_
+        identity_defs : List[dict[str]]
+            Identity definitions registered and validated with Authzee.
+        resource_defs : List[dict[str]]
+            Resource Definitions to registered and validated with Authzee.
         search : Callable[[str, Any], Any]
-            _description_
+            JMESPath search function.
         storage_type : Type[StorageModule]
-            _description_
+            Storage Module Type. 
         storage_kwargs : Dict[str, Any]
-            _description_
+            Storage module KWArgs used to create instances.
         """
         self.locality = ModuleLocality.PROCESS
         self.identity_defs = identity_defs
@@ -121,7 +121,7 @@ class ComputeModule:
         grants_page_size : int
             Number of grants per page to process. Not exact.
         parallel_paging : bool
-            Enable parallel pagination. Used to control compute and storage.
+            Enable parallel pagination. Used to control how compute and storage process pages.
         refs_page_size : int
             Number of page reference to process. Not exact.
 

@@ -10,3 +10,11 @@ __all__ = [
 from authzee.authzee import Authzee
 from authzee.authzee_async import AuthzeeAsync
 
+from authzee.compute import *
+from authzee.compute import __all__ as compute_all
+__all__ += compute_all
+
+from authzee.storage import *
+from authzee.storage import __all__ as storage_all
+__all__ += storage_all
+

@@ -205,7 +205,11 @@ class AuthzeeAsync:
         if def_val['valid'] is False:
             raise exceptions.DefinitionError(
                 message="Error when validating the identity or resource definitions",
-                response=def_val
+                context=[],
+                definition=def_val['errors'],
+                grant=[],
+                jmespath=[],
+                request=[]
             )
         
         schemas = core.generate_schemas(
@@ -238,6 +242,12 @@ class AuthzeeAsync:
                     f"The compute locality is only compatible with {locality_compatibility[self._compute.locality]}."
                 )
             )
+
+        if (
+            self.parallel_paging is True
+            and self._storage.parallel_paging_supported is False
+        ):
+            raise exceptions.ParallelPaginationNotSupported("Parallel paging is set to default but the storage engine does not support it!")
 
     
     async def shutdown(self) -> None:
@@ -296,7 +306,11 @@ class AuthzeeAsync:
         if grant_val['valid'] is False:
             raise exceptions.GrantError(
                 message=f"Error validating grant. {grant_val}",
-                response=grant_val
+                context=[],
+                definition=[],
+                grant=grant_val['errors'],
+                jmespath=[],
+                request=[]
             )
         
         return await self._storage.enact(new_grant=new_grant)
@@ -526,7 +540,8 @@ class AuthzeeAsync:
                         "grant": [],
                         "jmespath": [],
                         "request": []
-                    }
+                    },
+                    "next_page_ref": "page ref here"
                 }
         
         Raises
@@ -622,7 +637,7 @@ class AuthzeeAsync:
         grants_page_size : int | None
             Number of grants per page to process. Not exact. If ``None`` uses authzee default.
         parallel_paging : bool
-            Enable parallel pagination. Used to control compute and storage. If ``None`` uses authzee default.
+            Enable parallel pagination. Used to control how compute and storage process pages. If ``None`` uses authzee default.
         refs_page_size : int | None
             Number of page reference to process.  Not exact.  If ``None`` uses authzee default.
 

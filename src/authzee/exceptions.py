@@ -19,6 +19,7 @@ __all__ = [
     "PageReferenceError"
 ]
 
+from typing import List
 from uuid import UUID
 
 
@@ -31,12 +32,156 @@ class AuthzeeError(Exception):
 class SpecificationError(AuthzeeError):
     """Base exception for errors defined in the Authzee specification.
     
-    Includes a `response` field that always returns the currently running operations..
+    Parameters
+    ----------
+    context : List[dict]
+        Context errors from authzee spec.
+    definition : List[dict]
+        Definition errors from authzee spec.
+    grant : List[dict]
+        Grant errors from authzee spec.
+    jmespath : List[dict]
+        JMESPath errors from authzee spec.
+    request : List[dict]
+        Request errors from authzee spec.
+    
+    Attributes
+    ---------------------
+    context : List[dict]
+        Context errors from authzee spec.
+    definition : List[dict]
+        Definition errors from authzee spec.
+    grant : List[dict]
+        Grant errors from authzee spec.
+    jmespath : List[dict]
+        JMESPath errors from authzee spec.
+    request : List[dict]
+        Request errors from authzee spec.
+        
+    Examples
+    --------
+
+    .. code-block:: python
+
+        SpecificationError(
+            message="A critical error occurred",
+            context = [
+                {
+                    "message": "'request_source' is a required property",
+                    "critical": false,
+                    "grant": {
+                        "grant_uuid": "c68cf016-1254-4c49-9f4d-3024dd6a937c",
+                        "name": "thing",
+                        "description": "thing",
+                        "tags": {},
+                        "effect": "allow",
+                        "actions": [
+                            "read"
+                        ],
+                        "query": "true",
+                        "query_validation": "error",
+                        "equality": true,
+                        "data": {},
+                        "context_schema": {
+                            "type": "object",
+                            "properties": {
+                                "request_source": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "request_source"
+                            ]
+                        },
+                        "context_validation": "error"
+                    }
+                }
+            ],
+            definition=[
+                {
+                    "message": "Identity types must be unique. 'User' is present more than once.",
+                    "critical": true,
+                    "definition_type": "identity",
+                    "definition": { # this will match the definition given so it is free form.
+                        "identity_type": "User",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            ],
+            grant=[
+                {
+                    "message": "The grant is not valid. Schema Error: 'invalid_action' is not one of ['read', 'inflate', 'deflate', 'pop', 'tie']",
+                    "critical": true,
+                    "grant": {
+                        "grant_uuid": "c68cf016-1254-4c49-9f4d-3024dd6a937c",
+                        "name": "thing",
+                        "description": "thing",
+                        "tags": {},
+                        "effect": "allow",
+                        "actions": [
+                            "invalid_action"
+                        ],
+                        "query": "true",
+                        "query_validation": "error",
+                        "equality": true,
+                        "data": {},
+                        "context_schema": {
+                            "type": "object"
+                        },
+                        "context_validation": "none"
+                    }
+                }
+            ],
+            jmespath=[
+                {
+                    "message": "Invalid function name: invalid_function",
+                    "critical": false,
+                    "grant": {
+                    "grant_uuid": "c68cf016-1254-4c49-9f4d-3024dd6a937c",
+                    "name": "thing",
+                    "description": "thing",
+                    "tags": {},
+                    "effect": "allow",
+                    "actions": [
+                        "read"
+                    ],
+                    "query": "invalid_function(request.identities.User[0].department)",
+                    "query_validation": "error",
+                    "equality": true,
+                    "data": {},
+                    "context_schema": {
+                        "type": "object"
+                    },
+                    "context_validation": "none"
+                }
+            ],
+            request=[
+                {
+                    "message": "The request is not valid for the request schema: 'invalid_action' is not one of ['read', 'inflate', 'deflate', 'pop', 'tie']",
+                    "critical": true
+                }
+            ]
+        )
+
     """
     
-    def __init__(self, message: str, response: dict):
+    def __init__(
+        self, 
+        message: str, 
+        context: List[dict],
+        definition: List[dict],
+        grant: List[dict],
+        jmespath: List[dict],
+        request: List[dict]
+    ):
         super().__init__(message)
-        self.response = response
+        self.context = context
+        self.definition = definition
+        self.grant = grant
+        self.jmespath = jmespath
+        self.request = request
 
 
 class ContextError(SpecificationError):
@@ -112,7 +257,8 @@ class ParallelPaginationNotSupported(SDKError):
     """
     pass
 
+
 class PageReferenceError(SDKError):
-    """The given page reference had an error when processing.
+    """Error when processing a page reference.
     """
     pass
