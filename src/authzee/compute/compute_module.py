@@ -89,7 +89,7 @@ class ComputeModule:
         Returns
         -------
         dict
-            Page of page references with the next page reference.
+            Audit response for a page.
 
         Raises
         ------

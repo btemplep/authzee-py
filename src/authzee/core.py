@@ -1,3 +1,5 @@
+
+
 __all__ = [
     "identity_definition_schema",
     "resource_definition_schema",
@@ -505,7 +507,7 @@ _authorize_response_base_schema = {
         "completed",
         "grant",
         "message",
-        "errors"
+        "critical_errors"
     ],
     "properties": {
         "authorized": {
@@ -529,7 +531,7 @@ _authorize_response_base_schema = {
             "type": "string",
             "description": "Details about why the request was authorized or not."
         },
-        "errors": {}
+        "critical_errors": {}
     },
     "$defs": {
         "grant": {}
@@ -653,7 +655,7 @@ def generate_schemas(
     schemas['audit']['$defs']['grant'] = schemas['grant']
 
     # authorize response schema
-    schemas['authorize']['properties']['errors'] = workflow_errors_schema
+    schemas['authorize']['properties']['critical_errors'] = workflow_errors_schema
     schemas['authorize']['$defs']['grant'] = schemas['grant']
 
     # request schema
@@ -744,7 +746,8 @@ def validate_request(request: Dict[str, AnyJSON], schema: Dict[str, AnyJSON]) ->
 def evaluate_one(
     request: Dict[str, AnyJSON], 
     grant: Dict[str, AnyJSON],
-    search: Callable[[str, AnyJSON], AnyJSON]
+    search: Callable[[str, AnyJSON], AnyJSON],
+    only_crits: bool
 ) -> Dict[str, AnyJSON]:
     result = {
         "critical": False,
@@ -761,11 +764,17 @@ def evaluate_one(
         return result
     
     c_val = grant['context_validation'] if request['context_validation'] == "grant" else request['context_validation']
-    if c_val != "none":
+    is_c_val_crit = c_val == "critical"
+    if (
+        c_val != "none"
+        and (
+            only_crits is False
+            or is_c_val_crit is True # and only_crits is True
+        )
+    ):
         try:
             jsonschema.validate(request['context'], grant['context_schema'])
         except jsonschema.exceptions.ValidationError as exc:
-            is_c_val_crit = c_val == "critical"
             if (
                 c_val == "error"
                 or is_c_val_crit is True
@@ -795,7 +804,10 @@ def evaluate_one(
         q_val = grant['query_validation'] if request['query_validation'] == "grant" else request['query_validation']
         is_q_val_crit = q_val == "critical"
         if (
-            q_val == "error"
+            (
+                q_val == "error"
+                and only_crits is False
+            )
             or is_q_val_crit is True
         ):
             result['errors']['jmespath'].append(
@@ -830,7 +842,7 @@ def audit(
         }
     }
     for g in grants:
-        g_eval = evaluate_one(request, g, search)
+        g_eval = evaluate_one(request, g, search, False)
         result['errors']['context'] += g_eval['errors']['context']
         result['errors']['jmespath'] += g_eval['errors']['jmespath']
         if g_eval['critical'] is True:
@@ -859,14 +871,13 @@ def authorize(
     allow_grants = []
     deny_grants = []
     for g in grants:
-        if request['action'] in g['actions'] or len(g['actions']) == 0:
-            if g['effect'] == "allow":
-                allow_grants.append(g)
-            else:
-                deny_grants.append(g)
+        if g['effect'] == "allow":
+            allow_grants.append(g)
+        else:
+            deny_grants.append(g)
     
     for g in deny_grants:
-        g_eval = evaluate_one(request, g, search)
+        g_eval = evaluate_one(request, g, search, True)
         errors['context'] += g_eval['errors']['context']
         errors['jmespath'] += g_eval['errors']['jmespath']
         if g_eval['critical'] is True:
@@ -875,7 +886,7 @@ def authorize(
                 "completed": False,
                 "grant": g,
                 "message": "A critical error has occurred. Therefore, the request is not authorized.",
-                "errors": errors
+                "critical_errors": errors
             }
         
         if g_eval['applicable'] is True:
@@ -884,11 +895,11 @@ def authorize(
                 "completed": True,
                 "grant": g,
                 "message": "A deny grant is applicable to the request. Therefore, the request is not authorized.",
-                "errors": errors
+                "critical_errors": errors
             }
     
     for g in allow_grants:
-        g_eval = evaluate_one(request, g, search)
+        g_eval = evaluate_one(request, g, search, True)
         errors['context'] += g_eval['errors']['context']
         errors['jmespath'] += g_eval['errors']['jmespath']
         if g_eval['critical'] is True:
@@ -897,7 +908,7 @@ def authorize(
                 "completed": False,
                 "grant": g,
                 "message": "A critical error has occurred. Therefore, the request is not authorized.",
-                "errors": errors
+                "critical_errors": errors
             }
         
         if g_eval['applicable'] is True:
@@ -906,7 +917,7 @@ def authorize(
                 "completed": True,
                 "grant": g,
                 "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
-                "errors": errors
+                "critical_errors": errors
             }
     
     return {
@@ -914,7 +925,7 @@ def authorize(
         "completed": True,
         "grant": None,
         "message": "No allow or deny grants are applicable to the request. Therefore, the request is implicitly denied and is not authorized.",
-        "errors": errors
+        "critical_errors": errors
     }
 
 
@@ -994,7 +1005,7 @@ def authorize_workflow(
             "grant": None,
             "message": "One or more identity and/or resource definitions are not valid. Therefore, the request is not authorized.",
             "completed": False,
-            "errors": errors
+            "critical_errors": errors
         }
     
     schemas = generate_schemas(
@@ -1009,7 +1020,7 @@ def authorize_workflow(
             "grant": None,
             "message": "One or more grants are not valid.  Therefore, the request is not authorized.",
             "completed": False,
-            "errors": errors
+            "critical_errors": errors
         }
 
     request_val = validate_request(request, schemas['request'])
@@ -1020,8 +1031,7 @@ def authorize_workflow(
             "grant": None,
             "message": "The request is not valid. Therefore the request is not authorized.",
             "completed": False,
-            "errors": errors
+            "critical_errors": errors
         }
 
     return authorize(request, grants, search)
-

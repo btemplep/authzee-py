@@ -4,7 +4,7 @@ __all__ = [
 
 from typing import Any, AsyncGenerator, Callable, Dict, List, Type
 
-from authzee import core, exceptions
+from authzee import core
 from authzee.compute.compute_module import ComputeModule
 from authzee.module_locality import ModuleLocality
 from authzee.storage.storage_module import StorageModule
@@ -51,7 +51,7 @@ class InProcessCompute(ComputeModule):
         )
         self.locality = ModuleLocality.PROCESS
         self._storage = storage_type(**storage_kwargs)
-        await self._storage.start()
+        await self._storage.start(identity_defs=identity_defs, resource_defs=resource_defs)
 
 
     async def audit_page(
@@ -80,7 +80,7 @@ class InProcessCompute(ComputeModule):
         Returns
         -------
         dict
-            Page of page references with the next page reference.
+            Audit response.
 
         Raises
         ------
@@ -90,7 +90,6 @@ class InProcessCompute(ComputeModule):
         page = await self._get_page_or_pages(
             effect=None,
             action=request['action'],
-            request=request,
             page_ref=page_ref,
             grants_page_size=grants_page_size,
             parallel_paging=parallel_paging,
@@ -158,7 +157,7 @@ class InProcessCompute(ComputeModule):
                 grants=grants,
                 search=self.search
             )
-            if resp['completed'] is True and resp['grant'] is not None:
+            if resp['completed'] is False and resp['grant'] is not None:
                 return resp
         
         return resp
@@ -185,13 +184,13 @@ class InProcessCompute(ComputeModule):
                 "grants": [],
                 "next_page_ref": refs['next_page_ref']
             }
-            for ref in refs['refs']:
-                page['grants'] += await self._storage.get_grants_page(
+            for ref in refs['page_refs']:
+                page['grants'] += (await self._storage.get_grants_page(
                     effect=effect,
                     action=action,
                     page_ref=ref,
                     grants_page_size=grants_page_size
-                )
+                ))['grants']
         else:
             page = await self._storage.get_grants_page(
                 effect=effect,

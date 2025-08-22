@@ -2,14 +2,28 @@
 
 
 - [ ] add default None for methods after generating rust version. 
-- [ ] should break up the core authorize steps into separate functions to make it easier for the compute to reuse it.
-    - Authorize_deny to evaluate deny grants
-    - authorize_allow to evaluate allow grants and 
-    - should need to separate allow or deny as the function is unique to that, and should assume that the action matches as well. Besides that the authorization function is nicely reusable. 
-- [ ] optionally check output schemas
 - [ ] Add all exceptions at the authzee level
 
 
+- [x] For storage that is in the process, we have to copy it from authzee to the compute module
+    - In authzee start do we just set `self._compute._storage = self._storage` 
+    - or do we pass it in the the start method as an option to the compute engine?
+        - Thi is probably the smarter way, since compute can not pass it around as usual if it has any start sections that pass around the storage module?
+    - **SOLUTION** - Or for storage we require that you pass in the dictionary where you want to store it as an arg, then that is just passed along like a pointer to all other storage modules that are created.
+- [x] should break up the core authorize steps into separate functions to make it easier for the compute to reuse it.
+    - Authorize_deny to evaluate deny grants
+    - authorize_allow to evaluate allow grants and 
+    - should need to separate allow or deny as the function is unique to that, and should assume that the action matches as well. Besides that the authorization function is nicely reusable. 
+    - **SOLUTION** - maybe later it's not that bad now. 
+- [x] Should authorize return errors as well? 
+    - It's not really scalable to do that. 
+    - With audit it's done a page or few at a time because they could all be errors. 
+    - Authorize should only return whether it is authorized or not and the reason.  
+    - Should be scalable and optimized around the decision, not the errors. 
+    - It should only return whatever the critical error it was that caused it to fail. 
+    - Can still return the same response but it should only be the list of critical errors. S
+- [x] optionally check output schemas
+    - **SOLUTION** - this should just be in tests. 
 - [x] default for parallel paging should check storage if compatible
 - [x] How to return errors?
     - Not really a unified way to do this... 

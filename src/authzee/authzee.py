@@ -449,7 +449,7 @@ class Authzee:
         Returns
         -------
         dict
-            Page of page references with the next page reference. 
+            Audit response for a page.
             
             .. code-block:: python
 
@@ -561,7 +561,7 @@ class Authzee:
         Returns
         -------
         dict
-            Page of page references with the next page reference. 
+            Authorize response. 
             
             .. code-block:: python
 
@@ -586,7 +586,7 @@ class Authzee:
                         "context_validation": "none"
                     },
                     "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
-                    "errors": {
+                    "critical_errors": {
                         "context": [],
                         "definition": [],
                         "grant": [],

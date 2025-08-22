@@ -16,20 +16,45 @@ class InProcessStorage(StorageModule):
     """Storage module that uses the Authzee app process's memory as the storage medium.
 
     Upon ``shutdown()`` or exit all storage is lost.
+
+    Parameters
+    ----------
+    storage_ptr : dict
+        A dictionary that will be used as the storage medium for all instances of this storage module.
     """
 
-    def __init__(self):
-        self._grant_lut: Dict[UUID, dict] = {}
-        self._grant_effect_filter: Dict[str, List[dict]] = {
-            "allow": [],
-            "deny": []
-        }
-        self._grant_action_filter: Dict[str, List[dict]] = {}
-        self._grant_both_filter: Dict[str, Dict[str, List[dict]]] = {
-            "allow": {},
-            "deny": {}
-        }
-        self._latch_lut: Dict[UUID, dict] = {}
+    def __init__(self, storage_ptr: dict):
+        self._storage_ptr = storage_ptr
+        if "created" not in self._storage_ptr:
+            self._storage_ptr['grant_lut'] = {}
+            self._storage_ptr['grant_effect_filter'] = {}
+            self._storage_ptr['grant_action_filter'] = {}
+            self._storage_ptr['grant_both_filter'] = {}
+            self._storage_ptr['latch_lut'] = {}
+            self._grant_lut: Dict[UUID, dict] = self._storage_ptr['grant_lut']
+            self._grant_effect_filter: Dict[str, List[dict]] = self._storage_ptr['grant_effect_filter']
+            self._grant_effect_filter.update(
+                {
+                    "allow": [],
+                    "deny": []
+                }
+            )
+            self._grant_action_filter: Dict[str, List[dict]] = self._storage_ptr['grant_action_filter']
+            self._grant_both_filter: Dict[str, Dict[str, List[dict]]] = self._storage_ptr['grant_both_filter']
+            self._grant_both_filter.update(
+                {
+                    "allow": {},
+                    "deny": {}
+                }
+            )
+            self._latch_lut: Dict[UUID, dict] = self._storage_ptr['latch_lut']
+            self._storage_ptr['created'] = True
+        else:
+            self._grant_lut: Dict[UUID, dict] = self._storage_ptr['grant_lut']
+            self._grant_effect_filter: Dict[str, List[dict]] = self._storage_ptr['grant_effect_filter']
+            self._grant_action_filter: Dict[str, List[dict]] = self._storage_ptr['grant_action_filter']
+            self._grant_both_filter: Dict[str, Dict[str, List[dict]]] = self._storage_ptr['grant_both_filter']
+            self._latch_lut: Dict[UUID, dict] = self._storage_ptr['latch_lut']
 
 
     async def start(
@@ -52,17 +77,19 @@ class InProcessStorage(StorageModule):
         )
         self.locality = ModuleLocality.PROCESS
         self.parallel_paging_supported = True
-        for rd in resource_defs:
-            for action in rd['actions']:
-                self._grant_action_filter[action] = []
-                self._grant_both_filter['allow'][action] = []
-                self._grant_both_filter['deny'][action] = []
+        if "started" not in self._storage_ptr:
+            for rd in resource_defs:
+                for action in rd['actions']:
+                    self._grant_action_filter[action] = []
+                    self._grant_both_filter['allow'][action] = []
+                    self._grant_both_filter['deny'][action] = []
+            
+            # For grants that match all actions, ie empty actions list
+            self._grant_action_filter[None] = []
+            self._grant_both_filter['allow'][None] = []
+            self._grant_both_filter['deny'][None] = []
+            self._storage_ptr['started'] = True
         
-        # For grants that match all actions, ie empty actions list
-        self._grant_action_filter[None] = []
-        self._grant_both_filter['allow'][None] = []
-        self._grant_both_filter['deny'][None] = []
-    
 
     async def shutdown(self):
         self._grant_lut = {}
@@ -180,14 +207,11 @@ class InProcessStorage(StorageModule):
         dict
             Page of grants with the next page reference.
         """
-        # Get the appropriate grant list based on filters
         if effect is not None and action is not None:
-            # Include grants that match the specific action AND grants that match any action (empty actions)
             grants = self._grant_both_filter[effect][action] + self._grant_both_filter[effect][None]
         elif effect is not None:
             grants = self._grant_effect_filter[effect]
         elif action is not None:
-            # Include grants that match the specific action AND grants that match any action (empty actions)
             grants = self._grant_action_filter[action] + self._grant_action_filter[None]
         else:
             grants = list(self._grant_lut.values())

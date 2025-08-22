@@ -7,6 +7,9 @@ __all__ = [
     "AuthzeeAsync"
 ]
 
+from loguru import logger
+logger.disable("authzee")
+
 from authzee.authzee import Authzee
 from authzee.authzee_async import AuthzeeAsync
 
