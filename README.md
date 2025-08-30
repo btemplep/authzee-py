@@ -1,5 +1,6 @@
 # `authzee`
 
+
 <!-- ![authzee-logo](./docs/logo.svg) Documentation(Link TBD) -->
 <img src="https://raw.githubusercontent.com/btemplep/authzee/main/docs/logo.svg" alt="Authzee Logo" width="300">
 

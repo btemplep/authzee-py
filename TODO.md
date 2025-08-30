@@ -3,7 +3,27 @@
 
 - [ ] add default None for methods after generating rust version. 
 - [ ] Add all exceptions at the authzee level
+- [ ] multiprocess compute - multiple modes
+    - simple 
+        - Every request just gets sent to a process in a pool and all compute is done in that single process
+    - legacy
+        - All work is offloaded to a process pool but the main process controls all of it
+        - A complex request process would be expected to do this work
+    - complex
+        - 2 pools of processes.  One for handling requests and one for workers. If you only have one pool you may get into deadlock where you have requests taking all of the processes
+        - For single page eval it only uses a request handling process
+        - For multi-page eval it will use worker processes as well
+        - For authorization it will use a request process and many worker processes.
+            - serial paging should be able to chain worker processes, either by returning in the next page ref to the request process or by a worker submitting another task to the pool
+                - This can basically be a dupe of the legacy setup because that works really well
+            - Parallel paging should send out a page of pages at a time until all pages are sent then wait for a response 
 
+- [ ] Storage for SQL
+    - Parallel paging the uses limit paging
+        - faster because it's parallel but for a lot of pages may actually be slower
+    - single paging that uses id pages
+
+- [ ] Distributed compute with redis
 
 - [x] For storage that is in the process, we have to copy it from authzee to the compute module
     - In authzee start do we just set `self._compute._storage = self._storage` 
