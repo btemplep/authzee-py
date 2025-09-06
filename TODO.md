@@ -1,6 +1,5 @@
 # TODO
 
-
 - [ ] add default None for methods after generating rust version. 
 - [ ] Add all exceptions at the authzee level
 - [ ] multiprocess compute - multiple modes
@@ -17,6 +16,7 @@
             - serial paging should be able to chain worker processes, either by returning in the next page ref to the request process or by a worker submitting another task to the pool
                 - This can basically be a dupe of the legacy setup because that works really well
             - Parallel paging should send out a page of pages at a time until all pages are sent then wait for a response 
+    - 
 
 - [ ] Storage for SQL
     - Parallel paging the uses limit paging
@@ -63,4 +63,4 @@
 - [x] store grants with UUID as str in InMemoryDB
     - probably should be it's all stored as string and whatnot
     - or I could index by UUID and then just store grant as a string
-    - **SOLUTION** - grants get a string but the lookup is UUID.  Should be a list because that only speeds up repeal and get by UUID. 
+    - **SOLUTION** - grants get a string but the lookup is UUID.  Should be a list because that only speeds up repeal and get by UUID. c

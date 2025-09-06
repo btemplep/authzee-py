@@ -8,7 +8,6 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Callable, Dict, List, Type
 
 from authzee.compute.compute_module import ComputeModule
-from authzee.compute.in_process_compute import InProcessCompute
 from authzee.module_locality import ModuleLocality
 from authzee.storage.storage_module import StorageModule
 
@@ -16,16 +15,40 @@ from authzee.storage.storage_module import StorageModule
 class MultiprocessCompute(ComputeModule):
     """Compute using multiple processes with system locality.
     
-    Each request for audit page or authorize are simple sent to a single process from a pool. 
+    Requests for audit page or authorize are forwarded to a worker to handle the request.
+    Each worker will create it's own instance of ``compute_type`` and use that to process the requests.
+
+    Acts as a base class to offload to worker processes.
 
     Parameters
     ----------
-    max_workers : int, optional
-        Maximum number of worker processes. If None, uses default from ProcessPoolExecutor.
+    max_workers : int | None
+        Maximum number of worker processes. If None, defaults to number of machine processors.
+    compute_type : Type[ComputeModule]
+        The type of the compute module for each worker process to use to process requests.
+    compute_kwargs : Dict[str, Any]
+        KWArgs to pass when creating compute modules for the worker processes.
+
+    Examples
+    --------
+    .. code-block:: python
+
+        from Authzee import Authzee, InProcessCompute, MultiprocessCompute, FanOutMPCompute
+
+        azee_app = Authzee(
+        
+        )
     """
 
-    def __init__(self, max_workers: int | None = None):
+    def __init__(
+        self, 
+        max_workers: int | None,
+        compute_type: Type[ComputeModule],
+        compute_kwargs: Dict[str, Any]
+    ):
         self.max_workers = max_workers
+        self.compute_type = compute_type
+        self.compute_kwargs = compute_kwargs
         self._executor = None
 
 
@@ -51,6 +74,8 @@ class MultiprocessCompute(ComputeModule):
             mp_context=multiprocessing.get_context("spawn"),
             initializer=_executor_start,
             initargs=(
+                self.compute_type,
+                self.compute_kwargs,
                 {
                     "identity_defs": identity_defs,
                     "resource_defs": resource_defs,
@@ -113,10 +138,12 @@ class MultiprocessCompute(ComputeModule):
 
 
 def _executor_start(
+    compute_type: Type[ComputeModule],
+    compute_kwargs: Dict[str, Any],
     start_kwargs: Dict[str, Any]
 ) -> None:
     global authzee_compute
-    authzee_compute = InProcessCompute()
+    authzee_compute = compute_type(**compute_kwargs)
     return asyncio.run(authzee_compute.start(**start_kwargs))
 
 

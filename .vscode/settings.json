@@ -10,6 +10,7 @@
         "authzs",
         "autoclass",
         "automodule",
+        "azee",
         "beatdrop",
         "botocore",
         "caplog",
