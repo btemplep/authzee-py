@@ -1,5 +1,24 @@
 # TODO
 
+
+- Better Fan Out MP Compute
+    - Audit - parallel off
+        - Send request to worker to process
+    - Audit - Parallel on
+        - get the list of things and send one out to each process then collect results
+    - authorize - parallel off
+        - send request to process for deny with deny latch and aio tx pipe
+            - Worker gets first page and sends next ref back
+            - then continues 
+- [x] for fanout mp you need threads for each what?
+    - There is a process pool that is limited but the technically you could keep sending requests and they would need more threads
+    - If you don't and say you send a request 10 requests to the process pool and only 5 workers are in the pool. 
+        - The first 5 are picked up by the pool and the other 5 are waiting
+        - The waiting 5 have the connection recv functions dealt out to the thread pool first though. 
+        - IDK if the sending ones will have have to wait for recv or not
+        - Probably better just to use a package for this something like https://github.com/kchmck/aiopipe/tree/master
+- [ ] authorize needs to do many at once
+    - It would be a bad use of resources for if I list 100 or 1000 things to authorize each one separately
 - [ ] add default None for methods after generating rust version. 
 - [ ] Add all exceptions at the authzee level
 - [ ] multiprocess compute - multiple modes

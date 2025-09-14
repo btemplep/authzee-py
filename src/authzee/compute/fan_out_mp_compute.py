@@ -1,7 +1,7 @@
 
 
 import asyncio
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 import multiprocessing as mp
 from multiprocessing.connection import Connection
@@ -9,6 +9,7 @@ from multiprocessing.managers import SharedMemoryManager
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from authzee.compute.compute_module import ComputeModule
+from authzee.compute.shared_mem_latch import SharedMemLatch
 from authzee.module_locality import ModuleLocality
 from authzee.storage.storage_module import StorageModule
 
@@ -37,7 +38,11 @@ class FanOutMPCompute(ComputeModule):
         max_workers: int | None
     ):
         self.max_workers = max_workers
-        self._executor = None
+        if self.max_workers is None:
+            self.max_workers = mp.cpu_count()
+            
+        self._process_pool = None
+        self._shared_mem_manager = None
 
 
     async def start(
@@ -57,11 +62,9 @@ class FanOutMPCompute(ComputeModule):
             storage_kwargs=storage_kwargs
         )
         self.locality = ModuleLocality.SYSTEM
-        # Thread pool for converting pipe actions to async
-        self._thread_pool = ThreadPoolExecutor(max_workers=1)
         self._shared_mem_manager = SharedMemoryManager()
         self._shared_mem_manager.start()
-        self._executor = ProcessPoolExecutor(
+        self._process_pool = ProcessPoolExecutor(
             max_workers=self.max_workers,
             mp_context=mp.get_context("spawn"),
             initializer=_executor_start,
@@ -80,11 +83,60 @@ class FanOutMPCompute(ComputeModule):
     async def shutdown(self) -> None:
         """Early clean up of compute backend resources.
 
-        Will shutdown the process pool without waiting for current tasks to finish.
+        Will shutdown the process pool without waiting for current tasks to finish and free shared memory.
         """
         self._process_pool.shutdown(wait=False)
-        self._thread_pool.shutdown(wait=False)
+        self._process_pool = None
         self._shared_mem_manager.shutdown()
+        self._shared_mem_manager = None
+
+
+    async def audit_page(
+        self, 
+        request: dict, 
+        page_ref: str | None, 
+        grants_page_size: int, 
+        parallel_paging: bool, 
+        refs_page_size: int 
+    ) -> dict:
+        raise exceptions.NotImplementedError()
+
+
+    async def authorize(
+        self, 
+        request: dict, 
+        grants_page_size: int, 
+        parallel_paging: bool, 
+        refs_page_size: int 
+    ) -> dict:
+        """Authorize a request.
+
+        Parameters
+        ----------
+        request : dict
+            Authzee request data.
+        grants_page_size : int
+            Number of grants per page to process. Not exact.
+        parallel_paging : bool
+            Enable parallel pagination. Used to control how compute and storage process pages.
+        refs_page_size : int
+            Number of page reference to process. Not exact.
+
+        Returns
+        -------
+        dict
+            Authorization decision with effect and supporting information.
+
+        Raises
+        ------
+        authzee.exceptions.ContextError
+            Critical error when validating context.
+        authzee.exceptions.JMESPathError
+            Critical error when executing JMESPath query.
+        authzee.exceptions.NotImplementedError
+            This method is not implemented.
+        """
+        raise exceptions.NotImplementedError()
 
 
     async def authorize(
@@ -119,17 +171,17 @@ class FanOutMPCompute(ComputeModule):
         bool
             ``True`` if allowed, ``False`` if denied.
         """ 
-        loop = get_running_loop()
+        loop = asyncio.get_running_loop()
         deny_futures: List[asyncio.Future] = []
         next_page_ref = None
         did_once = False
-        cancel_event = SharedMemEvent(smm=self._shared_mem_manager)
+        cancel_latch = SharedMemLatch(smm=self._shared_mem_manager)
         while (
             (
                 did_once is not True
                 or next_page_ref is not None
             )
-            and cancel_event.is_set() is False
+            and cancel_latch.is_set() is False
         ):
             did_once = True
             recv_conn, send_conn = mp.Pipe(duplex=False)
@@ -145,7 +197,7 @@ class FanOutMPCompute(ComputeModule):
                         page_ref=next_page_ref,
                         jmespath_data=jmespath_data,
                         pipe_conn=send_conn,
-                        cancel_event=cancel_event
+                        cancel_latch=cancel_latch
                     )
                 )
             )
@@ -158,13 +210,13 @@ class FanOutMPCompute(ComputeModule):
         allow_futures: List[asyncio.Future] = []
         next_page_ref = None
         did_once = False
-        allow_match_event = SharedMemEvent(smm=self._shared_mem_manager)
+        allow_match_event = SharedMemLatch(smm=self._shared_mem_manager)
         while (
             (
                 did_once is not True
                 or next_page_ref is not None
             )
-            and cancel_event.is_set() is False
+            and cancel_latch.is_set() is False
             and allow_match_event.is_set() is False
         ):
             did_once = True
@@ -181,7 +233,7 @@ class FanOutMPCompute(ComputeModule):
                         page_ref=next_page_ref,
                         jmespath_data=jmespath_data,
                         pipe_conn=send_conn,
-                        cancel_event=cancel_event,
+                        cancel_latch=cancel_latch,
                         allow_match_event=allow_match_event
                     )
                 )
@@ -193,18 +245,18 @@ class FanOutMPCompute(ComputeModule):
             )
         
         # If we found a deny then cleanup tasks and return False
-        if cancel_event.is_set() is True:
+        if cancel_latch.is_set() is True:
             await self._cleanup_futures(futures=deny_futures + allow_futures)
-            cancel_event.unlink()
+            cancel_latch.unlink()
             allow_match_event.unlink()
 
             return False
         # Then check if we ran any deny tasks and recheck cancel status
         elif len(deny_futures) > 0:
             await asyncio.gather(*deny_futures)
-            if cancel_event.is_set() is True:
+            if cancel_latch.is_set() is True:
                 await self._cleanup_futures(futures=allow_futures)
-                cancel_event.unlink()
+                cancel_latch.unlink()
                 allow_match_event.unlink()
 
                 return False
@@ -212,7 +264,7 @@ class FanOutMPCompute(ComputeModule):
         # Check for allow match
         if allow_match_event.is_set() is True:
             await self._cleanup_futures(allow_futures)
-            cancel_event.unlink()
+            cancel_latch.unlink()
             allow_match_event.unlink()
 
             return True
@@ -220,12 +272,12 @@ class FanOutMPCompute(ComputeModule):
         elif len(allow_futures) > 0:
             await asyncio.gather(*allow_futures)
             if allow_match_event.is_set() is True:
-                cancel_event.unlink()
+                cancel_latch.unlink()
                 allow_match_event.unlink()
                 
                 return True
         
-        cancel_event.unlink()
+        cancel_latch.unlink()
         allow_match_event.unlink()
 
         return False
@@ -438,12 +490,16 @@ class FanOutMPCompute(ComputeModule):
 def _executor_start(
     start_kwargs: Dict[str, Any]
 ) -> None:
-    global authzee_jmespath_options
-    authzee_jmespath_options = jmespath_options
+    global authzee_search
+    authzee_search: Callable[[str, Any], Any] = start_kwargs['search']
     global authzee_storage
-    authzee_storage = storage_type(**storage_kwargs)
-    loop = get_event_loop()
-    loop.run_until_complete(authzee_storage.initialize(**initialize_kwargs))
+    authzee_storage: StorageModule = start_kwargs['storage_type'](**start_kwargs['storage_kwargs'])
+    asyncio.run(
+        authzee_storage.start(
+            identity_defs=start_kwargs['identity_defs'],
+            resource_defs=start_kwargs['resource_defs']
+        )
+    )
 
 
 def _executor_grant_page_matches_deny(
@@ -454,7 +510,7 @@ def _executor_grant_page_matches_deny(
     page_ref: Union[str, None],
     jmespath_data: Dict[str, Any],
     pipe_conn: Connection,
-    cancel_event: SharedMemEvent
+    cancel_latch: SharedMemEvent
 ) -> bool:
     global authzee_jmespath_options
     global authzee_storage
@@ -471,7 +527,7 @@ def _executor_grant_page_matches_deny(
     
     # Send back next page ref to parent
     pipe_conn.send(raw_grants.next_page_ref)
-    if cancel_event.is_set() is True:
+    if cancel_latch.is_set() is True:
         return False
 
     grants_page = loop.run_until_complete(
@@ -479,7 +535,7 @@ def _executor_grant_page_matches_deny(
             raw_grants_page=raw_grants
         )
     )
-    if cancel_event.is_set() is True:
+    if cancel_latch.is_set() is True:
         return False
     
     for grant in grants_page.grants:
@@ -488,10 +544,10 @@ def _executor_grant_page_matches_deny(
             jmespath_data=jmespath_data,
             jmespath_options=authzee_jmespath_options
         ) is True:
-            cancel_event.set()
+            cancel_latch.set()
             return True
 
-        if cancel_event.is_set() is True:
+        if cancel_latch.is_set() is True:
             return False
 
     return False
@@ -505,7 +561,7 @@ def _executor_grant_page_matches_allow(
     page_ref: Union[str, None],
     jmespath_data: Dict[str, Any],
     pipe_conn: Connection,
-    cancel_event: SharedMemEvent,
+    cancel_latch: SharedMemEvent,
     allow_match_event: SharedMemEvent
 ) -> bool:
     global authzee_jmespath_options
@@ -522,7 +578,7 @@ def _executor_grant_page_matches_allow(
     )
     pipe_conn.send(raw_grants.next_page_ref)
     if (
-        cancel_event.is_set() is True
+        cancel_latch.is_set() is True
         or allow_match_event.is_set() is True
     ):
         return False
@@ -542,7 +598,7 @@ def _executor_grant_page_matches_allow(
             return True
 
         if (
-            cancel_event.is_set() is True
+            cancel_latch.is_set() is True
             or allow_match_event.is_set() is True
         ):
             return False

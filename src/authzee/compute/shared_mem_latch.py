@@ -1,11 +1,20 @@
 __all__ = [
-    "SharedMemEvent"
+    "SharedMemLatch"
 ]
 
 from multiprocessing.managers import SharedMemoryManager
 
 
-class SharedMemEvent:
+class SharedMemLatch:
+    """ Shared Memory Latch linked to a ``SharedMemoryManager``.
+
+    Must call ``unlink()`` to free the memory. 
+
+    Parameters
+    ----------
+    smm : SharedMemoryManager
+        Shared memory manager to create.
+    """
 
 
     def __init__(self, smm: SharedMemoryManager):
@@ -19,10 +28,6 @@ class SharedMemEvent:
     def set(self) -> None:
         self._sm.buf[0] = 1
     
-    
-    def clear(self) -> None:
-        self._sm.buf[0] = 0
-
 
     def unlink(self) -> None:
         self._sm.unlink()
