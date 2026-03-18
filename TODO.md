@@ -1,6 +1,61 @@
 # TODO
 
 
+- [ ] when to use pydantic or data classes over raw. this is up to me but should be done from the beginning. 
+    - Need to weigh this because it would be a slim wrapper to put around Authzee if you want data classes and pydantic
+    - data classes is built it, so if I was going to do it, it would be better. 
+    - honestly just need to create  test and try it out both ways. 
+        - Dicts are fast to create, but data classes are more IDE friendly in general 
+
+- [ ] opaque struct for optional parameters
+    - Should this be a single config object to pass to the create struct, and to all methods? 
+    - should I do this in python and java too? 
+    - AuthzeeConfig
+        - grants_page_size
+            - get_grants_page
+        - grant_refs_size
+            - get_grant_refs_page
+        - authorize_parallel_paging
+            - authorize
+        - batch_authorize_parallel_paging
+            - batch_authorize
+        - raise_crits
+    - may just be easier to do this with all of them. 
+        - override the authzee configs
+    - this is really only needed to use slightly different configs and not spinning up a bunch of compute/storage resources
+    - Is there a better way to handle that
+        - If the compute resources are outside of this??
+        - fixed thread pool or process pool and send the tasks to a queue? 
+        - That's fine but do we really need to do that for all versions of this or just pass in the config when you need it???
+        - Even then there may still be a way that the configs should be overridden.  Even with like storage threads, it may just be easier to manage a couple of configs for the same pool of compute and storage workers, then send that instead. 
+    - This makes it easy to manage if they are all wrapped up into one.
+
+- [x] What to do with the SDK
+    - Multi-types
+        - Java can make this work
+        - C 
+            - 0 for int null
+            - null for str null
+            - use opaque structs
+    - default values - only use where you can or else they will have to pass the nulls or the defaults
+        - pass opaque 
+    - config object for authzee defaults? 
+        - This makes it easier to add to for other languages
+        - or else yo have to do var args or something like that
+        - can add defaults to C in the starter method 
+            - or if just the struct is opaque for C, then you can add to it. 
+    - The future of adding new values to functions?
+        - would be easiest to encapsulate new functionality in a struct or config
+        - That config is passed when creating Authzee and will be the defaults
+        - That config can also be passed to methods to override the defaults. 
+        - python is nice cause you can just add it to the 
+    
+
+- [x] - Include page and parallel settings in authorize()?
+    - yes, these need to be included for overrides where needed.  
+    - should set defaults at class level, and method should use default values where they can
+
+
 - Better Fan Out MP Compute
     - Audit - parallel off
         - Send request to worker to process
@@ -17,11 +72,12 @@
         - The waiting 5 have the connection recv functions dealt out to the thread pool first though. 
         - IDK if the sending ones will have have to wait for recv or not
         - Probably better just to use a package for this something like https://github.com/kchmck/aiopipe/tree/master
-- [ ] authorize needs to do many at once
+- [x] authorize needs to do many at once
     - It would be a bad use of resources for if I list 100 or 1000 things to authorize each one separately
-- [ ] add default None for methods after generating rust version. 
-- [ ] Add all exceptions at the authzee level
-- [ ] multiprocess compute - multiple modes
+- [x] add default None for methods after generating rust version. 
+- [x] Add all exceptions at the authzee level
+    - optional
+- [x] multiprocess compute - multiple modes
     - simple 
         - Every request just gets sent to a process in a pool and all compute is done in that single process
     - legacy
@@ -37,12 +93,12 @@
             - Parallel paging should send out a page of pages at a time until all pages are sent then wait for a response 
     - 
 
-- [ ] Storage for SQL
+- [x] Storage for SQL
     - Parallel paging the uses limit paging
         - faster because it's parallel but for a lot of pages may actually be slower
     - single paging that uses id pages
 
-- [ ] Distributed compute with redis
+- [x] Distributed compute with redis
 
 - [x] For storage that is in the process, we have to copy it from authzee to the compute module
     - In authzee start do we just set `self._compute._storage = self._storage` 

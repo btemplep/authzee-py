@@ -1,6 +1,6 @@
 
 import copy
-from typing import Any, Callable, Dict, List,Type
+from typing import Any, AsyncIterable, Callable, Dict, List, Type
 from uuid import UUID, uuid4
 
 from authzee import core
@@ -158,32 +158,17 @@ class AuthzeeAsync:
 
     def __init__(
         self, 
-        identity_defs: List[dict[str]],
-        resource_defs: List[dict[str]],
-        search: Callable[[str, Any], Any],
+        execute: Callable[[str, Any], Any],
         compute_type: Type[ComputeModule],
         compute_kwargs: Dict[str, Any],
         storage_type: Type[StorageModule],
         storage_kwargs: Dict[str, Any],
-        grants_page_size: int,
-        grant_refs_page_size: int,
-        parallel_paging: bool
     ):
-        self.identity_defs: List[dict[str]] = identity_defs
-        self.resource_defs: List[dict[str]] = resource_defs
-        self.search: Callable[[str, Any], Any] = search
-        self.compute_type: Type[ComputeModule] = compute_type
-        self.compute_kwargs: Dict[str, Any] = compute_kwargs
-        self.storage_type: Type[StorageModule] = storage_type
-        self.storage_kwargs: Dict[str, Any] = storage_kwargs
-        self.grants_page_size: int = grants_page_size
-        self.grant_refs_page_size: int = grant_refs_page_size
-        self.parallel_paging: bool = parallel_paging
-        self.grant_schema = {}
-        self.errors_schema = {}
-        self.request_schema = {}
-        self.audit_schema = {}
-        self.authorize_schema = {}
+        self.execute = execute
+        self.compute_type = compute_type
+        self.compute_kwargs = compute_kwargs
+        self.storage_type = storage_type
+        self.storage_kwargs= storage_kwargs
 
 
     async def start(self) -> None:
@@ -261,7 +246,7 @@ class AuthzeeAsync:
         await self._compute.shutdown()
     
 
-    async def setup(self) -> None:
+    async def construct(self) -> None:
         """One time setup for authzee app with the current configuration. 
 
         This method only has to be run once, and will standup resources for the compute and storage modules.
@@ -270,22 +255,94 @@ class AuthzeeAsync:
         await self._compute.setup()
     
 
-    async def teardown(self) -> None:
-        """Tear down resources create for one time setup by ``setup()``.
+    async def destroy(self) -> None:
+        """Tear down all runtime resources for this instance and all storage. 
 
-        This may delete all storage for grants.
+        Deletes all grants and definitions.
         """
         await self._storage.teardown()
         await self._compute.teardown()
 
 
-    async def enact(self, new_grant: dict) -> dict:
+    async def get_context_defs_page(
+        self,
+        page_ref: str | None, 
+        page_size: int
+    ) -> Any:
+        pass
+
+
+    async def get_context_def(self, context_type: str) -> Any:
+        pass
+
+
+    async def list_context_defs(self, page_size: int) -> AsyncIterable[Any]:
+        pass
+
+
+    async def put_context_def(self, context_def: Any) -> Any:
+        pass
+
+
+    async def delete_context_def(self, context_type: str) -> None:
+        pass
+
+
+    async def get_identity_defs_page(
+        self,
+        page_ref: str | None, 
+        page_size: int
+    ) -> Any:
+        pass
+
+
+    async def get_identity_def(self, identity_type: str) -> Any:
+        pass
+
+
+    async def list_identity_defs(self, page_size: int) -> AsyncIterable[Any]:
+        pass
+
+
+    async def put_identity_def(self, identity_def: Any) -> Any:
+        pass
+
+
+    async def delete_identity_def(self, identity_type: str) -> None:
+        pass
+
+    
+    async def get_resource_defs_page(
+        self,
+        page_ref: str | None, 
+        page_size: int
+    ) -> Any:
+        pass
+
+
+    async def get_resource_def(self, resource_type: str) -> Any:
+        pass
+
+
+    async def list_resource_defs(self, page_size: int) -> AsyncIterable[Any]:
+        pass
+
+
+    async def put_resource_def(self, resource_def: Any) -> Any:
+        pass
+
+
+    async def delete_resource_def(self, resource_type: str) -> None:
+        pass
+
+    
+    async def enact(self, new_grant: dict) -> Any:
         """Register an new grant with Authzee.
 
         Parameters
         ----------
         new_grant : dict
-            New grant. Grant object without ``grant_uuid``.
+            New grant.
 
         Returns
         -------
@@ -316,13 +373,13 @@ class AuthzeeAsync:
         return await self._storage.enact(new_grant=new_grant)
 
 
-    async def repeal(self, grant_uuid: UUID) -> None:
+    async def repeal(self, grant_uuid: str) -> None:
         """Delete a grant from Authzee.
 
         Parameters
         ----------
-        grant_uuid : UUID
-            UUID if the grant to delete.
+        grant_uuid : str
+            UUID of the grant to delete.
         
         Raises
         ------
@@ -332,12 +389,12 @@ class AuthzeeAsync:
         await self._storage.repeal(grant_uuid=grant_uuid)
     
 
-    async def get_grant(self, grant_uuid: UUID) -> dict:
+    async def get_grant(self, grant_uuid: str) -> dict:
         """Retrieve a grant from Authzee.
 
         Parameters
         ----------
-        grant_uuid : UUID
+        grant_uuid : str
             UUID if the grant to retrieve.
         
         Raises
@@ -353,7 +410,7 @@ class AuthzeeAsync:
         effect: str | None,
         action: str | None, 
         page_ref: str | None, 
-        grants_page_size: int | None
+        page_size: int
     ) -> dict:
         """Get a page of grants.
 
@@ -421,8 +478,8 @@ class AuthzeeAsync:
         effect: str | None, 
         action: str | None, 
         page_ref: str | None, 
-        grants_page_size: int | None,
-        refs_page_size: int | None
+        page_size: int,
+        grants_page_size: int
     ) -> dict:
         """Retrieve a page of grant page references.
 
@@ -501,9 +558,7 @@ class AuthzeeAsync:
         self, 
         request: dict, 
         page_ref: str | None, 
-        grants_page_size: int | None, 
-        parallel_paging: bool | None, 
-        refs_page_size: int | None
+        page_size: int
     ) -> dict:
         """Process a page of grants that are applicable to an authorization request.
 
@@ -621,13 +676,7 @@ class AuthzeeAsync:
         )
 
 
-    async def authorize(
-        self, 
-        request: dict, 
-        grants_page_size: int | None, 
-        parallel_paging: bool | None, 
-        refs_page_size: int | None 
-    ) -> dict:
+    async def authorize(self, request: dict) -> dict:
         """Authorize a request.
 
         Parameters
@@ -744,3 +793,15 @@ class AuthzeeAsync:
             parallel_paging=parallel_paging if parallel_paging is not None else self.parallel_paging,
             refs_page_size=refs_page_size if refs_page_size is not None else self.grant_refs_page_size
         )
+
+
+    async def batch_audit_page(
+        batch_request: Any, 
+        page_ref: str | None, 
+        page_size: int
+    ) -> Any:
+        pass
+
+
+    async def batch_authorize(batch_request: Any) -> Any:
+        pass

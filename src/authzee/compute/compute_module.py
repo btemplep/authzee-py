@@ -14,9 +14,7 @@ class ComputeModule:
 
     async def start(
         self,
-        identity_defs: List[Dict[str, Any]],
-        resource_defs: List[Dict[str, Any]],
-        search: Callable[[str, Any], Any], 
+        execute: Callable[[str, Any], Any], 
         storage_type: Type[StorageModule], 
         storage_kwargs: Dict[str, Any]
     ) -> None:
@@ -51,13 +49,13 @@ class ComputeModule:
         pass 
 
 
-    async def setup(self) -> None:
+    async def construct(self) -> None:
         """One time setup for compute backend resources.
         """
         pass
 
     
-    async def teardown(self) -> None:
+    async def destroy(self) -> None:
         """Teardown and delete the results of ``setup()`` .
         """
         pass
@@ -67,9 +65,7 @@ class ComputeModule:
         self, 
         request: dict, 
         page_ref: str | None, 
-        grants_page_size: int, 
-        parallel_paging: bool, 
-        refs_page_size: int 
+        page_size: int
     ) -> dict:
         """Process a page of grants that are applicable to an authorization request.
 
@@ -142,4 +138,9 @@ class ComputeModule:
         raise exceptions.NotImplementedError()
     
 
-  
+    async def batch_audit_page(
+        batch_request: Any, 
+        page_ref: str | None, 
+        page_size: int
+    ) -> Any:
+        raise exceptions.NotImplementedError()
