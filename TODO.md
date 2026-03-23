@@ -1,13 +1,9 @@
 # TODO
 
+- [ ] for iterators may need to manage own event loop instead of just using asyncio.run
 
-- [ ] when to use pydantic or data classes over raw. this is up to me but should be done from the beginning. 
-    - Need to weigh this because it would be a slim wrapper to put around Authzee if you want data classes and pydantic
-    - data classes is built it, so if I was going to do it, it would be better. 
-    - honestly just need to create  test and try it out both ways. 
-        - Dicts are fast to create, but data classes are more IDE friendly in general 
 
-- [ ] opaque struct for optional parameters
+- [x] opaque struct for optional parameters
     - Should this be a single config object to pass to the create struct, and to all methods? 
     - should I do this in python and java too? 
     - AuthzeeConfig
@@ -20,6 +16,7 @@
         - batch_authorize_parallel_paging
             - batch_authorize
         - raise_crits
+            - all methods if a critical error occurs
     - may just be easier to do this with all of them. 
         - override the authzee configs
     - this is really only needed to use slightly different configs and not spinning up a bunch of compute/storage resources
@@ -29,6 +26,15 @@
         - That's fine but do we really need to do that for all versions of this or just pass in the config when you need it???
         - Even then there may still be a way that the configs should be overridden.  Even with like storage threads, it may just be easier to manage a couple of configs for the same pool of compute and storage workers, then send that instead. 
     - This makes it easy to manage if they are all wrapped up into one.
+    - **SOLUTION** - Let's do the config as a dataclass and this will align more with other languages as well.
+
+- [x] when to use pydantic or data classes over raw. this is up to me but should be done from the beginning. 
+    - Need to weigh this because it would be a slim wrapper to put around Authzee if you want data classes and pydantic
+    - data classes is built it, so if I was going to do it, it would be better. 
+    - honestly just need to create  test and try it out both ways. 
+        - Dicts are fast to create, but data classes are more IDE friendly in general and very low performance implications
+        - for either it is fairly easy to add wrappers for pydantic or anything
+    - **Solution** - let's try dataclass
 
 - [x] What to do with the SDK
     - Multi-types

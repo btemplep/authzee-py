@@ -1220,6 +1220,51 @@ def evaluate_one(
     return result
 
 
+def evaluate_one_action_match(
+    request: Dict[str, AnyJSON], 
+    grant: Dict[str, AnyJSON],
+    execute: Callable[[str, AnyJSON], AnyJSON],
+    only_crits: bool
+) -> Dict[str, AnyJSON]:
+    result = {
+        "is_applicable": False,
+        "query_result": None,
+        "has_failed": False,
+        "errors": {}
+    }
+    query_result = execute(
+        grant['query'], 
+        {
+            "request": request,
+            "grant": grant
+        }
+    )
+    if query_result['has_failed'] is False:
+        result['query_result'] = query_result['result']
+        if query_result['result'] == grant['equality']:
+            result['is_applicable'] = True
+    else:
+        q_val = grant['evaluation_handler'] if request['evaluation_handler'] == "grant" else request['evaluation_handler']
+        is_q_val_crit = q_val == "critical"
+        if (
+            (
+                q_val == "error"
+                and only_crits is False
+            )
+            or is_q_val_crit is True
+        ):
+            result['errors']['query'] = [
+                {
+                    "is_critical": is_q_val_crit,
+                    "message": f"A JSON Query error has occurred: {query_result['error_message']}."
+                }
+            ]
+            if is_q_val_crit is True:
+                result['has_failed'] = True
+
+    return result
+
+
 def audit(
     request: Dict[str, AnyJSON], 
     grants: List[Dict[str, AnyJSON]],

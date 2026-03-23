@@ -162,7 +162,7 @@ class AuthzeeAsync:
         compute_type: Type[ComputeModule],
         compute_kwargs: Dict[str, Any],
         storage_type: Type[StorageModule],
-        storage_kwargs: Dict[str, Any],
+        storage_kwargs: Dict[str, Any]
     ):
         self.execute = execute
         self.compute_type = compute_type
