@@ -51,9 +51,14 @@ class AuthzeeConfig:
 
 
 @dataclass(kw_only=True)
+class GenericError:
+    is_critical: bool
+    message: str
+
+@dataclass(kw_only=True)
 class GenericResult:
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
@@ -66,15 +71,15 @@ class ContextDef:
 class ContextDefResult:
     context_def: ContextDef
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
-class ContextDefPage:
+class ContextDefsPage:
     context_defs: List[ContextDef]
     next_page_ref: str
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
@@ -88,15 +93,15 @@ class IdentityDef:
 class IdentityDefResult:
     identity_def: IdentityDef
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
-class IdentityDefPage:
+class IdentityDefsPage:
     identity_defs: List[IdentityDef]
     next_page_ref: str
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
@@ -110,15 +115,15 @@ class ResourceDef:
 class ResourceDefResult:
     resource_def: ResourceDef
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
-class ResourceDefPage:
+class ResourceDefsPage:
     resource_defs: List[ResourceDef]
     next_page_ref: str
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
@@ -139,13 +144,28 @@ class Grant:
     data: Dict[str, Any]
 
 
+@dataclass(kw_only=True)
+class GrantResult:
+    grant: Grant | None
+    next_page_ref: str
+    has_failed: bool
+    errors: Dict[str, List[GenericError]]
+
 
 @dataclass(kw_only=True)
 class GrantsPage:
     grants: List[Grant]
     next_page_ref: str
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
+
+
+@dataclass(kw_only=True)
+class PageRefsPage:
+    page_refs: List[str]
+    next_page_ref: str
+    has_failed: bool
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
@@ -200,15 +220,16 @@ class AuthzeeBatchRequest:
 class AuditResultItem:
     is_applicable: bool
     query_result: AnyJSON
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
-class AuditResult:
+class AuditResultPage:
     grants: List[Grant]
     results: List[AuditResultItem]
+    next_page_ref: str
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
@@ -217,16 +238,27 @@ class AuthorizeResult:
     grant: Grant | None
     message: str
     has_failed: bool
-    errors: Dict[str, List[Dict[str, Any]]]
+    critical_errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
-class BatchAuditResult:
-    pass
+class BatchAuditResultItem:
+    results: List[AuditResultItem]
+    has_failed: bool
+    errors: Dict[str, List[GenericError]]
+
+
+@dataclass(kw_only=True)
+class BatchAuditResultPage:
+    grants: List[Grant]
+    batch_results: List[BatchAuditResultItem]
+    next_page_ref: str
+    has_failed: bool
+    errors: Dict[str, List[GenericError]]
 
 
 @dataclass(kw_only=True)
 class BatchAuthorizeResult:
-    pass
-
-
+    batch_results: List[AuthorizeResult]
+    has_failed: bool
+    errors: Dict[str, List[GenericError]]
