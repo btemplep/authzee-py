@@ -1,5 +1,6 @@
 
 import asyncio
+import datetime
 from typing import Any, AsyncIterable, Callable, Coroutine, Dict, List, Type
 from uuid import UUID, uuid4
 
@@ -145,6 +146,16 @@ class AuthzeeAsync:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
 
+    async def validate_context_def(
+        self,
+        context_def: ContextDef, 
+        authzee_config: AuthzeeConfig | None = None
+    ) -> GenericResult:
+        """Validate a context definition.
+        """
+        authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+
     async def get_context_defs_page(
         self, 
         authzee_config: AuthzeeConfig | None = None
@@ -183,6 +194,16 @@ class AuthzeeAsync:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
 
+    async def validate_identity_def(
+        self,
+        identity_def: IdentityDef, 
+        authzee_config: AuthzeeConfig | None = None
+    ) -> GenericResult:
+        """Validate an identity definition.
+        """
+        authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+
     async def get_identity_defs_page(
         self, 
         authzee_config: AuthzeeConfig | None = None
@@ -218,6 +239,16 @@ class AuthzeeAsync:
         identity_type: str,
         authzee_config: AuthzeeConfig | None = None
     ) -> GenericResult:
+        authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+
+    async def validate_resource_def(
+        self,
+        resource_def: ResourceDef, 
+        authzee_config: AuthzeeConfig | None = None
+    ) -> GenericResult:
+        """Validate a resource definition.
+        """
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
 
@@ -313,6 +344,18 @@ class AuthzeeAsync:
     ) -> PageRefsPage:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+
+    async def cleanup_latches(
+        self, 
+        before: datetime.datetime, 
+        authzee_config: AuthzeeConfig | None = None
+    ) -> GenericResult:
+        """Delete all latches before the specified datetime.
+
+        - operations should clean up their own latches, but in case of a failure this can be used to clean up zombie latches.
+        """
+        authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+        
 
     async def audit_page(
         self,

@@ -76,7 +76,7 @@ class InProcessStorage(StorageModule):
             resource_defs=resource_defs
         )
         self.locality = ModuleLocality.PROCESS
-        self.parallel_paging_supported = True
+        self.has_parallel_paging = True
         if "started" not in self._storage_ptr:
             for rd in resource_defs:
                 for action in rd['actions']:

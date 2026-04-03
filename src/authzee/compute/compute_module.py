@@ -1,146 +1,128 @@
 
 
-from typing import Any, Callable, Dict, List, Type
+from typing import Any, Callable, Dict, Type
 
-from authzee import exceptions
+from authzee.dcs import *
+from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
 from authzee.storage.storage_module import StorageModule
 
-
 class ComputeModule:
-    """Base class for Compute Modules.
-    """
-    
 
-    async def start(
+
+    def __init__(self):
+        pass
+
+
+    def start(
         self,
-        execute: Callable[[str, Any], Any], 
-        storage_type: Type[StorageModule], 
+        execute: Callable[[str, Any], Any],
+        storage_type: Type[StorageModule],
         storage_kwargs: Dict[str, Any]
-    ) -> None:
-        """Create runtime resources for the compute module.
+    ) -> GenericResult:
+        """Start up compute module.
 
-        Set locality here as needed.  Can also start storage modules as needed.
-
-        Parameters
-        ----------
-        identity_defs : List[dict[str]]
-            Identity definitions registered and validated with Authzee.
-        resource_defs : List[dict[str]]
-            Resource Definitions to registered and validated with Authzee.
-        search : Callable[[str, Any], Any]
-            JMESPath search function.
-        storage_type : Type[StorageModule]
-            Storage Module Type. 
-        storage_kwargs : Dict[str, Any]
-            Storage module KWArgs used to create instances.
+        - run before use
+        - After this method is complete these public instance vars or getters must be available and stable:
+            - locality - Compute [Module Locality](#module-locality)
+            - has_parallel_paging - if the compute module supports processing grants with parallel paging
         """
+        self._execute = execute
+        self._storage_type = storage_type
+        self._storage_kwargs = storage_kwargs
         self.locality = ModuleLocality.PROCESS
-        self.identity_defs = identity_defs
-        self.resource_defs = resource_defs
-        self.search = search
-        self.storage_type = storage_type
-        self.storage_kwargs = storage_kwargs
+        self.has_parallel_paging = False
 
 
-    async def shutdown(self) -> None:
-        """Early clean up of compute backend resources.
+    def shutdown(self) -> GenericResult:
+        """Shutdown Compute module.
+
+        - clean up runtime resources
         """
-        pass 
+        raise NotImplementedError()
 
 
-    async def construct(self) -> None:
-        """One time setup for compute backend resources.
+    def construct(self) -> GenericResult:
+        """Construct backend resources for compute.
+
+        - one time setup
         """
-        pass
+        raise NotImplementedError()
 
-    
-    async def destroy(self) -> None:
-        """Teardown and delete the results of ``setup()`` .
+
+    def destroy(self) -> GenericResult:
+        """Tear down backend resources.
+
+        - destructive - may lose all long lasting compute resources
         """
-        pass
+        raise NotImplementedError()
 
 
-    async def audit_page(
-        self, 
-        request: dict, 
-        page_ref: str | None, 
+    def validate_request(
+        self,
+        request: AuthzeeRequest,
         page_size: int
-    ) -> dict:
-        """Process a page of grants that are applicable to an authorization request.
-
-        Parameters
-        ----------
-        request : dict
-            Authzee request data.
-        page_ref : str | None
-            Page reference of the page to retrieve. None to get the first page.
-        grants_page_size : int
-            Number of grants per page to process. Not exact.
-        parallel_paging : bool
-            Enable parallel pagination. May return many more results at once.
-        refs_page_size : int
-            Number of page reference to process. Not exact.
-
-        Returns
-        -------
-        dict
-            Audit response for a page.
-
-        Raises
-        ------
-        authzee.exceptions.ContextError
-            Critical error when validating context.
-        authzee.exceptions.JMESPathError
-            Critical error when executing JMESPath query.
-        authzee.exceptions.PageReferenceError
-            Invalid page reference provided.
-        authzee.exceptions.NotImplementedError
-            This method is not implemented.
+    ) -> GenericResult:
+        """Validate a request.
         """
-        raise exceptions.NotImplementedError()
+        raise NotImplementedError()
 
 
-    async def authorize(
-        self, 
-        request: dict, 
-        grants_page_size: int, 
-        parallel_paging: bool, 
-        refs_page_size: int 
-    ) -> dict:
-        """Authorize a request.
-
-        Parameters
-        ----------
-        request : dict
-            Authzee request data.
-        grants_page_size : int
-            Number of grants per page to process. Not exact.
-        parallel_paging : bool
-            Enable parallel pagination. Used to control how compute and storage process pages.
-        refs_page_size : int
-            Number of page reference to process. Not exact.
-
-        Returns
-        -------
-        dict
-            Authorization decision with effect and supporting information.
-
-        Raises
-        ------
-        authzee.exceptions.ContextError
-            Critical error when validating context.
-        authzee.exceptions.JMESPathError
-            Critical error when executing JMESPath query.
-        authzee.exceptions.NotImplementedError
-            This method is not implemented.
-        """
-        raise exceptions.NotImplementedError()
-    
-
-    async def batch_audit_page(
-        batch_request: Any, 
-        page_ref: str | None, 
+    def validate_batch_request(
+        self,
+        batch_request: AuthzeeBatchRequest,
         page_size: int
-    ) -> Any:
-        raise exceptions.NotImplementedError()
+    ) -> GenericResult:
+        """Validate a batch request.
+        """
+        raise NotImplementedError()
+
+
+    def audit_page(
+        self,
+        request: AuthzeeRequest,
+        page_ref: str | None,
+        page_size: int
+    ) -> AuditResultPage:
+        """Run the Audit Operation for a page of results.
+
+        Pass the returned page reference to get the next page until a null page reference is returned.
+        """
+        raise NotImplementedError()
+
+
+    def authorize(
+        self,
+        request: AuthzeeRequest,
+        page_size: int,
+        parallel_pagination: bool,
+        refs_page_size: int
+    ) -> AuthorizeResult:
+        """Run the Authorize Operation.
+        """
+        raise NotImplementedError()
+
+
+    def batch_audit_page(
+        self,
+        batch_request: AuthzeeBatchRequest,
+        page_ref: str | None,
+        page_size: int
+    ) -> BatchAuditResultPage:
+        """Run the Batch Audit Operation for a page of results.
+
+        Pass the returned page reference to get the next page until a null page reference is returned.
+        """
+        raise NotImplementedError()
+
+
+    def batch_authorize(
+        self,
+        batch_request: AuthzeeBatchRequest,
+        page_size: int,
+        parallel_pagination: bool,
+        refs_page_size: int
+    ) -> BatchAuthorizeResult:
+        """Run the Batch Authorize Operation.
+        """
+        raise NotImplementedError()

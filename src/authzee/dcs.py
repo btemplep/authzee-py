@@ -1,18 +1,37 @@
-_all__ = [
+__all__ = [
+    "AnyJSON",
     "AuthzeeConfig",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-
+    "GenericError",
+    "GenericResult",
+    "ContextDef",
+    "ContextDefResult",
+    "ContextDefsPage",
+    "IdentityDef",
+    "IdentityDefResult",
+    "IdentityDefsPage",
+    "ResourceDef",
+    "ResourceDefResult",
+    "ResourceDefsPage",
+    "Grant",
+    "GrantResult",
+    "GrantsPage",
+    "PageRefsPage",
+    "StorageLatch",
+    "StorageLatchResult",
+    "AuthzeeRequest",
+    "BatchItem",
+    "AuthzeeBatchRequest",
+    "ExecuteResult",
+    "EvaluateResult",
+    "AuditResultItem",
+    "AuditResultPage",
+    "AuthorizeResult",
+    "BatchAuditResultItem",
+    "BatchAuditResultPage",
+    "BatchAuthorizeResult",
 ]
-from dataclasses import dataclass
+import datetime
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Literal
 from uuid import UUID
 
@@ -42,7 +61,7 @@ class AuthzeeConfig:
     raise_crits: bool, default: True
         Raise critical errors as exceptions.
     """
-    definitions_page_size: int = 100
+    defs_page_size: int = 100
     grants_page_size: int = 100
     grant_refs_page_size: int = 10
     authorize_parallel_paging: bool = True
@@ -55,31 +74,60 @@ class GenericError:
     is_critical: bool
     message: str
 
+
+@dataclass(kw_only=True)
+class SDKError:
+    type: str
+    is_critical: bool
+    message: str
+
+
+@dataclass(kw_only=True)
+class ResultErrors:
+    definition: List[GenericError] = field(default_factory=list)
+    grant: List[GenericError] = field(default_factory=list)
+    request: List[GenericError] = field(default_factory=list)
+    evaluation: List[GenericError] = field(default_factory=list)
+    sdk: List[SDKError] = field(default_factory=list)
+
+# ResultErrors = Dict[
+#     Literal[
+#         "definition",
+#         "grant",
+#         "request",
+#         "evaluation"
+#     ],
+#     List[GenericError]
+# ] | Dict[
+#     Literal["sdk"],
+#     List[SDKError]
+# ]
+
 @dataclass(kw_only=True)
 class GenericResult:
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class ContextDef:
     context_type: str
-    schema: str
+    schema: dict
 
 
 @dataclass(kw_only=True)
 class ContextDefResult:
-    context_def: ContextDef
+    context_def: ContextDef | None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class ContextDefsPage:
     context_defs: List[ContextDef]
-    next_page_ref: str
+    next_page_ref: str | None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
@@ -91,17 +139,17 @@ class IdentityDef:
 
 @dataclass(kw_only=True)
 class IdentityDefResult:
-    identity_def: IdentityDef
+    identity_def: IdentityDef| None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class IdentityDefsPage:
     identity_defs: List[IdentityDef]
-    next_page_ref: str
+    next_page_ref: str | None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
@@ -113,17 +161,17 @@ class ResourceDef:
 
 @dataclass(kw_only=True)
 class ResourceDefResult:
-    resource_def: ResourceDef
+    resource_def: ResourceDef| None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class ResourceDefsPage:
     resource_defs: List[ResourceDef]
-    next_page_ref: str
+    next_page_ref: str | None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
@@ -147,25 +195,39 @@ class Grant:
 @dataclass(kw_only=True)
 class GrantResult:
     grant: Grant | None
-    next_page_ref: str
+    next_page_ref: str | None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class GrantsPage:
     grants: List[Grant]
-    next_page_ref: str
+    next_page_ref: str | None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class PageRefsPage:
     page_refs: List[str]
-    next_page_ref: str
+    next_page_ref: str | None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
+
+
+@dataclass(kw_only=True)
+class StorageLatch:
+    storage_latch_uuid: UUID
+    is_set: bool
+    created_at: datetime.datetime
+
+
+@dataclass(kw_only=True)
+class StorageLatchResult:
+    storage_latch: StorageLatch
+    has_failed: bool
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
@@ -215,21 +277,35 @@ class AuthzeeBatchRequest:
     context: Dict[str, AnyJSON]
     batch: List[BatchItem]
 
+@dataclass(kw_only=True)
+class ExecuteResult:
+    result: Any
+    has_failed: bool
+    error_message: str | None
+
+
+@dataclass(kw_only=True)
+class EvaluateResult:
+    is_applicable: bool
+    query_result: Any
+    has_failed: bool
+    errors: ResultErrors = field(default_factory=ResultErrors)
+
 
 @dataclass(kw_only=True)
 class AuditResultItem:
     is_applicable: bool
     query_result: AnyJSON
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class AuditResultPage:
     grants: List[Grant]
     results: List[AuditResultItem]
-    next_page_ref: str
+    next_page_ref: str | None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
@@ -238,27 +314,28 @@ class AuthorizeResult:
     grant: Grant | None
     message: str
     has_failed: bool
-    critical_errors: Dict[str, List[GenericError]]
+    critical_errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class BatchAuditResultItem:
     results: List[AuditResultItem]
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class BatchAuditResultPage:
     grants: List[Grant]
     batch_results: List[BatchAuditResultItem]
-    next_page_ref: str
+    next_page_ref: str | None
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
 
 
 @dataclass(kw_only=True)
 class BatchAuthorizeResult:
     batch_results: List[AuthorizeResult]
     has_failed: bool
-    errors: Dict[str, List[GenericError]]
+    errors: ResultErrors = field(default_factory=ResultErrors)
+

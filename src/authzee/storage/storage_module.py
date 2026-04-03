@@ -1,299 +1,231 @@
 
 
 import datetime
-from typing import Any, Dict, List
+from typing import AsyncIterable
 from uuid import UUID
 
-from authzee import exceptions
+from authzee.dcs import *
+from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
 
 
-
 class StorageModule:
-    """Base class for Authzee Storage Modules. 
-    
-    The ``__init__`` method should take Storage module specific arguments and store them as necessary.
-    """   
+
+    def __init__(self): 
+        pass
 
 
-    async def start(
-        self, 
-        identity_defs: List[Dict[str, Any]],
-        resource_defs: List[Dict[str, Any]]
-    ) -> None:
-        """Initialize the storage module. 
+    async def start(self) -> GenericResult:
+        """Start up storage module.
 
-        Any initialization of runtime storage should take place here.
-        Also update locality and parallel paging if needed after calling this super. 
-        The default locality is process and parallel paging support is set to false.
-
-        Parameters
-        ----------
-        identity_defs : List[dict[str]]
-            Identity definitions registered and validated with Authzee.
-        resource_defs : List[dict[str]]
-            ``ResourceAuthz`` instances that have been registered with Authzee.
+        - run before use
+        - After this method is complete these public instance vars or getters must be available:
+            - locality - Storage [Module Locality](#module-locality)
+            - has_parallel_paging - if the storage module supports parallel paging (returning a page of grant page references).
         """
-        self.identity_defs = identity_defs
-        self.resource_defs = resource_defs
         self.locality = ModuleLocality.PROCESS
-        self.parallel_paging_supported = False
-    
+        self.has_parallel_paging = False
+   
+        return GenericResult(has_failed=False)
 
-    async def shutdown(self) -> None:
-        """Early clean up of storage module resources.
+
+    async def shutdown(self) -> GenericResult:
+        """Shutdown storage module.
+
+        - clean up runtime resources
         """
-        pass
+        raise NotImplementedError()
 
 
-    async def setup(self) -> None:
-        """One time setup for storage module resources.
+    async def construct(self) -> GenericResult:
+        """Construct backend resources for storage.
+
+        - one time setup
         """
-        pass
+        raise NotImplementedError()
 
-    
-    async def teardown(self) -> None:
-        """Teardown and delete the results of ``setup()`` .
+
+    async def destroy(self) -> GenericResult:
+        """Tear down backend resources.
+
+        - destructive - may lose all long lasting storage resources
         """
-        pass
+        raise NotImplementedError()
 
-    
-    async def enact(self, new_grant: dict) -> dict:
-        """Add a grant. 
 
-        Parameters
-        ----------
-        new_grant : dict
-            The new grant data.
+    async def get_context_defs_page(
+        self,
+        page_ref: str | None,
+        page_size: int
+    ) -> ContextDefsPage:
+        """Get a page of context definitions.
 
-        Returns
-        -------
-        dict
-            The grant that has been added.
-
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
+        Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise exceptions.NotImplementedError()
+        raise NotImplementedError()
 
 
-    async def repeal(self, grant_uuid: UUID) -> None:
+    async def get_context_def(self, context_type: str) -> ContextDefResult:
+        """Get a context definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def put_context_def(self, context_def: ContextDef) -> GenericResult:
+        """Add a new Context Definition or update an existing one.
+        """
+        raise NotImplementedError()
+
+
+    async def delete_context_def(self, context_type: str) -> GenericResult:
+        """Delete a context definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def get_identity_defs_page(
+        self,
+        page_ref: str | None,
+        page_size: int
+    ) -> IdentityDefsPage:
+        """Get a page of identity definitions.
+
+        Pass the returned page reference to get the next page until a null page reference is returned.
+        """
+        raise NotImplementedError()
+
+
+    async def get_identity_def(self, identity_type: str) -> IdentityDefResult:
+        """Get an identity definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def put_identity_def(self, identity_def: IdentityDef) -> GenericResult:
+        """Add a new Identity Definition or update an existing one.
+        """
+        raise NotImplementedError()
+
+
+    async def delete_identity_def(self, identity_type: str) -> GenericResult:
+        """Delete an identity definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def get_resource_defs_page(
+        self,
+        page_ref: str | None,
+        page_size: int
+    ) -> ResourceDefsPage:
+        """Get a page of resource definitions.
+
+        Pass the returned page reference to get the next page until a null page reference is returned.
+        """
+        raise NotImplementedError()
+
+
+    async def get_resource_def(self, resource_type: str) -> ResourceDefResult:
+        """Get a resource definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def list_resource_defs(self, page_size: int) -> AsyncIterable[ResourceDef]:
+        """Auto-paginate resource definitions - only included if the language supports it.
+        """
+        raise NotImplementedError()
+
+
+    async def put_resource_def(self, resource_def: ResourceDef) -> ResourceDef:
+        """Add a new Resource Definition or update an existing one.
+        """
+        raise NotImplementedError()
+
+
+    async def delete_resource_def(self, resource_type: str) -> None:
+        """Delete a resource definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def enact(self, grant: Grant) -> GenericResult:
+        """Add a new grant.
+        """
+        raise NotImplementedError()
+
+
+    async def repeal(self, grant_uuid: UUID, purge: bool) -> GenericResult:
         """Delete a grant.
-
-        Parameters
-        ----------
-        grant_uuid : UUID
-            The UUID of the grant to delete.
-
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
-        authzee.exceptions.GrantNotFoundError
-            The grant with the given UUID could not be found.
         """
-        raise exceptions.NotImplementedError()
-    
+        raise NotImplementedError()
 
-    async def get_grant(self, grant_uuid: UUID) -> dict:
-        """Retrieve a grant by UUID.
 
-        Parameters
-        ----------
-        grant_uuid : UUID
-            Grant UUID.
-
-        Returns
-        -------
-        dict
-            The grant with the matching UUID.
-
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
-        authzee.exceptions.GrantNotFoundError
-            The grant with the given UUID could not be found.
+    async def get_grant(self, grant_uuid: UUID) -> GrantResult:
+        """Get a grant by UUID.
         """
-        raise exceptions.NotImplementedError()
-        
+        raise NotImplementedError()
+
 
     async def get_grants_page(
         self,
         effect: str | None,
-        action: str | None, 
-        page_ref: str | None, 
-        grants_page_size: int
-    ) -> dict:
-        """Get a page of grants.
+        action: str | None,
+        page_ref: str | None,
+        page_size: int
+    ) -> GrantsPage:
+        """Retrieve a page of grants.
 
-        Parameters
-        ----------
-        effect : str | None
-            Filter by grant effect. None for no filter.
-        action : str | None
-            Filter by grant action. None for no filter.
-        page_ref : str | None
-            Page reference of the page to retrieve. None to get the first page.
-        grants_page_size : int
-            Number of grants to return. Not exact.
-
-        Returns
-        -------
-        dict
-            Page of grants with the next page reference.
-
-        Raises
-        ------
-        authzee.exceptions.PageReferenceError
-            Invalid page reference provided.
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
+        Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise exceptions.NotImplementedError()
-    
+        raise NotImplementedError()
 
-    async def get_grant_page_refs_page(
+
+    async def get_grant_refs_page(
         self,
-        effect: str | None, 
-        action: str | None, 
-        page_ref: str | None, 
-        grants_page_size: int,
-        refs_page_size: int
-    ) -> dict:
-        """Get a page of page references for parallel pagination. 
+        effect: str | None,
+        action: str | None,
+        page_ref: str | None,
+        refs_page_size: int,
+        grants_page_size: int
+    ) -> PageRefsPage:
+        """Retrieve a page of grant page references for parallel pagination.
 
-        Parameters
-        ----------
-        effect : str, optional
-            Filter by grant effect. 
-        action : str, optional
-            Filter by grant action.
-        page_ref : str, optional
-            Reference to the page to retrieve.
-        page_size : int
-            Page size for the page references themselves.
-        grants_page_size : int
-            Page size of grants for each page reference.
+        Pass the returned page reference to get the next page until a null page reference is returned.
 
-        Returns
-        -------
-        dict
-            Page of page references and next page ref.
-
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method if this storage module supports parallel pagination. 
-            They must also set the ``supports_parallel_paging`` flag. 
+        For some storage modules this may not be possible.
+        Check the `parallel_paging` attribute on the storage module after `start()` is complete.
         """
-        if self.parallel_paging_supported is True:
-            raise exceptions.NotImplementedError(
-                (
-                    "There is an error in the storage module!"
-                    "This storage module has marked supports_parallel_paging as true "
-                    "but it has not implemented the required methods!"
-                )
-            )
-        else:
-            raise exceptions.ParallelPaginationNotSupported(
-                "This storage module does not support parallel pagination."
-            )
-    
-    
-    async def create_latch(self) -> dict:
-        """Create a new shared latch in the storage module.
+        raise NotImplementedError()
 
-        Returns
-        -------
-        dict
-            New storage latch. 
-        
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
+
+    async def create_latch(self) -> StorageLatchResult:
+        """Create a new [storage latch](#storage-latches).
         """
-        raise exceptions.NotImplementedError()
+        raise NotImplementedError()
 
 
-    async def get_latch(self, storage_latch_uuid: UUID) -> dict:
-        """Retrieve latch by UUID.
-
-        Parameters
-        ----------
-        storage_latch_uuid : UUID
-            Storage latch UUID.
-
-        Returns
-        -------
-        dict
-            The storage latch with the given UUID.
-        
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
-        authzee.exceptions.LatchNotFoundError
-            The latch with the given UUID could not be found.
+    async def get_latch(self, storage_latch_uuid: UUID) -> StorageLatchResult:
+        """Get a [storage latch](#storage-latches) by UUID.
         """
-        raise exceptions.NotImplementedError()
+        raise NotImplementedError()
 
 
-    async def set_latch(self, storage_latch_uuid: UUID) -> dict:
-        """Set a latch for a given UUID. 
-
-        Parameters
-        ----------
-        storage_latch_uuid : UUID
-            Storage latch UUID.
-
-        Returns
-        -------
-        dict
-            The storage latch with the given UUID and the latch set.
-        
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
-        authzee.exceptions.LatchNotFoundError
-            The latch with the given UUID could not be found.
+    async def set_latch(self, storage_latch_uuid: UUID) -> StorageLatchResult:
+        """Set a [storage latch](#storage-latches) by UUID.
         """
-        raise exceptions.NotImplementedError()
+        raise NotImplementedError()
 
 
-    async def delete_latch(self, storage_latch_uuid: UUID) -> None:
-        """Delete a storage latch by UUID.
-
-        Parameters
-        ----------
-        uuid : UUID
-            Storage latch UUID.
-        
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
-        authzee.exceptions.LatchNotFoundError
-            The latch with the given UUID could not be found.
+    async def delete_latch(self, storage_latch_uuid: UUID) -> GenericResult:
+        """Delete a [storage latch](#storage-latches) by UUID.
         """
-        raise exceptions.NotImplementedError()
+        raise NotImplementedError()
 
 
-    async def cleanup_latches(self, before: datetime.datetime) -> None:
-        """Delete zombie storage latches created before a certain point in time.
+    async def cleanup_latches(self, before: datetime.datetime) -> GenericResult:
+        """Delete all latches before the specified datetime.
 
-        Parameters
-        ----------
-        before : datetime.datetime
-            Delete latches created before this datetime.
-        
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
+        - operations should clean up their own latches, but in case of a failure this can be used to clean up zombie latches.
         """
-        raise exceptions.NotImplementedError()
+        raise NotImplementedError()
