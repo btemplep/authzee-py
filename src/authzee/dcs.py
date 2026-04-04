@@ -2,6 +2,7 @@ __all__ = [
     "AnyJSON",
     "AuthzeeConfig",
     "GenericError",
+    "SDKError",
     "GenericResult",
     "ContextDef",
     "ContextDefResult",
@@ -48,8 +49,12 @@ class AuthzeeConfig:
 
     Attributes
     ----------
-    defs_page_size : int, default: 100
-        Maximum number of definitions (context, identity, resource) to return per page. 
+    context_defs_page_size : int, default: 100
+        Maximum number of context definitions to return per page. 
+    identity_defs_page_size : int, default: 100
+        Maximum number of identity definitions to return per page.
+    resource_defs_page_size : int, default: 100
+        Maximum number of resource definitions to return per page.
     grants_page_size : int, default: 100
         Maximum number of grants to return per page.
     grant_refs_page_size : int, default: 10
@@ -61,7 +66,9 @@ class AuthzeeConfig:
     raise_crits: bool, default: True
         Raise critical errors as exceptions.
     """
-    defs_page_size: int = 100
+    context_defs_page_size: int = 100
+    identity_defs_page_size: int = 100
+    resource_defs_page_size: int = 100
     grants_page_size: int = 100
     grant_refs_page_size: int = 10
     authorize_parallel_paging: bool = True
@@ -77,7 +84,7 @@ class GenericError:
 
 @dataclass(kw_only=True)
 class SDKError:
-    type: str
+    error_type: str
     is_critical: bool
     message: str
 

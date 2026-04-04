@@ -1,412 +1,327 @@
-__all__ = [
-    "InProcessStorage"
-]
 
-import copy
+
 import datetime
-from typing import Any, Dict, List
-from uuid import UUID, uuid4
+from typing import List
+from uuid import UUID
 
-from authzee import exceptions
+from authzee.dcs import *
+from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
-from authzee.storage.storage_module import StorageModule
 
 
-class InProcessStorage(StorageModule):
-    """Storage module that uses the Authzee app process's memory as the storage medium.
+class InProcessStorage:
 
-    Upon ``shutdown()`` or exit all storage is lost.
-
-    Parameters
-    ----------
-    storage_ptr : dict
-        A dictionary that will be used as the storage medium for all instances of this storage module.
-    """
-
-    def __init__(self, storage_ptr: dict):
-        self._storage_ptr = storage_ptr
-        if "created" not in self._storage_ptr:
-            self._storage_ptr['grant_lut'] = {}
-            self._storage_ptr['grant_effect_filter'] = {}
-            self._storage_ptr['grant_action_filter'] = {}
-            self._storage_ptr['grant_both_filter'] = {}
-            self._storage_ptr['latch_lut'] = {}
-            self._grant_lut: Dict[UUID, dict] = self._storage_ptr['grant_lut']
-            self._grant_effect_filter: Dict[str, List[dict]] = self._storage_ptr['grant_effect_filter']
-            self._grant_effect_filter.update(
-                {
-                    "allow": [],
-                    "deny": []
-                }
-            )
-            self._grant_action_filter: Dict[str, List[dict]] = self._storage_ptr['grant_action_filter']
-            self._grant_both_filter: Dict[str, Dict[str, List[dict]]] = self._storage_ptr['grant_both_filter']
-            self._grant_both_filter.update(
-                {
-                    "allow": {},
-                    "deny": {}
-                }
-            )
-            self._latch_lut: Dict[UUID, dict] = self._storage_ptr['latch_lut']
-            self._storage_ptr['created'] = True
-        else:
-            self._grant_lut: Dict[UUID, dict] = self._storage_ptr['grant_lut']
-            self._grant_effect_filter: Dict[str, List[dict]] = self._storage_ptr['grant_effect_filter']
-            self._grant_action_filter: Dict[str, List[dict]] = self._storage_ptr['grant_action_filter']
-            self._grant_both_filter: Dict[str, Dict[str, List[dict]]] = self._storage_ptr['grant_both_filter']
-            self._latch_lut: Dict[UUID, dict] = self._storage_ptr['latch_lut']
+    def __init__(self, storage_ptr: dict): 
+        self._storage_prt = storage_ptr
 
 
-    async def start(
-        self, 
-        identity_defs: List[Dict[str, Any]],
-        resource_defs: List[Dict[str, Any]]
-    ) -> None:
-        """Initialize the storage module. 
+    async def start(self, authzee_config: AuthzeeConfig) -> GenericResult:
+        """Start up storage module.
 
-        Parameters
-        ----------
-        identity_defs : List[dict[str]]
-            Identity definitions registered and validated with Authzee.
-        resource_defs : List[dict[str]]
-            ``ResourceAuthz`` instances that have been registered with Authzee.
+        - run before use
+        - After this method is complete these public instance vars or getters must be available:
+            - locality - Storage [Module Locality](#module-locality)
+            - has_parallel_paging - if the storage module supports parallel paging (returning a page of grant page references).
         """
-        await super().start(
-            identity_defs=identity_defs,
-            resource_defs=resource_defs
-        )
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = True
-        if "started" not in self._storage_ptr:
-            for rd in resource_defs:
-                for action in rd['actions']:
-                    self._grant_action_filter[action] = []
-                    self._grant_both_filter['allow'][action] = []
-                    self._grant_both_filter['deny'][action] = []
-            
-            # For grants that match all actions, ie empty actions list
-            self._grant_action_filter[None] = []
-            self._grant_both_filter['allow'][None] = []
-            self._grant_both_filter['deny'][None] = []
-            self._storage_ptr['started'] = True
-        
+        self._storage_prt['context_defs'] = []
+        self._storage_prt['identity_defs'] = []
+        self._storage_prt['resource_defs'] = []
+        self._storage_prt['grants'] = []
+        self._storage_prt['latches'] = []
+        self._storage_prt['context_defs_lut'] = {}
+        self._storage_prt['identity_defs_lut'] = {}
+        self._storage_prt['resource_defs_lut'] = {}
+        self._storage_prt['grants_lut'] = {}
+        self._storage_prt['latches_lut'] = {}
+   
+        return GenericResult(has_failed=False)
 
-    async def shutdown(self):
-        self._grant_lut = {}
-        self._grant_action_filter = {}
-        self._grant_effect_filter = {}
-        self._grant_both_filter = {}
-        self._latch_lut = {}
-        
 
-    async def enact(self, new_grant: dict) -> dict:
-        """Add a grant. 
+    async def shutdown(self, authzee_config: AuthzeeConfig) -> GenericResult:
+        """Shutdown storage module.
 
-        Parameters
-        ----------
-        new_grant : dict
-            The new grant data.
-
-        Returns
-        -------
-        dict
-            The grant that has been added.
+        - clean up runtime resources
         """
-        grant = copy.deepcopy(new_grant)
-        grant_uuid = uuid4()
-        grant['grant_uuid'] = str(grant_uuid)
-        self._grant_lut[grant_uuid] = grant
-        self._grant_effect_filter[grant['effect']].append(grant)
-        actions = grant['actions']
-        if len(grant['actions']) == 0:
-            actions = [None]
-
-        for action in actions:
-            self._grant_action_filter[action].append(grant)
-            self._grant_both_filter[grant['effect']][action].append(grant)
-
-        return copy.deepcopy(grant)
+        pass
 
 
-    async def repeal(self, grant_uuid: UUID) -> None:
+    async def construct(self, authzee_config: AuthzeeConfig) -> GenericResult:
+        """Construct backend resources for storage.
+
+        - one time setup
+        """
+        pass
+
+
+    async def destroy(self, authzee_config: AuthzeeConfig) -> GenericResult:
+        """Tear down backend resources.
+
+        - destructive - may lose all long lasting storage resources
+        """
+        pass
+
+
+    async def get_context_defs_page(
+        self,
+        page_ref: str | None,
+        authzee_config: AuthzeeConfig
+    ) -> ContextDefsPage:
+        """Get a page of context definitions.
+
+        Pass the returned page reference to get the next page until a null page reference is returned.
+        """
+        if page_ref is None:
+            start_index = 0
+        else:
+            start_index = int(page_ref)
+
+        end_index = start_index + authzee_config.context_defs_page_size  
+        next_page_ref = end_index      
+        if end_index >= len(self._storage_prt['context_defs']):
+            next_page_ref = None
+        
+        return ContextDefsPage(
+            context_defs=self._storage_prt['context_defs'][start_index:end_index],
+            next_page_ref=next_page_ref,
+            has_failed=False
+        )
+
+
+    async def get_context_def(
+        self, 
+        context_type: str,
+        authzee_config: AuthzeeConfig
+    ) -> ContextDefResult:
+        """Get a context definition by type.
+        """
+        result = ContextDefResult(
+            context_def=self._storage_prt['context_defs_lut'].get(context_type, None),
+            has_failed=False
+        )
+        if result.context_def is None:
+            result.has_failed = True
+            result.errors.sdk = [
+                SDKError(
+                    error_type="ResourceNotFoundError",
+                    is_critical=True,
+                    message=f"Context type '{context_type}' was not found."
+                )
+            ]
+        
+        return result
+
+
+    async def put_context_def(
+        self, 
+        context_def: ContextDef,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
+        """Add a new Context Definition or update an existing one.
+        """
+        raise NotImplementedError()
+
+
+    async def delete_context_def(
+        self, 
+        context_type: str,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
+        """Delete a context definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def get_identity_defs_page(
+        self,
+        page_ref: str | None,
+        authzee_config: AuthzeeConfig
+    ) -> IdentityDefsPage:
+        """Get a page of identity definitions.
+
+        Pass the returned page reference to get the next page until a null page reference is returned.
+        """
+        raise NotImplementedError()
+
+
+    async def get_identity_def(
+        self, 
+        identity_type: str,
+        authzee_config: AuthzeeConfig
+    ) -> IdentityDefResult:
+        """Get an identity definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def put_identity_def(
+        self, 
+        identity_def: IdentityDef,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
+        """Add a new Identity Definition or update an existing one.
+        """
+        raise NotImplementedError()
+
+
+    async def delete_identity_def(
+        self, 
+        identity_type: str,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
+        """Delete an identity definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def get_resource_defs_page(
+        self,
+        page_ref: str | None,
+        authzee_config: AuthzeeConfig
+    ) -> ResourceDefsPage:
+        """Get a page of resource definitions.
+
+        Pass the returned page reference to get the next page until a null page reference is returned.
+        """
+        raise NotImplementedError()
+
+
+    async def get_resource_def(
+        self, 
+        resource_type: str,
+        authzee_config: AuthzeeConfig
+    ) -> ResourceDefResult:
+        """Get a resource definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def put_resource_def(
+        self, 
+        resource_def: ResourceDef,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
+        """Add a new Resource Definition or update an existing one.
+        """
+        raise NotImplementedError()
+
+
+    async def delete_resource_def(
+        self, 
+        resource_type: str,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
+        """Delete a resource definition by type.
+        """
+        raise NotImplementedError()
+
+
+    async def enact(
+        self, 
+        grant: Grant,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
+        """Add a new grant.
+        """
+        raise NotImplementedError()
+
+
+    async def repeal(
+        self, 
+        grant_uuid: UUID, 
+        purge: bool,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
         """Delete a grant.
-
-        Parameters
-        ----------
-        grant_uuid : UUID
-            The UUID of the grant to delete.
-
-        Raises
-        ------
-        authzee.exceptions.GrantNotFoundError
-            The grant with the given UUID could not be found.
         """
-        if grant_uuid not in self._grant_lut:
-            raise exceptions.GrantNotFoundError(grant_uuid=grant_uuid)
-    
-        grant = self._grant_lut.pop(grant_uuid)
-        uuid_str = grant['grant_uuid']
-        self._grant_effect_filter[grant['effect']] = [g for g in self._grant_effect_filter[grant['effect']] if g['grant_uuid'] != uuid_str]
-        actions = grant['actions']
-        if len(grant['actions']) == 0:
-            actions = [None]
+        raise NotImplementedError()
 
-        for action in actions:
-            self._grant_action_filter[action] = [g for g in self._grant_action_filter[action] if g['grant_uuid'] != uuid_str]
-            self._grant_both_filter[grant['effect']][action] = [g for g in self._grant_both_filter[grant['effect']][action] if g['grant_uuid'] != uuid_str]
-    
 
-    async def get_grant(self, grant_uuid: UUID) -> dict:
-        """Retrieve a grant by UUID.
-
-        Parameters
-        ----------
-        grant_uuid : UUID
-            Grant UUID.
-
-        Returns
-        -------
-        dict
-            The grant with the matching UUID.
-
-        Raises
-        ------
-        authzee.exceptions.NotImplementedError
-            ``StorageModule`` sub-classes must implement this method.
-        authzee.exceptions.GrantNotFoundError
-            The grant with the given UUID could not be found.
+    async def get_grant(
+        self, 
+        grant_uuid: UUID,
+        authzee_config: AuthzeeConfig
+    ) -> GrantResult:
+        """Get a grant by UUID.
         """
-        if grant_uuid not in self._grant_lut:
-            raise exceptions.GrantNotFoundError(grant_uuid=grant_uuid)
+        raise NotImplementedError()
 
-        return copy.deepcopy(self._grant_lut[grant_uuid])
-        
 
     async def get_grants_page(
         self,
         effect: str | None,
-        action: str | None, 
-        page_ref: str | None, 
-        grants_page_size: int
-    ) -> dict:
-        """Get a page of grants.
+        action: str | None,
+        page_ref: str | None,
+        authzee_config: AuthzeeConfig
+    ) -> GrantsPage:
+        """Retrieve a page of grants.
 
-        Parameters
-        ----------
-        effect : str | None
-            Filter by grant effect. None for no filter.
-        action : str | None
-            Filter by grant action. None for no filter.
-        page_ref : str | None
-            Page reference of the page to retrieve. None to get the first page.
-        grants_page_size : int
-            Number of grants to return. Not exact.
-
-        Returns
-        -------
-        dict
-            Page of grants with the next page reference.
+        Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        if effect is not None and action is not None:
-            grants = self._grant_both_filter[effect][action] + self._grant_both_filter[effect][None]
-        elif effect is not None:
-            grants = self._grant_effect_filter[effect]
-        elif action is not None:
-            grants = self._grant_action_filter[action] + self._grant_action_filter[None]
-        else:
-            grants = list(self._grant_lut.values())
+        raise NotImplementedError()
 
-        # Handle pagination
-        start_index = 0
-        if page_ref is not None:
-            try:
-                start_index = int(page_ref)
-            except ValueError:
-                start_index = 0
 
-        end_index = start_index + grants_page_size
-        page_grants = grants[start_index:end_index]
-        
-        # Determine next page reference
-        next_page_ref = None
-        if end_index < len(grants):
-            next_page_ref = str(end_index)
-
-        return {
-            "grants": copy.deepcopy(page_grants),
-            "next_page_ref": next_page_ref
-        }
-    
-
-    async def get_grant_page_refs_page(
+    async def get_grant_refs_page(
         self,
-        effect: str | None, 
-        action: str | None, 
-        page_ref: str | None, 
-        grants_page_size: int,
-        refs_page_size: int
-    ) -> dict:
-        """Get a page of page references for parallel pagination. 
+        effect: str | None,
+        action: str | None,
+        page_ref: str | None,
+        authzee_config: AuthzeeConfig
+    ) -> PageRefsPage:
+        """Retrieve a page of grant page references for parallel pagination.
 
-        Parameters
-        ----------
-        effect : str | None
-            Filter by grant effect. None for no filter.
-        action : str | None
-            Filter by grant action. None for no filter.
-        page_ref : str | None
-            Page reference of the page to retrieve. None to get the first page.
-        grants_page_size : int
-            Number of grants per page. Not exact.
-        refs_page_size : int
-            Number of page reference to return. Not exact.
+        Pass the returned page reference to get the next page until a null page reference is returned.
 
-        Returns
-        -------
-        dict
-            Page of page references with the next page reference.
+        For some storage modules this may not be possible.
+        Check the `parallel_paging` attribute on the storage module after `start()` is complete.
         """
-        # Get the appropriate grant list based on filters
-        if effect is not None and action is not None:
-            # Include grants that match the specific action AND grants that match any action (empty actions)
-            grants = self._grant_both_filter[effect][action] + self._grant_both_filter[effect][None]
-        elif effect is not None:
-            grants = self._grant_effect_filter[effect]
-        elif action is not None:
-            # Include grants that match the specific action AND grants that match any action (empty actions)
-            grants = self._grant_action_filter[action] + self._grant_action_filter[None]
-        else:
-            grants = list(self._grant_lut.values())
+        raise NotImplementedError()
 
-        # lesser of page * grants page size or total length
-        total_grants = len(grants)
-            
-        # Generate page references based on grants_page_size
-        page_refs = []
-        for i in range(0, total_grants, grants_page_size):
-            page_refs.append(str(i))
 
-        # Handle pagination of page references using page_size
-        start_index = 0
-        if page_ref is not None:
-            try:
-                start_index = int(page_ref)
-            except ValueError:
-                start_index = 0
-
-        end_index = start_index + refs_page_size
-        page_ref_page = page_refs[start_index:end_index]
-        
-        # Determine next page reference
-        next_page_ref = None
-        if end_index < len(page_refs):
-            next_page_ref = str(end_index)
-
-        return {
-            "page_refs": page_ref_page,
-            "next_page_ref": next_page_ref
-        }
-    
-    
-    async def create_latch(self) -> dict:
-        """Create a new shared latch in the storage module.
-
-        Returns
-        -------
-        dict
-            New storage latch.
+    async def create_latch(self, authzee_config: AuthzeeConfig) -> StorageLatchResult:
+        """Create a new [storage latch](#storage-latches).
         """
-        new_latch = {
-            "storage_latch_uuid": uuid4(),
-            "set": False,
-            "created_at": datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
-        }
-        self._latch_lut[new_latch['storage_latch_uuid']] = new_latch
-
-        return copy.deepcopy(new_latch)
+        raise NotImplementedError()
 
 
-    async def get_latch(self, storage_latch_uuid: UUID) -> dict:
-        """Retrieve latch by UUID.
-
-        Parameters
-        ----------
-        storage_latch_uuid : UUID
-            Storage latch UUID.
-
-        Returns
-        -------
-        dict
-            The storage latch with the given UUID.
-        
-        Raises
-        ------
-        authzee.exceptions.LatchNotFoundError
-            The latch with the given UUID could not be found.
+    async def get_latch(
+        self, 
+        storage_latch_uuid: UUID,
+        authzee_config: AuthzeeConfig
+    ) -> StorageLatchResult:
+        """Get a [storage latch](#storage-latches) by UUID.
         """
-        if storage_latch_uuid not in self._latch_lut:
-            raise exceptions.LatchNotFoundError(storage_latch_uuid=storage_latch_uuid)
-        
-        return copy.deepcopy(self._latch_lut[storage_latch_uuid])
+        raise NotImplementedError()
 
 
-    async def set_latch(self, storage_latch_uuid: UUID) -> dict:
-        """Set a latch for a given UUID. 
-
-        Parameters
-        ----------
-        storage_latch_uuid : UUID
-            Storage latch UUID.
-
-        Returns
-        -------
-        dict
-            The storage latch with the given UUID and the latch set.
-        
-        Raises
-        ------
-        authzee.exceptions.LatchNotFoundError
-            The latch with the given UUID could not be found.
+    async def set_latch(
+        self, 
+        storage_latch_uuid: UUID,
+        authzee_config: AuthzeeConfig
+    ) -> StorageLatchResult:
+        """Set a [storage latch](#storage-latches) by UUID.
         """
-        if storage_latch_uuid not in self._latch_lut:
-            raise exceptions.LatchNotFoundError(storage_latch_uuid=storage_latch_uuid)
-        
-        self._latch_lut[storage_latch_uuid]["set"] = True
-        return copy.deepcopy(self._latch_lut[storage_latch_uuid])
+        raise NotImplementedError()
 
 
-    async def delete_latch(self, storage_latch_uuid: UUID) -> None:
-        """Delete a storage latch by UUID.
-
-        Parameters
-        ----------
-        storage_latch_uuid : UUID
-            Storage latch UUID.
-        
-        Raises
-        ------
-        authzee.exceptions.LatchNotFoundError
-            The latch with the given UUID could not be found.
+    async def delete_latch(
+        self, 
+        storage_latch_uuid: UUID,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
+        """Delete a [storage latch](#storage-latches) by UUID.
         """
-        if storage_latch_uuid not in self._latch_lut:
-            raise exceptions.LatchNotFoundError(storage_latch_uuid=storage_latch_uuid)
-        
-        del self._latch_lut[storage_latch_uuid]
+        raise NotImplementedError()
 
 
-    async def cleanup_latches(self, before: datetime.datetime) -> None:
-        """Delete zombie storage latches created before a certain point in time.
+    async def cleanup_latches(
+        self, 
+        before: datetime.datetime,
+        authzee_config: AuthzeeConfig
+    ) -> GenericResult:
+        """Delete all latches before the specified datetime.
 
-        Parameters
-        ----------
-        before : datetime.datetime
-            Delete latches created before this datetime.
+        - operations should clean up their own latches, but in case of a failure this can be used to clean up zombie latches.
         """
-        latches_to_delete = []
-        for latch_uuid, latch in self._latch_lut.items():
-            created_at = datetime.datetime.fromisoformat(latch["created_at"])
-            if created_at < before:
-                latches_to_delete.append(latch_uuid)
-        
-        for latch_uuid in latches_to_delete:
-            del self._latch_lut[latch_uuid]
+        raise NotImplementedError()

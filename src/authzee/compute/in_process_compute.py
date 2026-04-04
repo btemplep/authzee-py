@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, Type
 import jsonschema_rs
 
 from authzee.compute.compute_module import ComputeModule
-from authzee.core import paginator, validate_request_schema
+from authzee.core import evaluate, paginator, validate_request_schema
 from authzee.dcs import *
 from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
@@ -19,7 +19,8 @@ class InProcessCompute(ComputeModule):
         self,
         execute: Callable[[str, Any], Any],
         storage_type: Type[StorageModule],
-        storage_kwargs: Dict[str, Any]
+        storage_kwargs: Dict[str, Any],
+        authzee_config: AuthzeeConfig
     ) -> GenericResult:
         """Start up compute module.
 
@@ -38,7 +39,7 @@ class InProcessCompute(ComputeModule):
         self._storage = storage_type(**storage_kwargs)
 
 
-    async def shutdown(self) -> GenericResult:
+    async def shutdown(self, authzee_config: AuthzeeConfig) -> GenericResult:
         """Shutdown Compute module.
 
         - clean up runtime resources
@@ -46,7 +47,7 @@ class InProcessCompute(ComputeModule):
         await self._storage.shutdown()
 
 
-    async def construct(self) -> GenericResult:
+    async def construct(self, authzee_config: AuthzeeConfig) -> GenericResult:
         """Construct backend resources for compute.
 
         - one time setup
@@ -54,7 +55,7 @@ class InProcessCompute(ComputeModule):
         pass
 
 
-    async def destroy(self) -> GenericResult:
+    async def destroy(self, authzee_config: AuthzeeConfig) -> GenericResult:
         """Tear down backend resources.
 
         - destructive - may lose all long lasting compute resources
@@ -65,7 +66,7 @@ class InProcessCompute(ComputeModule):
     async def validate_request(
         self,
         request: AuthzeeRequest,
-        page_size: int
+        authzee_config: AuthzeeConfig
     ) -> GenericResult:
         """Validate a request.
         """
@@ -166,7 +167,7 @@ class InProcessCompute(ComputeModule):
     async def validate_batch_request(
         self,
         batch_request: AuthzeeBatchRequest,
-        page_size: int
+        authzee_config: AuthzeeConfig
     ) -> GenericResult:
         """Validate a batch request.
         """
@@ -177,7 +178,7 @@ class InProcessCompute(ComputeModule):
         self,
         request: AuthzeeRequest,
         page_ref: str | None,
-        grants_page_size: int
+        authzee_config: AuthzeeConfig
     ) -> AuditResultPage:
         """Run the Audit Operation for a page of results.
 
@@ -189,38 +190,153 @@ class InProcessCompute(ComputeModule):
             next_page_ref=None,
             has_failed=False,
         )
-        val_result = await self.validate_request(request=request, page_size=page_size)
+        val_result = await self.validate_request(request=request, authzee_config=authzee_config)
         if val_result.has_failed is True:
+            result.has_failed = True
             result.errors = val_result.errors 
 
             return result
 
-        grants = (
+        grants_page = (
             await self._storage.get_grants_page(
                 effect=None,
                 action=request.action,
                 page_ref=page_ref,
-                page_size=page_size
-            ))
+                authzee_config=authzee_config
+            )
+        )
+        if grants_page.has_failed is True:
+            result.has_failed = True
+            result.errors = grants_page.errors
+
+            return result
+        
+        result.grants = grants_page.grants
+        result.next_page_ref = grants_page.next_page_ref
+        for grant in result.grants:
+            eval_result = evaluate(
+                request=request,
+                grant=grant,
+                execute=self._execute,
+                only_crits=False
+            )
+            result.results.append(eval_result)
+            if eval_result.has_failed is True:
+                result.next_page_ref = None
+                result.has_failed = True
+                result.errors.evaluation = [
+                    GenericError(
+                        is_critical=True,
+                        message=f"A critical error occurred when evaluation grants[{len(result.results) - 1}]."
+                    )
+                ]
+
+                return result
+        
+        return result
 
 
     async def authorize(
         self,
         request: AuthzeeRequest,
-        page_size: int,
-        parallel_pagination: bool,
-        refs_page_size: int
+        authzee_config: AuthzeeConfig
     ) -> AuthorizeResult:
         """Run the Authorize Operation.
         """
-        raise NotImplementedError()
+        crit_result = AuthorizeResult(
+            is_authorized=False,
+            grant=None,
+            message="A critical error has occurred. Therefore, the request is not authorized.",
+            has_failed=True
+        )
+        val_result = await self.validate_request(request=request, authzee_config=authzee_config)
+        if val_result.has_failed is True:
+            crit_result.critical_errors = val_result.errors 
+
+            return crit_result
+
+        async for page in paginator(
+            self._storage.get_grants_page,
+            effect="deny",
+            action=request.action,
+            page_ref=None,
+            authzee_config=authzee_config
+        ):
+            page: GrantsPage
+            if page.has_failed is True:
+                crit_result.critical_errors = page.errors
+
+                return crit_result
+        
+            for grant in page.grants:
+                eval_result = evaluate(
+                    request=request,
+                    grant=grant,
+                    execute=self._execute,
+                    only_crits=True
+                )
+                if eval_result.has_failed is True:
+                    crit_result.grant = grant
+                    crit_result.critical_errors = eval_result.errors
+
+                    return crit_result
+
+                if eval_result.is_applicable is True:
+                    return AuthorizeResult(
+                        is_authorized=False,
+                        grant=grant,
+                        message="A deny grant is applicable to the request. Therefore, the request is not authorized.",
+                        has_failed=False
+                    )
+
+        # got through all allow grants
+        async for page in paginator(
+            self._storage.get_grants_page,
+            effect="allow",
+            action=request.action,
+            page_ref=None,
+            authzee_config=authzee_config
+        ):
+            page: GrantsPage
+            if page.has_failed is True:
+                crit_result.critical_errors = page.errors
+
+                return crit_result
+        
+            for grant in page.grants:
+                eval_result = evaluate(
+                    request=request,
+                    grant=grant,
+                    execute=self._execute,
+                    only_crits=True
+                )
+                if eval_result.has_failed is True:
+                    crit_result.grant = grant
+                    crit_result.critical_errors = eval_result.errors
+
+                    return crit_result
+
+                if eval_result.is_applicable is True:
+                    return AuthorizeResult(
+                        is_authorized=True,
+                        grant=grant,
+                        message="An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
+                        has_failed=False
+                    )
+
+        return AuthorizeResult(
+            is_authorized=False,
+            grant=None,
+            message="No grants are applicable to the request. Therefore, the request is implicitly denied and is not authorized.",
+            has_failed=False
+        )
 
 
     async def batch_audit_page(
         self,
         batch_request: AuthzeeBatchRequest,
         page_ref: str | None,
-        page_size: int
+        authzee_config: AuthzeeConfig
     ) -> BatchAuditResultPage:
         """Run the Batch Audit Operation for a page of results.
 
@@ -232,9 +348,7 @@ class InProcessCompute(ComputeModule):
     async def batch_authorize(
         self,
         batch_request: AuthzeeBatchRequest,
-        page_size: int,
-        parallel_pagination: bool,
-        refs_page_size: int
+        authzee_config: AuthzeeConfig
     ) -> BatchAuthorizeResult:
         """Run the Batch Authorize Operation.
         """

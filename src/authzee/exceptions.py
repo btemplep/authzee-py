@@ -104,14 +104,8 @@ class LocalityIncompatibilityError(AuthzeeSDKError):
     pass
 
 
-class GrantNotFoundError(AuthzeeSDKError):
-    """The Grant with a specific UUID was not found in the storage backend.
-    """
-    pass
-
-
-class LatchNotFoundError(AuthzeeSDKError):
-    """The storage latch with a specific UUID was not found in the storage backend.
+class ResourceNotFoundError(AuthzeeSDKError):
+    """The resource with a specific UUID or type was not found in the storage backend.
     """
     pass
 

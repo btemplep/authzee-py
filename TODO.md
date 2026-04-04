@@ -1,19 +1,5 @@
 # TODO
 
-
-- [ ] Authzee Config break out page size of each type of def into it's own size
-
-- [ ] validate request, could have page size for identity defs
-    - When you run an op like Audit, when you pass it down should you have to add in the grant page size and def page size? 
-    - Maybe we should just continue with the AuthzeeConfig and pass that to both the Authzee class and the compute/storage modules???
-        - Upside is it's extremely flexible with the configuration of items
-            - things like audit should only need the request, page_ref, and the authzee config
-            - That get's passed as far down as it needs to and everything can just pluck the configs from there
-        - downsides
-            - passing yet another value everywhere, upside is it replaces the extra configs
-            - pretty small now but may get bigger, thus performance issues passing this thing everywhere??
-            - 
-
 - [ ] switch reference to use jsonschema-rs and switch in the spec too
 
 - [ ] paginators 
@@ -35,6 +21,19 @@
 - [ ] for iterators may need to manage own event loop instead of just using asyncio.run
 
 - [ ] jmespath rust bindings for python
+
+- [x] Authzee Config break out page size of each type of def into it's own size
+
+- [x] validate request, could have page size for identity defs
+    - When you run an op like Audit, when you pass it down should you have to add in the grant page size and def page size? 
+    - Maybe we should just continue with the AuthzeeConfig and pass that to both the Authzee class and the compute/storage modules???
+        - Upside is it's extremely flexible with the configuration of items
+            - things like audit should only need the request, page_ref, and the authzee config
+            - That get's passed as far down as it needs to and everything can just pluck the configs from there
+        - downsides
+            - passing yet another value everywhere, upside is it replaces the extra configs
+            - pretty small now but may get bigger, thus performance issues passing this thing everywhere??
+    - **SOLUTION** use authzee_config for all
 
 - [x] validation
     - validate defs doesn't need to be split since it's just validating the schema and schema base type is object
