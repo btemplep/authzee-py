@@ -3,6 +3,7 @@ __all__ = [
     "AuthzeeConfig",
     "GenericError",
     "SDKError",
+    "ResultErrors",
     "GenericResult",
     "ContextDef",
     "ContextDefResult",
@@ -34,7 +35,7 @@ __all__ = [
 import datetime
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 
 AnyJSON = bool | str | int | float | None | list | dict
@@ -202,7 +203,6 @@ class Grant:
 @dataclass(kw_only=True)
 class GrantResult:
     grant: Grant | None
-    next_page_ref: str | None
     has_failed: bool
     errors: ResultErrors = field(default_factory=ResultErrors)
 
@@ -222,17 +222,19 @@ class PageRefsPage:
     has_failed: bool
     errors: ResultErrors = field(default_factory=ResultErrors)
 
+def utc_now() -> datetime.datetime:
+    return datetime.datetime.now(tz=datetime.timezone.utc)
 
 @dataclass(kw_only=True)
 class StorageLatch:
-    storage_latch_uuid: UUID
-    is_set: bool
-    created_at: datetime.datetime
+    storage_latch_uuid: UUID = field(default_factory=uuid4)
+    is_set: bool = False
+    created_at: datetime.datetime = field(default_factory=utc_now)
 
 
 @dataclass(kw_only=True)
 class StorageLatchResult:
-    storage_latch: StorageLatch
+    storage_latch: StorageLatch | None
     has_failed: bool
     errors: ResultErrors = field(default_factory=ResultErrors)
 

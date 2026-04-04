@@ -1,5 +1,12 @@
 # TODO
 
+- [ ] errors for putting and deleted and getting defs/grants
+    - put and delete should not care if it exists either way
+    - get should return error since it expects to be there??
+
+- [ ] define where authzee class and modules do the validation
+    - Requests are handled by compute, 
+    - defs are done at the authzee level
 - [ ] switch reference to use jsonschema-rs and switch in the spec too
 
 - [ ] paginators 

@@ -2,7 +2,7 @@
 
 import datetime
 from typing import List
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from authzee.dcs import *
 from authzee.exceptions import NotImplementedError
@@ -12,7 +12,7 @@ from authzee.module_locality import ModuleLocality
 class InProcessStorage:
 
     def __init__(self, storage_ptr: dict): 
-        self._storage_prt = storage_ptr
+        self._storage_ptr = storage_ptr
 
 
     async def start(self, authzee_config: AuthzeeConfig) -> GenericResult:
@@ -25,16 +25,11 @@ class InProcessStorage:
         """
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = True
-        self._storage_prt['context_defs'] = []
-        self._storage_prt['identity_defs'] = []
-        self._storage_prt['resource_defs'] = []
-        self._storage_prt['grants'] = []
-        self._storage_prt['latches'] = []
-        self._storage_prt['context_defs_lut'] = {}
-        self._storage_prt['identity_defs_lut'] = {}
-        self._storage_prt['resource_defs_lut'] = {}
-        self._storage_prt['grants_lut'] = {}
-        self._storage_prt['latches_lut'] = {}
+        self._storage_ptr['context_defs_lut'] = {}
+        self._storage_ptr['identity_defs_lut'] = {}
+        self._storage_ptr['resource_defs_lut'] = {}
+        self._storage_ptr['grants_lut'] = {}
+        self._storage_ptr['latches_lut'] = {}
    
         return GenericResult(has_failed=False)
 
@@ -77,13 +72,14 @@ class InProcessStorage:
         else:
             start_index = int(page_ref)
 
+        context_defs = list(self._storage_ptr['context_defs_lut'].values())
         end_index = start_index + authzee_config.context_defs_page_size  
         next_page_ref = end_index      
-        if end_index >= len(self._storage_prt['context_defs']):
+        if end_index >= len(context_defs):
             next_page_ref = None
         
         return ContextDefsPage(
-            context_defs=self._storage_prt['context_defs'][start_index:end_index],
+            context_defs=context_defs[start_index:end_index],
             next_page_ref=next_page_ref,
             has_failed=False
         )
@@ -97,7 +93,7 @@ class InProcessStorage:
         """Get a context definition by type.
         """
         result = ContextDefResult(
-            context_def=self._storage_prt['context_defs_lut'].get(context_type, None),
+            context_def=self._storage_ptr['context_defs_lut'].get(context_type, None),
             has_failed=False
         )
         if result.context_def is None:
@@ -119,9 +115,13 @@ class InProcessStorage:
         authzee_config: AuthzeeConfig
     ) -> GenericResult:
         """Add a new Context Definition or update an existing one.
-        """
-        raise NotImplementedError()
 
+        Validated by authzee class
+        """
+        self._storage_ptr['context_defs_lut'][context_def.context_type] = context_def
+
+        return GenericResult(has_failed=False)
+        
 
     async def delete_context_def(
         self, 
@@ -130,7 +130,9 @@ class InProcessStorage:
     ) -> GenericResult:
         """Delete a context definition by type.
         """
-        raise NotImplementedError()
+        self._storage_ptr['context_defs_lut'].pop(context_type, None)
+        
+        return GenericResult(has_failed=False)
 
 
     async def get_identity_defs_page(
@@ -142,7 +144,22 @@ class InProcessStorage:
 
         Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise NotImplementedError()
+        if page_ref is None:
+            start_index = 0
+        else:
+            start_index = int(page_ref)
+
+        identity_defs = list(self._storage_ptr['identity_defs_lut'].values())
+        end_index = start_index + authzee_config.identity_defs_page_size  
+        next_page_ref = end_index      
+        if end_index >= len(identity_defs):
+            next_page_ref = None
+        
+        return IdentityDefsPage(
+            identity_defs=identity_defs[start_index:end_index],
+            next_page_ref=next_page_ref,
+            has_failed=False
+        )
 
 
     async def get_identity_def(
@@ -152,7 +169,21 @@ class InProcessStorage:
     ) -> IdentityDefResult:
         """Get an identity definition by type.
         """
-        raise NotImplementedError()
+        result = IdentityDefResult(
+            identity_def=self._storage_ptr['identity_defs_lut'].get(identity_type, None),
+            has_failed=False
+        )
+        if result.identity_def is None:
+            result.has_failed = True
+            result.errors.sdk = [
+                SDKError(
+                    error_type="ResourceNotFoundError",
+                    is_critical=True,
+                    message=f"identity type '{identity_type}' was not found."
+                )
+            ]
+        
+        return result
 
 
     async def put_identity_def(
@@ -162,7 +193,9 @@ class InProcessStorage:
     ) -> GenericResult:
         """Add a new Identity Definition or update an existing one.
         """
-        raise NotImplementedError()
+        self._storage_ptr['identity_defs_lut'][identity_def.identity_type] = identity_def
+
+        return GenericResult(has_failed=False)
 
 
     async def delete_identity_def(
@@ -172,7 +205,9 @@ class InProcessStorage:
     ) -> GenericResult:
         """Delete an identity definition by type.
         """
-        raise NotImplementedError()
+        self._storage_ptr['identity_defs_lut'].pop(identity_type, None)
+        
+        return GenericResult(has_failed=False)
 
 
     async def get_resource_defs_page(
@@ -184,7 +219,22 @@ class InProcessStorage:
 
         Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise NotImplementedError()
+        if page_ref is None:
+            start_index = 0
+        else:
+            start_index = int(page_ref)
+
+        resource_defs = list(self._storage_ptr['resource_defs_lut'].values())
+        end_index = start_index + authzee_config.resource_defs_page_size  
+        next_page_ref = end_index      
+        if end_index >= len(resource_defs):
+            next_page_ref = None
+        
+        return ResourceDefsPage(
+            resource_defs=resource_defs[start_index:end_index],
+            next_page_ref=next_page_ref,
+            has_failed=False
+        )
 
 
     async def get_resource_def(
@@ -194,7 +244,21 @@ class InProcessStorage:
     ) -> ResourceDefResult:
         """Get a resource definition by type.
         """
-        raise NotImplementedError()
+        result = ResourceDefResult(
+            resource_def=self._storage_ptr['resource_defs_lut'].get(resource_type, None),
+            has_failed=False
+        )
+        if result.resource_def is None:
+            result.has_failed = True
+            result.errors.sdk = [
+                SDKError(
+                    error_type="ResourceNotFoundError",
+                    is_critical=True,
+                    message=f"resource type '{resource_type}' was not found."
+                )
+            ]
+        
+        return result
 
 
     async def put_resource_def(
@@ -204,7 +268,9 @@ class InProcessStorage:
     ) -> GenericResult:
         """Add a new Resource Definition or update an existing one.
         """
-        raise NotImplementedError()
+        self._storage_ptr['resource_defs_lut'][resource_def.resource_type] = resource_def
+
+        return GenericResult(has_failed=False)
 
 
     async def delete_resource_def(
@@ -214,7 +280,9 @@ class InProcessStorage:
     ) -> GenericResult:
         """Delete a resource definition by type.
         """
-        raise NotImplementedError()
+        self._storage_ptr['resource_defs_lut'].pop(resource_type, None)
+        
+        return GenericResult(has_failed=False)
 
 
     async def enact(
@@ -224,7 +292,9 @@ class InProcessStorage:
     ) -> GenericResult:
         """Add a new grant.
         """
-        raise NotImplementedError()
+        self._storage_ptr['grants_lut'][grant.grant_uuid] = grant
+
+        return GenericResult(has_failed=False)
 
 
     async def repeal(
@@ -235,7 +305,9 @@ class InProcessStorage:
     ) -> GenericResult:
         """Delete a grant.
         """
-        raise NotImplementedError()
+        self._storage_ptr['grants_lut'].pop(grant_uuid, None)
+
+        return GenericResult(has_failed=False)
 
 
     async def get_grant(
@@ -245,7 +317,21 @@ class InProcessStorage:
     ) -> GrantResult:
         """Get a grant by UUID.
         """
-        raise NotImplementedError()
+        result = GrantResult(
+            grant=self._storage_ptr['grants_lut'].pop(grant_uuid, None),
+            has_failed=False
+        ) 
+        if result.grant is None:
+            result.has_failed = True
+            result.errors.sdk = [
+                SDKError(
+                    error_type="ResourceNotFoundError",
+                    is_critical=True,
+                    message=f"Grant with UUID '{grant_uuid}' was not found."
+                )
+            ]
+        
+        return result
 
 
     async def get_grants_page(
@@ -259,7 +345,28 @@ class InProcessStorage:
 
         Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise NotImplementedError()
+        if page_ref is None:
+            start_index = 0
+        else:
+            start_index = int(page_ref)
+
+        grants: List[Grant] = list(self._storage_ptr['grants_lut'].values())
+        if effect is not None:
+            grants = [g for g in grants if g.effect == effect]
+        
+        if action is not None:
+            grants = [g for g in grants if action in g.actions]
+
+        end_index = start_index + authzee_config.grants_page_size  
+        next_page_ref = end_index      
+        if end_index >= len(grants):
+            next_page_ref = None
+        
+        return GrantsPage(
+            grants=grants[start_index:end_index],
+            next_page_ref=next_page_ref,
+            has_failed=False
+        )
 
 
     async def get_grant_refs_page(
@@ -276,13 +383,31 @@ class InProcessStorage:
         For some storage modules this may not be possible.
         Check the `parallel_paging` attribute on the storage module after `start()` is complete.
         """
-        raise NotImplementedError()
+        if page_ref is None:
+            start_index = 0
+        else:
+            start_index = int(page_ref)
+
+        grants: List[Grant] = list(self._storage_ptr['grants_lut'].values())
+        if effect is not None:
+            grants = [g for g in grants if g.effect == effect]
+        
+        if action is not None:
+            grants = [g for g in grants if action in g.actions]
+        
+
 
 
     async def create_latch(self, authzee_config: AuthzeeConfig) -> StorageLatchResult:
         """Create a new [storage latch](#storage-latches).
         """
-        raise NotImplementedError()
+        latch = StorageLatch()
+        self._storage_ptr['latches_lut'][latch.storage_latch_uuid] = latch
+
+        return StorageLatchResult(
+            storage_latch=latch,
+            has_failed=False
+        )
 
 
     async def get_latch(
@@ -292,7 +417,21 @@ class InProcessStorage:
     ) -> StorageLatchResult:
         """Get a [storage latch](#storage-latches) by UUID.
         """
-        raise NotImplementedError()
+        result = StorageLatchResult(
+            grant=self._storage_ptr['latches_lut'].pop(storage_latch_uuid, None),
+            has_failed=False
+        ) 
+        if result.storage_latch is None:
+            result.has_failed = True
+            result.errors.sdk = [
+                SDKError(
+                    error_type="ResourceNotFoundError",
+                    is_critical=True,
+                    message=f"Storage latch with UUID '{storage_latch_uuid}' was not found."
+                )
+            ]
+        
+        return result
 
 
     async def set_latch(
@@ -302,7 +441,17 @@ class InProcessStorage:
     ) -> StorageLatchResult:
         """Set a [storage latch](#storage-latches) by UUID.
         """
-        raise NotImplementedError()
+        result = await self.get_latch(
+            storage_latch_uuid=storage_latch_uuid,
+            authzee_config=authzee_config
+        )
+        if result.has_failed is True:
+            return result
+    
+        # double check this actually sets it
+        result.storage_latch.is_set = True
+        
+        return result
 
 
     async def delete_latch(
@@ -312,7 +461,10 @@ class InProcessStorage:
     ) -> GenericResult:
         """Delete a [storage latch](#storage-latches) by UUID.
         """
-        raise NotImplementedError()
+        self._storage_ptr['latches_lut'].pop(storage_latch_uuid, None)
+
+        return GenericResult(has_failed=False)
+
 
 
     async def cleanup_latches(
@@ -324,4 +476,11 @@ class InProcessStorage:
 
         - operations should clean up their own latches, but in case of a failure this can be used to clean up zombie latches.
         """
-        raise NotImplementedError()
+        new_lut = {}
+        for lu, l in self._storage_ptr['latches_lut'].items():
+            if l.created_at > before:
+                new_lut[lu] = l
+        
+        self._storage_ptr['latches_lut'] = new_lut
+        
+        return GenericResult(has_failed=False)
