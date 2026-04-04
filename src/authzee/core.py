@@ -58,7 +58,7 @@ def validate_resource_def(resource_def: ResourceDef) -> GenericResult:
 
 
 def validate_request_schema(request: AuthzeeRequest) -> GenericResult:
-    result = GenericResult(has_failed=request_validator.is_valid(asdict(request)))
+    result = GenericResult(has_failed=not request_validator.is_valid(asdict(request)))
     if result.has_failed is True:
         result.errors.definition = [
             GenericError(

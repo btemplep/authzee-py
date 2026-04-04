@@ -32,11 +32,14 @@ class InProcessCompute(ComputeModule):
         super().start(
             execute=execute,
             storage_type=storage_type, 
-            storage_kwargs=storage_kwargs
+            storage_kwargs=storage_kwargs,
+            authzee_config=authzee_config
         )
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = False
         self._storage = storage_type(**storage_kwargs)
+    
+        return GenericResult(has_failed=False)
 
 
     async def shutdown(self, authzee_config: AuthzeeConfig) -> GenericResult:
@@ -74,9 +77,9 @@ class InProcessCompute(ComputeModule):
         if result.has_failed is True:
             return result
 
-        context_def_task = create_task(self._storage.get_context_def(request.context_type))
-        resource_def_task = create_task(self._storage.get_resource_def(request.resource_type))
-        identity_def_tasks = [create_task(self._storage.get_identity_def(it)) for it in request.identities]
+        context_def_task = create_task(self._storage.get_context_def(request.context_type, authzee_config))
+        resource_def_task = create_task(self._storage.get_resource_def(request.resource_type, authzee_config))
+        identity_def_tasks = [create_task(self._storage.get_identity_def(it, authzee_config)) for it in request.identities]
 
         context_def = (await context_def_task).context_def
         if context_def is None:

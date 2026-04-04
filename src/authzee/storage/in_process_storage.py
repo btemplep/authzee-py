@@ -74,13 +74,10 @@ class InProcessStorage:
 
         context_defs = list(self._storage_ptr['context_defs_lut'].values())
         end_index = start_index + authzee_config.context_defs_page_size  
-        next_page_ref = end_index      
-        if end_index >= len(context_defs):
-            next_page_ref = None
         
         return ContextDefsPage(
             context_defs=context_defs[start_index:end_index],
-            next_page_ref=next_page_ref,
+            next_page_ref=str(end_index) if end_index < len(context_defs) else None,
             has_failed=False
         )
 
@@ -150,14 +147,11 @@ class InProcessStorage:
             start_index = int(page_ref)
 
         identity_defs = list(self._storage_ptr['identity_defs_lut'].values())
-        end_index = start_index + authzee_config.identity_defs_page_size  
-        next_page_ref = end_index      
-        if end_index >= len(identity_defs):
-            next_page_ref = None
+        end_index = start_index + authzee_config.identity_defs_page_size       
         
         return IdentityDefsPage(
             identity_defs=identity_defs[start_index:end_index],
-            next_page_ref=next_page_ref,
+            next_page_ref=str(end_index) if end_index < len(identity_defs) else None,
             has_failed=False
         )
 
@@ -225,14 +219,11 @@ class InProcessStorage:
             start_index = int(page_ref)
 
         resource_defs = list(self._storage_ptr['resource_defs_lut'].values())
-        end_index = start_index + authzee_config.resource_defs_page_size  
-        next_page_ref = end_index      
-        if end_index >= len(resource_defs):
-            next_page_ref = None
+        end_index = start_index + authzee_config.resource_defs_page_size 
         
         return ResourceDefsPage(
             resource_defs=resource_defs[start_index:end_index],
-            next_page_ref=next_page_ref,
+            next_page_ref=str(end_index) if end_index < len(resource_defs) else None,
             has_failed=False
         )
 
@@ -358,13 +349,10 @@ class InProcessStorage:
             grants = [g for g in grants if action in g.actions]
 
         end_index = start_index + authzee_config.grants_page_size  
-        next_page_ref = end_index      
-        if end_index >= len(grants):
-            next_page_ref = None
         
         return GrantsPage(
             grants=grants[start_index:end_index],
-            next_page_ref=next_page_ref,
+            next_page_ref=str(end_index) if end_index < len(grants) else None,
             has_failed=False
         )
 
@@ -395,7 +383,22 @@ class InProcessStorage:
         if action is not None:
             grants = [g for g in grants if action in g.actions]
         
-
+        num_grants = len(grants)
+        refs = []
+        for _ in range(authzee_config.grant_refs_page_size):
+            end_index = start_index + authzee_config.grants_page_size  
+            next_page_ref = end_index          
+            refs.append(start_index)
+            start_index = end_index
+            if end_index >= num_grants:
+                next_page_ref = None
+                break
+        
+        return PageRefsPage(
+            page_refs=refs,
+            next_page_ref=next_page_ref,
+            has_failed=False
+        )
 
 
     async def create_latch(self, authzee_config: AuthzeeConfig) -> StorageLatchResult:
@@ -478,6 +481,8 @@ class InProcessStorage:
         """
         new_lut = {}
         for lu, l in self._storage_ptr['latches_lut'].items():
+            lu: UUID
+            l: StorageLatch
             if l.created_at > before:
                 new_lut[lu] = l
         

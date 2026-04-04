@@ -78,22 +78,24 @@ class AuthzeeAsync:
         return results
 
     
-    async def start(
-        self, 
-        authzee_config: AuthzeeConfig | None = None
-    ) -> GenericResult:
+    async def start(self, authzee_config: AuthzeeConfig | None = None) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
         self._compute = self.compute_type(**self.compute_kwargs)
         self._storage = self.storage_type(**self.storage_kwargs)
 
         return await self._get_results(
             coros=[
-                self._compute.start(authzee_config),
+                self._compute.start(
+                    execute=self.execute,
+                    storage_type=self.storage_type,
+                    storage_kwargs=self.storage_kwargs,
+                    authzee_config=authzee_config
+                ),
                 self._storage.start(authzee_config)
             ],
             error_messages=[
-                "Error when starting compute module.",
-                "Error when starting storage module."
+                "Error when starting the compute module.",
+                "Error when starting the storage module."
             ],
             authzee_config=authzee_config
         )
@@ -103,33 +105,22 @@ class AuthzeeAsync:
         self, 
         authzee_config: AuthzeeConfig | None = None
     ) -> GenericResult:
-        authzee_config = authzee_config if authzee_config is not None else self.authzee_config
-        results = await asyncio.gather(
-            self._compute.stop(authzee_config),
-            self._storage.stop(authzee_config)
+        return await self._get_results(
+            coros=[
+                self._compute.shutdown(
+                    execute=self.execute,
+                    storage_type=self.storage_type,
+                    storage_kwargs=self.storage_kwargs,
+                    authzee_config=authzee_config
+                ),
+                self._storage.shutdown(authzee_config)
+            ],
+            error_messages=[
+                "Error when shutting down the compute module.",
+                "Error when shutting down the storage module."
+            ],
+            authzee_config=authzee_config
         )
-        compute_result = self._exception_handler(results[0], authzee_config)
-        if compute_result.has_failed is True:
-            if authzee_config.raise_crits:
-                raise exceptions.AuthzeeSDKError(
-                    message="Error when starting compute module",
-                    is_critical=True,
-                    result=compute_result
-                )
-            else:
-                return compute_result
-    
-        storage_result = self._exception_handler(results[0], authzee_config)
-        if storage_result.has_failed is True:
-            if authzee_config.raise_crits:
-                raise exceptions.AuthzeeSDKError(
-                    message="Error when starting storage module",
-                    is_critical=True,
-                    result=storage_result
-                )
-            else:
-                return storage_result
-
 
 
     async def construct(
@@ -137,6 +128,23 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+        
+        return await self._get_results(
+            coros=[
+                self._compute.construct(
+                    execute=self.execute,
+                    storage_type=self.storage_type,
+                    storage_kwargs=self.storage_kwargs,
+                    authzee_config=authzee_config
+                ),
+                self._storage.construct(authzee_config)
+            ],
+            error_messages=[
+                "Error when running construct in the compute module.",
+                "Error when running construct in the storage module."
+            ],
+            authzee_config=authzee_config
+        )
 
 
     async def destroy(
@@ -144,6 +152,23 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+        
+        return await self._get_results(
+            coros=[
+                self._compute.destroy(
+                    execute=self.execute,
+                    storage_type=self.storage_type,
+                    storage_kwargs=self.storage_kwargs,
+                    authzee_config=authzee_config
+                ),
+                self._storage.destroy(authzee_config)
+            ],
+            error_messages=[
+                "Error when running destroy in the compute module.",
+                "Error when running destroy in the storage module."
+            ],
+            authzee_config=authzee_config
+        )
 
 
     async def validate_context_def(
@@ -154,13 +179,21 @@ class AuthzeeAsync:
         """Validate a context definition.
         """
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+        
+        return core.validate_context_def(context_def=context_def)
 
 
     async def get_context_defs_page(
         self, 
+        page_ref: str | None,
         authzee_config: AuthzeeConfig | None = None
     ) -> ContextDefsPage:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.get_context_defs_page(
+            page_ref=page_ref,
+            authzee_config=authzee_config
+        )
 
 
     async def get_context_def(
@@ -372,6 +405,11 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> AuthorizeResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._compute.authorize(
+            request=request,
+            authzee_config=authzee_config
+        )
 
 
     async def batch_audit_page(

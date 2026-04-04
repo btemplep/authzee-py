@@ -98,18 +98,6 @@ class ResultErrors:
     evaluation: List[GenericError] = field(default_factory=list)
     sdk: List[SDKError] = field(default_factory=list)
 
-# ResultErrors = Dict[
-#     Literal[
-#         "definition",
-#         "grant",
-#         "request",
-#         "evaluation"
-#     ],
-#     List[GenericError]
-# ] | Dict[
-#     Literal["sdk"],
-#     List[SDKError]
-# ]
 
 @dataclass(kw_only=True)
 class GenericResult:
@@ -142,7 +130,6 @@ class ContextDefsPage:
 class IdentityDef:
     identity_type: str
     schema: dict
-    new_thing: str | None = None
 
 
 @dataclass(kw_only=True)

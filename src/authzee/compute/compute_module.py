@@ -18,7 +18,8 @@ class ComputeModule:
         self,
         execute: Callable[[str, Any], Any],
         storage_type: Type[StorageModule],
-        storage_kwargs: Dict[str, Any]
+        storage_kwargs: Dict[str, Any],
+        authzee_config: AuthzeeConfig
     ) -> GenericResult:
         """Start up compute module.
 
@@ -34,7 +35,7 @@ class ComputeModule:
         self.has_parallel_paging = False
 
 
-    def shutdown(self) -> GenericResult:
+    def shutdown(self, authzee_config: AuthzeeConfig) -> GenericResult:
         """Shutdown Compute module.
 
         - clean up runtime resources
@@ -42,7 +43,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def construct(self) -> GenericResult:
+    def construct(self, authzee_config: AuthzeeConfig) -> GenericResult:
         """Construct backend resources for compute.
 
         - one time setup
@@ -50,7 +51,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def destroy(self) -> GenericResult:
+    def destroy(self, authzee_config: AuthzeeConfig) -> GenericResult:
         """Tear down backend resources.
 
         - destructive - may lose all long lasting compute resources
@@ -61,7 +62,7 @@ class ComputeModule:
     def validate_request(
         self,
         request: AuthzeeRequest,
-        page_size: int
+        authzee_config: AuthzeeConfig
     ) -> GenericResult:
         """Validate a request.
         """
@@ -71,7 +72,7 @@ class ComputeModule:
     def validate_batch_request(
         self,
         batch_request: AuthzeeBatchRequest,
-        page_size: int
+        authzee_config: AuthzeeConfig
     ) -> GenericResult:
         """Validate a batch request.
         """
@@ -82,7 +83,7 @@ class ComputeModule:
         self,
         request: AuthzeeRequest,
         page_ref: str | None,
-        page_size: int
+        authzee_config: AuthzeeConfig
     ) -> AuditResultPage:
         """Run the Audit Operation for a page of results.
 
@@ -94,9 +95,7 @@ class ComputeModule:
     def authorize(
         self,
         request: AuthzeeRequest,
-        page_size: int,
-        parallel_pagination: bool,
-        refs_page_size: int
+        authzee_config: AuthzeeConfig
     ) -> AuthorizeResult:
         """Run the Authorize Operation.
         """
@@ -107,7 +106,7 @@ class ComputeModule:
         self,
         batch_request: AuthzeeBatchRequest,
         page_ref: str | None,
-        page_size: int
+        authzee_config: AuthzeeConfig
     ) -> BatchAuditResultPage:
         """Run the Batch Audit Operation for a page of results.
 
@@ -119,9 +118,7 @@ class ComputeModule:
     def batch_authorize(
         self,
         batch_request: AuthzeeBatchRequest,
-        page_size: int,
-        parallel_pagination: bool,
-        refs_page_size: int
+        authzee_config: AuthzeeConfig
     ) -> BatchAuthorizeResult:
         """Run the Batch Authorize Operation.
         """

@@ -1,5 +1,24 @@
 # TODO
 
+- [ ] fill out authzeeasync
+    - How to handle errors
+
+- [ ] add has_failed to the authorizeresult
+
+- [ ] internal json serializer just take string?
+
+- [ ] dataclasses vs dicts
+    - It is easier to read dicts to me
+    - dataclasses are easier to program
+    - docs are the dicts make it really easy though
+    - except either and return dataclasses? 
+    - I think using the dictionaries internally is the lowest level, but can be turned into anything
+        - Creating a DC or pydantic wrapper is trivial
+        - Could be included in the package for dataclasses and a simple pydantic wrapper authzee-pydantic
+
+
+- [ ] Def schemas need to check for base object
+
 - [ ] errors for putting and deleted and getting defs/grants
     - put and delete should not care if it exists either way
     - get should return error since it expects to be there??
@@ -7,13 +26,16 @@
 - [ ] define where authzee class and modules do the validation
     - Requests are handled by compute, 
     - defs are done at the authzee level
+    - Need to document this in the SDK docs or just this packages at least
+
 - [ ] switch reference to use jsonschema-rs and switch in the spec too
 
 - [ ] paginators 
     - def want something in the backend
         - Done
     - Should these be at the Authzee level? 
-        Authzee.paginate_grants()
+        - Authzee.paginate_grants()
+        - I think this would be nice to have, just return an async page generator
 
 - [ ] core.py functionality
     - validate the request
@@ -28,6 +50,8 @@
 - [ ] for iterators may need to manage own event loop instead of just using asyncio.run
 
 - [ ] jmespath rust bindings for python
+
+- [ ] thing about caching for defs
 
 - [x] Authzee Config break out page size of each type of def into it's own size
 
