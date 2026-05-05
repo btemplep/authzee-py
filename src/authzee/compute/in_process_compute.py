@@ -14,6 +14,9 @@ from authzee.storage.storage_module import StorageModule
 
 class InProcessCompute(ComputeModule):
 
+    def __init__(self, storage_kwargs: Dict[str, Any] | None = None):
+        super().__init__(storage_kwargs=storage_kwargs)
+
 
     async def start(
         self,

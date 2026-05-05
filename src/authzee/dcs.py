@@ -33,12 +33,34 @@ __all__ = [
     "BatchAuthorizeResult",
 ]
 import datetime
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Literal
 from uuid import UUID, uuid4
 
 
 AnyJSON = bool | str | int | float | None | list | dict
+
+
+def _asjsondict_inner(d: Any) -> dict:
+    if type(d) is datetime.datetime:
+        return d.isoformat()
+    elif type(d) is UUID:
+        return str(d)
+    elif type(d) is dict:
+        new_d = {}
+        for k in d:
+            new_d[k] = _asjsondict_inner(d[k])
+        
+        return new_d
+    elif type(d) is list:
+        return [_asjsondict_inner(i) for i in d]
+    else:
+        return d
+
+
+
+def asjsondict(dc: object) -> dict:
+    return _asjsondict_inner(asdict(dc))
 
 
 @dataclass(kw_only=True)
@@ -209,8 +231,10 @@ class PageRefsPage:
     has_failed: bool
     errors: ResultErrors = field(default_factory=ResultErrors)
 
+
 def utc_now() -> datetime.datetime:
     return datetime.datetime.now(tz=datetime.timezone.utc)
+
 
 @dataclass(kw_only=True)
 class StorageLatch:

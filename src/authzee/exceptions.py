@@ -11,8 +11,7 @@ __all__ = [
     "RequestError",
     "AuthzeeSDKError",
     "LocalityIncompatibilityError",
-    "GrantNotFoundError",
-    "LatchNotFoundError",
+    "ResourceNotFoundError",
     "StartError",
     "NotImplementedError",
     "ParallelPaginationNotSupported",
@@ -40,14 +39,15 @@ class AuthzeeSpecError(AuthzeeError):
     
     def __init__(
         self, 
-        message: str, 
         is_critical: bool,
+        message: str, 
         result: GenericResult
     ):
         super().__init__(message)
         self.is_critical = is_critical
+        self.message = message
         self.result = result
-      
+
 
 class DefinitionError(AuthzeeSpecError):
     """Error when validating the identity and resource definitions."""

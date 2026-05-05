@@ -4,14 +4,16 @@ import datetime
 from typing import List
 from uuid import UUID, uuid4
 
+from authzee.storage.storage_module import StorageModule
 from authzee.dcs import *
 from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
 
 
-class InProcessStorage:
+class InProcessStorage(StorageModule):
 
     def __init__(self, storage_ptr: dict): 
+        super().__init__()
         self._storage_ptr = storage_ptr
 
 

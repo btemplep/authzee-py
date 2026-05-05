@@ -5,6 +5,7 @@
         "aiosqlite",
         "argnames",
         "argvalues",
+        "asjsondict",
         "asyncio",
         "authzee",
         "authzs",

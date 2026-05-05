@@ -2,15 +2,17 @@
 import asyncio
 import datetime
 from typing import Any, AsyncIterable, Callable, Coroutine, Dict, List, Type
-from uuid import UUID, uuid4
+from uuid import UUID
 
-from authzee.dcs import *
+from authzee.types import *
+from authzee.exceptions import *
 from authzee import core
 from authzee.compute.compute_module import ComputeModule
 from authzee.storage.storage_module import StorageModule
 
 from authzee import exceptions
 from authzee.module_locality import locality_compatibility
+
 
 
 class AuthzeeAsync:
@@ -53,11 +55,37 @@ class AuthzeeAsync:
         self.authzee_config = authzee_config
         self._compute: ComputeModule = None
         self._storage: StorageModule = None
+        self._exception_map = {
+            "definition": DefinitionError,
+            
+        }
+    
+
+    async def _raise_result(
+        self,
+        coro: Coroutine[Any, Any, GenericResult],
+        authzee_config: AuthzeeConfig
+    ) -> Any:
+        result = await coro
+        if authzee_config.raise_crits is True and result.has_failed is True:
+            for et in result.errors:
+                for err in result.errors[et]:
+                    err: GenericError
+                    if err.is_critical:
+                        if et == "sdk": 
+                            err: SDKError
+                            raise self._exception_map[err.error_type](
+                                is_critical=True,
+                                message=err.message,
+                                result=result
+                            )
+        
+        return result
     
 
     async def _get_results(
         self,
-        coros: List[Coroutine[Any, Any, GenericResult]],
+        coros: List[Coroutine],
         error_messages: List[str | None],
         authzee_config: AuthzeeConfig
     ) -> GenericResult:
@@ -203,12 +231,19 @@ class AuthzeeAsync:
     ) -> ContextDefResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return await self._storage.get_context_def(
+            context_type=context_type,
+            authzee_config=authzee_config
+        )
+
 
     async def list_context_defs(
         self,
         authzee_config: AuthzeeConfig | None = None
     ) -> AsyncIterable[ContextDef]:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage
 
 
     async def put_context_def(
@@ -218,6 +253,11 @@ class AuthzeeAsync:
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return await self._storage.put_context_def(
+            context_def=context_def,
+            authzee_config=authzee_config
+        )
+
 
     async def delete_context_def(
         self, 
@@ -225,6 +265,11 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.delete_context_def(
+            context_type=context_type,
+            authzee_config=authzee_config
+        )
 
 
     async def validate_identity_def(
@@ -236,12 +281,20 @@ class AuthzeeAsync:
         """
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return core.validate_identity_def(identity_def)
+
 
     async def get_identity_defs_page(
         self, 
+        page_ref: str | None,
         authzee_config: AuthzeeConfig | None = None
     ) -> IdentityDefsPage:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.get_identity_defs_page(
+            page_ref=page_ref,
+            authzee_config=authzee_config
+        )
 
 
     async def get_identity_def(
@@ -251,12 +304,19 @@ class AuthzeeAsync:
     ) -> IdentityDefResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return await self._storage.get_identity_def(
+            identity_type=identity_type,
+            authzee_config=authzee_config
+        )
+
 
     async def list_identity_defs(
         self, 
         authzee_config: AuthzeeConfig | None = None
     ) -> AsyncIterable[IdentityDef]:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return
 
 
     async def put_identity_def(
@@ -266,6 +326,11 @@ class AuthzeeAsync:
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return await self._storage.put_identity_def(
+            identity_def=identity_def,
+            authzee_config=authzee_config
+        )
+
 
     async def delete_identity_def(
         self, 
@@ -273,6 +338,11 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.delete_identity_def(
+            identity_type=identity_type,
+            authzee_config=authzee_config
+        )
 
 
     async def validate_resource_def(
@@ -284,12 +354,20 @@ class AuthzeeAsync:
         """
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return core.validate_resource_def(resource_def)
+
 
     async def get_resource_defs_page(
         self, 
+        page_ref: str | None,
         authzee_config: AuthzeeConfig | None = None
     ) -> ResourceDefsPage:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.get_resource_defs_page(
+            page_ref=page_ref,
+            authzee_config=authzee_config
+        )
 
 
     async def get_resource_def(
@@ -299,12 +377,19 @@ class AuthzeeAsync:
     ) -> ResourceDefResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return await self._storage.get_resource_def(
+            resource_type=resource_type,
+            authzee_config=authzee_config
+        )
+
 
     async def list_resource_defs(
         self, 
         authzee_config: AuthzeeConfig | None = None
     ) -> AsyncIterable[ResourceDef]:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage
     
     
     async def put_resource_def(
@@ -314,6 +399,11 @@ class AuthzeeAsync:
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return await self._storage.put_resource_def(
+            resource_def=resource_def,
+            authzee_config=authzee_config
+        )
+
 
     async def delete_resource_def(
         self, 
@@ -321,6 +411,11 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.delete_resource_def(
+            resource_type=resource_type,
+            authzee_config=authzee_config
+        )
 
 
     async def enact(
@@ -330,14 +425,25 @@ class AuthzeeAsync:
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return await self._storage.enact(
+            grant=grant,
+            authzee_config=authzee_config
+        )
+
         
     async def repeal(
         self, 
         grant_uuid: UUID, 
-        run_scan: bool,
+        purge: bool,
         authzee_config: AuthzeeConfig | None = None
     ) -> GenericResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.repeal(
+            grant_uuid=grant_uuid,
+            purge=purge,
+            authzee_config=authzee_config
+        )
 
 
     async def get_grant(
@@ -346,6 +452,11 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> GrantResult:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.get_grant(
+            grant_uuid=grant_uuid,
+            authzee_config=authzee_config
+        )
 
 
     async def get_grants_page(
@@ -356,6 +467,13 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> GrantsPage:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.get_grants_page(
+            effect=effect,
+            action=action,
+            page_ref=page_ref,
+            authzee_config=authzee_config
+        )
     
 
     async def list_grants(
@@ -367,6 +485,8 @@ class AuthzeeAsync:
     ) -> AsyncIterable[Grant]:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
 
+        return await self._storage
+
 
     async def get_grant_refs_page(
         self,
@@ -376,6 +496,13 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> PageRefsPage:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage.get_grant_refs_page(
+            effect=effect,
+            action=action,
+            page_ref=page_ref,
+            authzee_config=authzee_config
+        )
 
 
     async def cleanup_latches(
@@ -388,6 +515,8 @@ class AuthzeeAsync:
         - operations should clean up their own latches, but in case of a failure this can be used to clean up zombie latches.
         """
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._storage
         
 
     async def audit_page(
@@ -397,6 +526,12 @@ class AuthzeeAsync:
         authzee_config: AuthzeeConfig | None = None
     ) -> AuditResultPage:
         authzee_config = authzee_config if authzee_config is not None else self.authzee_config
+
+        return await self._compute.audit_page(
+            request=request,
+            page_ref=page_ref,
+            authzee_config=authzee_config
+        )
 
 
     async def authorize(

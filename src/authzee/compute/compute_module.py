@@ -10,8 +10,11 @@ from authzee.storage.storage_module import StorageModule
 class ComputeModule:
 
 
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        storage_kwargs: Dict[str, Any] | None = None
+    ):
+        self._storage_kwargs = storage_kwargs
 
 
     def start(
@@ -30,7 +33,7 @@ class ComputeModule:
         """
         self._execute = execute
         self._storage_type = storage_type
-        self._storage_kwargs = storage_kwargs
+        self._storage_kwargs = self._storage_kwargs if self._storage_kwargs is not None else storage_kwargs
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = False
 

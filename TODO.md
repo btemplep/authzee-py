@@ -1,32 +1,60 @@
 # TODO
 
+
+- [ ] Higher level how do I want authzee classes to be used? 
+    - At what point do you just scale out the Authzee processes vs having a single instance with multiple workers?
+    - For storage it can very easily have multiple requests per process
+    - storage types
+        - local
+        - sql
+        - S3 with lock
+        - redis
+        - later
+            - mongodb
+    - For compute we really just need the ability to
+        - push out a request per a process
+        - fan out a request to multiple workers for parallel pagination
+        - send out request to async workers that can process them 
+    
+
+- [ ] best way to handle configuration options at different levels
+    - The authzee level sets the defaults at the authzee level for direct storage access
+    - Set similar settings at the compute level for how to handle storage settings for the compute module
+    - really these should just be different configs, right? 
+        - Authzee configs
+            - raise_crits: NotRequired[bool]
+        - compute
+            - context_defs_page_size: NotRequired[int]
+            - identity_defs_page_size: NotRequired[int]
+            - resource_defs_page_size: NotRequired[int]
+            - grants_page_size: NotRequired[int]
+            - grant_refs_page_size: NotRequired[int]
+            - authorize_parallel_paging: NotRequired[bool]
+            - batch_authorize_parallel_paging: NotRequired[bool]
+        - storage
+            - context_defs_page_size: NotRequired[int]
+            - identity_defs_page_size: NotRequired[int]
+            - resource_defs_page_size: NotRequired[int]
+            - grants_page_size: NotRequired[int]
+            - grant_refs_page_size: NotRequired[int]
+    - but they all need to be passed at the Authzee level so it can manage how to pass them down
+        - AuthzeeConfig
+        - ComputeConfig
+        - StorageConfig
+    - Will just need to update the methods for the different config types
+    - But this doesn't make sense if I also want to override and authzee config like raise_crits
+
+- [ ] update authzee to use dicts instead of DC
+
 - [ ] fill out authzeeasync
     - How to handle errors
 
-- [ ] add has_failed to the authorizeresult
-
-- [ ] internal json serializer just take string?
-
-- [ ] dataclasses vs dicts
-    - It is easier to read dicts to me
-    - dataclasses are easier to program
-    - docs are the dicts make it really easy though
-    - except either and return dataclasses? 
-    - I think using the dictionaries internally is the lowest level, but can be turned into anything
-        - Creating a DC or pydantic wrapper is trivial
-        - Could be included in the package for dataclasses and a simple pydantic wrapper authzee-pydantic
-
-
-- [ ] Def schemas need to check for base object
-
-- [ ] errors for putting and deleted and getting defs/grants
-    - put and delete should not care if it exists either way
-    - get should return error since it expects to be there??
 
 - [ ] define where authzee class and modules do the validation
     - Requests are handled by compute, 
     - defs are done at the authzee level
     - Need to document this in the SDK docs or just this packages at least
+    
 
 - [ ] switch reference to use jsonschema-rs and switch in the spec too
 
@@ -36,11 +64,9 @@
     - Should these be at the Authzee level? 
         - Authzee.paginate_grants()
         - I think this would be nice to have, just return an async page generator
+    - **Solution** - Should be a method for each list_grants, list_identity_defs etc
+        - Also expose a general paginator if they want to go over each page for some reason
 
-- [ ] core.py functionality
-    - validate the request
-    - run audit on a page
-    - run authorize
 
 - [ ] make a minimum product with the SDK. 
 
@@ -49,9 +75,135 @@
 
 - [ ] for iterators may need to manage own event loop instead of just using asyncio.run
 
-- [ ] jmespath rust bindings for python
+- [ ] update examples to use balloons. 
 
-- [ ] thing about caching for defs
+- [x] errors for putting and deleted and getting defs/grants
+    - put and delete should not care if it exists either way
+    - get should return error since it expects to be there??
+
+- [x] dataclasses vs dicts
+    - dicts
+        - pros
+            - It is easier to read dicts to me
+            - dicts are easier to read in docs
+            - I think using the dictionaries internally is the lowest level, but can be turned into anything
+            - Creating a DC or pydantic wrapper is trivial
+        - negative
+            - need to look up docs or docstrings for fields
+    - dataclasses
+        - pros
+            - dataclasses are easier to program
+            - You can also very easily transform dataclasses to dicts 
+            - creating a pydantic wrapper is trivial
+        - negatives
+            - need to import the models you want
+    - **solution** - This should be dicts - it's the easiest to build off of and universal 
+        - makes more sense in the basic structure of everything
+        - Easy to build off of, no limitations of data classes like excluding fields
+        - New file with types and docstrings with examples.
+            - Use simple types that are directly convertable to json
+                - UUID -> str
+                - datatime -> iso format etc but most things will use datatimes right???
+            - Should used typed dict to since it's easy to convert from DCs
+        - Go back and convert example resources to balloon
+
+- [x] error types shouldn't need to be present in errors object?
+    - This should maybe be a list of errors???
+    - list  
+        - pros
+            - if they are all uniform then a list makes this so much cleaner
+        - cons
+            - if there are a lot of errors you need to sort through, but this is not that hard.
+        - neutral
+            - If they all must have the same base type, then this makes it fairly easy to filter by type, is_critical, message
+    - map of objects
+        - pros
+            - Easier to discern by type or filter by type
+            - Easier to human to find the type
+        - cons
+            - in order to grow you need to add even more or like we did with SDK need to include another "type" field
+            - With JSON these can be not required, but with object it makes the mapping strange
+            - I'd rather always return all fields, but that adds a lot of overhead for audits and batch audits etc
+            - harder to filter with a machine, especially if more errors are added, unless you do the SDK thing
+    - **solution** going to do the map of objects since it makes sense for the index
+        - Yeah it may mess up object mapping but it wouldn't be clear on adding types anyway
+        - Already like this
+
+
+- [x] authorize errors should only be critical but just return them as errors field
+    - critical errors
+        - pros
+            - clear that the errors are critical
+        - cons
+            - field is different from errors and not the same when literally everything else is "error"
+    - errors
+        - pros
+            - same as other results
+        - cons
+            - is only critical and that is not obvious from the name
+    - **solution** - mark as critical errors since it just makes sense
+
+- [x] Overarching data needs to either be map of lists for types, or single list with type in the dict
+    - identities
+    - errors
+    - single list
+        - pros
+            - no fields that are not required
+        - cons
+            - typing is harder because the type is in the item and needs to be specified for each
+                - Could maybe correct this by just not including it?
+            - list of mixed types for SDKs
+    - map of lists
+        - pros
+            - easy to find type
+            - easy to find if type exists and is empty
+            - lists of same types for SDKs
+            - Maps better for direct abstractions like dataclasses or pydantic
+        - cons
+            - awkward with models.  
+                - Like do you enumerate all but set to none? or set to empty list? None if nothing exists 
+                - what if the list grows quite large for identities
+                - Can't create a model for this essentially for identities
+    - How to handle in a dataclass when a type is not present?
+        - empty list?
+        - None
+        - **In general I like to map, it's not there to None/null**
+            - Just need to be able to take or exclude values
+            - I think for now just leave it as an empty list as the possibility, don't include it or empty list  
+
+- [x] Def schemas need to check for base object
+
+- [x] add has_failed to the authorizeresult
+
+- [x] core.py functionality
+    - validate the request
+    - run audit on a page
+    - run authorize
+
+- [x] internal function to convert dataclass to json dict - asjsondict()
+
+- [x] thing about caching for defs
+    - This can just be set at the storage level
+    - Can now set the storage kwargs different for authzee and compute to control this
+
+
+- [x] handle differences in configuration in storage between when when used from authzee and compute 
+    - Things like caching 
+        - Caching for compute may be different from caching in Authzee
+    - Storage kwargs
+        - Separate compute set at Authzee level
+            - `storage_kwargs_compute dict | None = None`
+            - ORRR  `authzee_storage_kwargs |` and `compute_storage_kwargs`
+        - Pass separate set to compute kwargs - need to specify for each compute? 
+            - not all compute may do things like caching but it would be needed
+            - Separate configs, or separate this out 
+    - Different authzee config for the authzee and for the compute side of things
+        - must be set at authzee level since this is sent to compute
+    - **SOLUTION** 
+        - Authzee configs 
+            - leave as is
+        - Just need to pass the storage type and kwargs to the compute as well
+            - pass to the authzee and to the compute
 
 - [x] Authzee Config break out page size of each type of def into it's own size
 
