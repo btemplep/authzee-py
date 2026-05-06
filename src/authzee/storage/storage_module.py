@@ -3,7 +3,7 @@
 import datetime
 from uuid import UUID
 
-from authzee.dcs import *
+from authzee.types import *
 from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
 
@@ -14,7 +14,7 @@ class StorageModule:
         pass
 
 
-    async def start(self, authzee_config: AuthzeeConfig) -> GenericResult:
+    async def start(self, config: AuthzeeConfig) -> GenericResult:
         """Start up storage module.
 
         - run before use
@@ -28,7 +28,7 @@ class StorageModule:
         return GenericResult(has_failed=False)
 
 
-    async def shutdown(self, authzee_config: AuthzeeConfig) -> GenericResult:
+    async def shutdown(self, config: AuthzeeConfig) -> GenericResult:
         """Shutdown storage module.
 
         - clean up runtime resources
@@ -36,7 +36,7 @@ class StorageModule:
         raise NotImplementedError()
 
 
-    async def construct(self, authzee_config: AuthzeeConfig) -> GenericResult:
+    async def construct(self, config: AuthzeeConfig) -> GenericResult:
         """Construct backend resources for storage.
 
         - one time setup
@@ -44,7 +44,7 @@ class StorageModule:
         raise NotImplementedError()
 
 
-    async def destroy(self, authzee_config: AuthzeeConfig) -> GenericResult:
+    async def destroy(self, config: AuthzeeConfig) -> GenericResult:
         """Tear down backend resources.
 
         - destructive - may lose all long lasting storage resources
@@ -55,7 +55,7 @@ class StorageModule:
     async def get_context_defs_page(
         self,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> ContextDefsPage:
         """Get a page of context definitions.
 
@@ -67,7 +67,7 @@ class StorageModule:
     async def get_context_def(
         self, 
         context_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> ContextDefResult:
         """Get a context definition by type.
         """
@@ -77,7 +77,7 @@ class StorageModule:
     async def put_context_def(
         self, 
         context_def: ContextDef,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Add a new Context Definition or update an existing one.
         """
@@ -87,7 +87,7 @@ class StorageModule:
     async def delete_context_def(
         self, 
         context_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a context definition by type.
         """
@@ -97,7 +97,7 @@ class StorageModule:
     async def get_identity_defs_page(
         self,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> IdentityDefsPage:
         """Get a page of identity definitions.
 
@@ -109,7 +109,7 @@ class StorageModule:
     async def get_identity_def(
         self, 
         identity_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> IdentityDefResult:
         """Get an identity definition by type.
         """
@@ -119,7 +119,7 @@ class StorageModule:
     async def put_identity_def(
         self, 
         identity_def: IdentityDef,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Add a new Identity Definition or update an existing one.
         """
@@ -129,7 +129,7 @@ class StorageModule:
     async def delete_identity_def(
         self, 
         identity_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete an identity definition by type.
         """
@@ -139,7 +139,7 @@ class StorageModule:
     async def get_resource_defs_page(
         self,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> ResourceDefsPage:
         """Get a page of resource definitions.
 
@@ -151,7 +151,7 @@ class StorageModule:
     async def get_resource_def(
         self, 
         resource_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> ResourceDefResult:
         """Get a resource definition by type.
         """
@@ -161,7 +161,7 @@ class StorageModule:
     async def put_resource_def(
         self, 
         resource_def: ResourceDef,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Add a new Resource Definition or update an existing one.
         """
@@ -171,7 +171,7 @@ class StorageModule:
     async def delete_resource_def(
         self, 
         resource_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a resource definition by type.
         """
@@ -181,7 +181,7 @@ class StorageModule:
     async def enact(
         self, 
         grant: Grant,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Add a new grant.
         """
@@ -192,7 +192,7 @@ class StorageModule:
         self, 
         grant_uuid: UUID, 
         purge: bool,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a grant.
         """
@@ -202,7 +202,7 @@ class StorageModule:
     async def get_grant(
         self, 
         grant_uuid: UUID,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GrantResult:
         """Get a grant by UUID.
         """
@@ -214,7 +214,7 @@ class StorageModule:
         effect: str | None,
         action: str | None,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GrantsPage:
         """Retrieve a page of grants.
 
@@ -228,7 +228,7 @@ class StorageModule:
         effect: str | None,
         action: str | None,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> PageRefsPage:
         """Retrieve a page of grant page references for parallel pagination.
 
@@ -240,7 +240,7 @@ class StorageModule:
         raise NotImplementedError()
 
 
-    async def create_latch(self, authzee_config: AuthzeeConfig) -> StorageLatchResult:
+    async def create_latch(self, config: AuthzeeConfig) -> StorageLatchResult:
         """Create a new [storage latch](#storage-latches).
         """
         raise NotImplementedError()
@@ -249,7 +249,7 @@ class StorageModule:
     async def get_latch(
         self, 
         storage_latch_uuid: UUID,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> StorageLatchResult:
         """Get a [storage latch](#storage-latches) by UUID.
         """
@@ -259,7 +259,7 @@ class StorageModule:
     async def set_latch(
         self, 
         storage_latch_uuid: UUID,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> StorageLatchResult:
         """Set a [storage latch](#storage-latches) by UUID.
         """
@@ -269,7 +269,7 @@ class StorageModule:
     async def delete_latch(
         self, 
         storage_latch_uuid: UUID,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a [storage latch](#storage-latches) by UUID.
         """
@@ -279,7 +279,7 @@ class StorageModule:
     async def cleanup_latches(
         self, 
         before: datetime.datetime,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete all latches before the specified datetime.
 

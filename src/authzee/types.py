@@ -44,8 +44,13 @@ class AuthzeeConfig(TypedDict):
     ```
     Authzee configuration Type
 
-    Pass at the class instance level to set defaults.
-    Pass at the method level to override instance defaults.
+    The configuration can be set at several different levels where only the provided values override the previous levels values. 
+
+    The order of least to most precedence is:
+    - Default config values
+    - Authzee class instances config
+    - Authzee class instance compute config, for compute operations
+    - Function/Method call config
 
     Examples
     --------

@@ -5,8 +5,7 @@ from typing import List
 from uuid import UUID, uuid4
 
 from authzee.storage.storage_module import StorageModule
-from authzee.dcs import *
-from authzee.exceptions import NotImplementedError
+from authzee.types import *
 from authzee.module_locality import ModuleLocality
 
 
@@ -17,7 +16,7 @@ class InProcessStorage(StorageModule):
         self._storage_ptr = storage_ptr
 
 
-    async def start(self, authzee_config: AuthzeeConfig) -> GenericResult:
+    async def start(self, config: AuthzeeConfig) -> GenericResult:
         """Start up storage module.
 
         - run before use
@@ -33,10 +32,13 @@ class InProcessStorage(StorageModule):
         self._storage_ptr['grants_lut'] = {}
         self._storage_ptr['latches_lut'] = {}
    
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
-    async def shutdown(self, authzee_config: AuthzeeConfig) -> GenericResult:
+    async def shutdown(self, config: AuthzeeConfig) -> GenericResult:
         """Shutdown storage module.
 
         - clean up runtime resources
@@ -44,7 +46,7 @@ class InProcessStorage(StorageModule):
         pass
 
 
-    async def construct(self, authzee_config: AuthzeeConfig) -> GenericResult:
+    async def construct(self, config: AuthzeeConfig) -> GenericResult:
         """Construct backend resources for storage.
 
         - one time setup
@@ -52,7 +54,7 @@ class InProcessStorage(StorageModule):
         pass
 
 
-    async def destroy(self, authzee_config: AuthzeeConfig) -> GenericResult:
+    async def destroy(self, config: AuthzeeConfig) -> GenericResult:
         """Tear down backend resources.
 
         - destructive - may lose all long lasting storage resources
@@ -63,7 +65,7 @@ class InProcessStorage(StorageModule):
     async def get_context_defs_page(
         self,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> ContextDefsPage:
         """Get a page of context definitions.
 
@@ -75,69 +77,82 @@ class InProcessStorage(StorageModule):
             start_index = int(page_ref)
 
         context_defs = list(self._storage_ptr['context_defs_lut'].values())
-        end_index = start_index + authzee_config.context_defs_page_size  
+        end_index = start_index + config['context_defs_page_size']  
         
-        return ContextDefsPage(
-            context_defs=context_defs[start_index:end_index],
-            next_page_ref=str(end_index) if end_index < len(context_defs) else None,
-            has_failed=False
-        )
+        return {
+            "context_defs": context_defs[start_index:end_index],
+            "next_page_ref": str(end_index) if end_index < len(context_defs) else None,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def get_context_def(
         self, 
         context_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> ContextDefResult:
         """Get a context definition by type.
         """
-        result = ContextDefResult(
-            context_def=self._storage_ptr['context_defs_lut'].get(context_type, None),
-            has_failed=False
-        )
-        if result.context_def is None:
-            result.has_failed = True
-            result.errors.sdk = [
-                SDKError(
-                    error_type="ResourceNotFoundError",
-                    is_critical=True,
-                    message=f"Context type '{context_type}' was not found."
-                )
-            ]
+        context_def = self._storage_ptr['context_defs_lut'].get(context_type, None)
+        if context_def is None:
+            return {
+                "context_def": None,
+                "has_failed": True,
+                "errors": {
+                    "sdk": [
+                        {
+                            "error_type": "ResourceNotFoundError",
+                            "is_critical": True,
+                            "message": f"Context type '{context_type}' was not found."
+                        }
+                    ]
+                }
+            }
         
-        return result
+        return {
+            "context_def": context_def,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def put_context_def(
         self, 
         context_def: ContextDef,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Add a new Context Definition or update an existing one.
 
         Validated by authzee class
         """
-        self._storage_ptr['context_defs_lut'][context_def.context_type] = context_def
+        self._storage_ptr['context_defs_lut'][context_def['context_type']] = context_def
 
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
         
 
     async def delete_context_def(
         self, 
         context_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a context definition by type.
         """
         self._storage_ptr['context_defs_lut'].pop(context_type, None)
         
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def get_identity_defs_page(
         self,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> IdentityDefsPage:
         """Get a page of identity definitions.
 
@@ -149,67 +164,80 @@ class InProcessStorage(StorageModule):
             start_index = int(page_ref)
 
         identity_defs = list(self._storage_ptr['identity_defs_lut'].values())
-        end_index = start_index + authzee_config.identity_defs_page_size       
+        end_index = start_index + config['identity_defs_page_size']       
         
-        return IdentityDefsPage(
-            identity_defs=identity_defs[start_index:end_index],
-            next_page_ref=str(end_index) if end_index < len(identity_defs) else None,
-            has_failed=False
-        )
+        return {
+            "identity_defs": identity_defs[start_index:end_index],
+            "next_page_ref": str(end_index) if end_index < len(identity_defs) else None,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def get_identity_def(
         self, 
         identity_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> IdentityDefResult:
         """Get an identity definition by type.
         """
-        result = IdentityDefResult(
-            identity_def=self._storage_ptr['identity_defs_lut'].get(identity_type, None),
-            has_failed=False
-        )
-        if result.identity_def is None:
-            result.has_failed = True
-            result.errors.sdk = [
-                SDKError(
-                    error_type="ResourceNotFoundError",
-                    is_critical=True,
-                    message=f"identity type '{identity_type}' was not found."
-                )
-            ]
+        identity_def = self._storage_ptr['identity_defs_lut'].get(identity_type, None)
+        if identity_def is None:
+            return {
+                "identity_def": None,
+                "has_failed": True,
+                "errors": {
+                    "sdk": [
+                        {
+                            "error_type": "ResourceNotFoundError",
+                            "is_critical": True,
+                            "message": f"identity type '{identity_type}' was not found."
+                        }
+                    ]
+                }
+            }
         
-        return result
+        return {
+            "identity_def": identity_def,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def put_identity_def(
         self, 
         identity_def: IdentityDef,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Add a new Identity Definition or update an existing one.
         """
-        self._storage_ptr['identity_defs_lut'][identity_def.identity_type] = identity_def
+        self._storage_ptr['identity_defs_lut'][identity_def['identity_type']] = identity_def
 
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def delete_identity_def(
         self, 
         identity_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete an identity definition by type.
         """
         self._storage_ptr['identity_defs_lut'].pop(identity_type, None)
         
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def get_resource_defs_page(
         self,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> ResourceDefsPage:
         """Get a page of resource definitions.
 
@@ -221,110 +249,135 @@ class InProcessStorage(StorageModule):
             start_index = int(page_ref)
 
         resource_defs = list(self._storage_ptr['resource_defs_lut'].values())
-        end_index = start_index + authzee_config.resource_defs_page_size 
+        end_index = start_index + config['resource_defs_page_size'] 
         
-        return ResourceDefsPage(
-            resource_defs=resource_defs[start_index:end_index],
-            next_page_ref=str(end_index) if end_index < len(resource_defs) else None,
-            has_failed=False
-        )
+        return {
+            "resource_defs": resource_defs[start_index:end_index],
+            "next_page_ref": str(end_index) if end_index < len(resource_defs) else None,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def get_resource_def(
         self, 
         resource_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> ResourceDefResult:
         """Get a resource definition by type.
         """
-        result = ResourceDefResult(
-            resource_def=self._storage_ptr['resource_defs_lut'].get(resource_type, None),
-            has_failed=False
-        )
-        if result.resource_def is None:
-            result.has_failed = True
-            result.errors.sdk = [
-                SDKError(
-                    error_type="ResourceNotFoundError",
-                    is_critical=True,
-                    message=f"resource type '{resource_type}' was not found."
-                )
-            ]
+        resource_def = self._storage_ptr['resource_defs_lut'].get(resource_type, None)
+        if resource_def is None:
+            return {
+                "resource_def": None,
+                "has_failed": True,
+                "errors": {
+                    "sdk": [
+                        {
+                            "error_type": "ResourceNotFoundError",
+                            "is_critical": True,
+                            "message": f"resource type '{resource_type}' was not found."
+                        }
+                    ]
+                }
+            }
         
-        return result
+        return {
+            "resource_def": resource_def,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def put_resource_def(
         self, 
         resource_def: ResourceDef,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Add a new Resource Definition or update an existing one.
         """
-        self._storage_ptr['resource_defs_lut'][resource_def.resource_type] = resource_def
+        self._storage_ptr['resource_defs_lut'][resource_def['resource_type']] = resource_def
 
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def delete_resource_def(
         self, 
         resource_type: str,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a resource definition by type.
         """
         self._storage_ptr['resource_defs_lut'].pop(resource_type, None)
         
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def enact(
         self, 
         grant: Grant,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Add a new grant.
         """
-        self._storage_ptr['grants_lut'][grant.grant_uuid] = grant
+        self._storage_ptr['grants_lut'][grant['grant_uuid']] = grant
 
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def repeal(
         self, 
         grant_uuid: UUID, 
         purge: bool,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a grant.
         """
         self._storage_ptr['grants_lut'].pop(grant_uuid, None)
 
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def get_grant(
         self, 
         grant_uuid: UUID,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GrantResult:
         """Get a grant by UUID.
         """
-        result = GrantResult(
-            grant=self._storage_ptr['grants_lut'].pop(grant_uuid, None),
-            has_failed=False
-        ) 
-        if result.grant is None:
-            result.has_failed = True
-            result.errors.sdk = [
-                SDKError(
-                    error_type="ResourceNotFoundError",
-                    is_critical=True,
-                    message=f"Grant with UUID '{grant_uuid}' was not found."
-                )
-            ]
+        grant = self._storage_ptr['grants_lut'].get(grant_uuid, None)
+        if grant is None:
+            return {
+                "grant": None,
+                "has_failed": True,
+                "errors": {
+                    "sdk": [
+                        {
+                            "error_type": "ResourceNotFoundError",
+                            "is_critical": True,
+                            "message": f"Grant with UUID '{grant_uuid}' was not found."
+                        }
+                    ]
+                }
+            }
         
-        return result
+        return {
+            "grant": grant,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def get_grants_page(
@@ -332,7 +385,7 @@ class InProcessStorage(StorageModule):
         effect: str | None,
         action: str | None,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GrantsPage:
         """Retrieve a page of grants.
 
@@ -345,18 +398,19 @@ class InProcessStorage(StorageModule):
 
         grants: List[Grant] = list(self._storage_ptr['grants_lut'].values())
         if effect is not None:
-            grants = [g for g in grants if g.effect == effect]
+            grants = [g for g in grants if g['effect'] == effect]
         
         if action is not None:
-            grants = [g for g in grants if action in g.actions]
+            grants = [g for g in grants if action in g['actions']]
 
-        end_index = start_index + authzee_config.grants_page_size  
+        end_index = start_index + config['grants_page_size']  
         
-        return GrantsPage(
-            grants=grants[start_index:end_index],
-            next_page_ref=str(end_index) if end_index < len(grants) else None,
-            has_failed=False
-        )
+        return {
+            "grants": grants[start_index:end_index],
+            "next_page_ref": str(end_index) if end_index < len(grants) else None,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def get_grant_refs_page(
@@ -364,7 +418,7 @@ class InProcessStorage(StorageModule):
         effect: str | None,
         action: str | None,
         page_ref: str | None,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> PageRefsPage:
         """Retrieve a page of grant page references for parallel pagination.
 
@@ -380,15 +434,15 @@ class InProcessStorage(StorageModule):
 
         grants: List[Grant] = list(self._storage_ptr['grants_lut'].values())
         if effect is not None:
-            grants = [g for g in grants if g.effect == effect]
+            grants = [g for g in grants if g['effect'] == effect]
         
         if action is not None:
-            grants = [g for g in grants if action in g.actions]
+            grants = [g for g in grants if action in g['actions']]
         
         num_grants = len(grants)
         refs = []
-        for _ in range(authzee_config.grant_refs_page_size):
-            end_index = start_index + authzee_config.grants_page_size  
+        for _ in range(config['grant_refs_page_size']):
+            end_index = start_index + config['grants_page_size']  
             next_page_ref = end_index          
             refs.append(start_index)
             start_index = end_index
@@ -396,65 +450,77 @@ class InProcessStorage(StorageModule):
                 next_page_ref = None
                 break
         
-        return PageRefsPage(
-            page_refs=refs,
-            next_page_ref=next_page_ref,
-            has_failed=False
-        )
+        return {
+            "page_refs": refs,
+            "next_page_ref": next_page_ref,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
-    async def create_latch(self, authzee_config: AuthzeeConfig) -> StorageLatchResult:
+    async def create_latch(self, config: AuthzeeConfig) -> StorageLatchResult:
         """Create a new [storage latch](#storage-latches).
         """
-        latch = StorageLatch()
-        self._storage_ptr['latches_lut'][latch.storage_latch_uuid] = latch
+        latch_uuid = str(uuid4())
+        latch = {
+            "storage_latch_uuid": latch_uuid,
+            "is_set": False,
+            "created_at": datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+        }
+        self._storage_ptr['latches_lut'][latch_uuid] = latch
 
-        return StorageLatchResult(
-            storage_latch=latch,
-            has_failed=False
-        )
+        return {
+            "storage_latch": latch,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def get_latch(
         self, 
         storage_latch_uuid: UUID,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> StorageLatchResult:
         """Get a [storage latch](#storage-latches) by UUID.
         """
-        result = StorageLatchResult(
-            grant=self._storage_ptr['latches_lut'].pop(storage_latch_uuid, None),
-            has_failed=False
-        ) 
-        if result.storage_latch is None:
-            result.has_failed = True
-            result.errors.sdk = [
-                SDKError(
-                    error_type="ResourceNotFoundError",
-                    is_critical=True,
-                    message=f"Storage latch with UUID '{storage_latch_uuid}' was not found."
-                )
-            ]
+        latch = self._storage_ptr['latches_lut'].get(storage_latch_uuid, None)
+        if latch is None:
+            return {
+                "storage_latch": None,
+                "has_failed": True,
+                "errors": {
+                    "sdk": [
+                        {
+                            "error_type": "ResourceNotFoundError",
+                            "is_critical": True,
+                            "message": f"Storage latch with UUID '{storage_latch_uuid}' was not found."
+                        }
+                    ]
+                }
+            }
         
-        return result
+        return {
+            "storage_latch": latch,
+            "has_failed": False,
+            "errors": {}
+        }
 
 
     async def set_latch(
         self, 
         storage_latch_uuid: UUID,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> StorageLatchResult:
         """Set a [storage latch](#storage-latches) by UUID.
         """
         result = await self.get_latch(
             storage_latch_uuid=storage_latch_uuid,
-            authzee_config=authzee_config
+            config=config
         )
-        if result.has_failed is True:
+        if result['has_failed'] is True:
             return result
     
-        # double check this actually sets it
-        result.storage_latch.is_set = True
+        result['storage_latch']['is_set'] = True
         
         return result
 
@@ -462,20 +528,23 @@ class InProcessStorage(StorageModule):
     async def delete_latch(
         self, 
         storage_latch_uuid: UUID,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a [storage latch](#storage-latches) by UUID.
         """
         self._storage_ptr['latches_lut'].pop(storage_latch_uuid, None)
 
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
 
     async def cleanup_latches(
         self, 
         before: datetime.datetime,
-        authzee_config: AuthzeeConfig
+        config: AuthzeeConfig
     ) -> GenericResult:
         """Delete all latches before the specified datetime.
 
@@ -483,11 +552,12 @@ class InProcessStorage(StorageModule):
         """
         new_lut = {}
         for lu, l in self._storage_ptr['latches_lut'].items():
-            lu: UUID
-            l: StorageLatch
-            if l.created_at > before:
+            if l['created_at'] > before.isoformat():
                 new_lut[lu] = l
         
         self._storage_ptr['latches_lut'] = new_lut
         
-        return GenericResult(has_failed=False)
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }

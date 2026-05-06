@@ -17,35 +17,6 @@
         - send out request to async workers that can process them 
     
 
-- [ ] best way to handle configuration options at different levels
-    - The authzee level sets the defaults at the authzee level for direct storage access
-    - Set similar settings at the compute level for how to handle storage settings for the compute module
-    - really these should just be different configs, right? 
-        - Authzee configs
-            - raise_crits: NotRequired[bool]
-        - compute
-            - context_defs_page_size: NotRequired[int]
-            - identity_defs_page_size: NotRequired[int]
-            - resource_defs_page_size: NotRequired[int]
-            - grants_page_size: NotRequired[int]
-            - grant_refs_page_size: NotRequired[int]
-            - authorize_parallel_paging: NotRequired[bool]
-            - batch_authorize_parallel_paging: NotRequired[bool]
-        - storage
-            - context_defs_page_size: NotRequired[int]
-            - identity_defs_page_size: NotRequired[int]
-            - resource_defs_page_size: NotRequired[int]
-            - grants_page_size: NotRequired[int]
-            - grant_refs_page_size: NotRequired[int]
-    - but they all need to be passed at the Authzee level so it can manage how to pass them down
-        - AuthzeeConfig
-        - ComputeConfig
-        - StorageConfig
-    - Will just need to update the methods for the different config types
-    - But this doesn't make sense if I also want to override and authzee config like raise_crits
-
-- [ ] update authzee to use dicts instead of DC
-
 - [ ] fill out authzeeasync
     - How to handle errors
 
@@ -76,6 +47,39 @@
 - [ ] for iterators may need to manage own event loop instead of just using asyncio.run
 
 - [ ] update examples to use balloons. 
+
+
+
+
+- [x] update authzee to use dicts instead of DC
+
+- [x] best way to handle configuration options at different levels
+    - The authzee level sets the defaults at the authzee level for direct storage access
+    - Set similar settings at the compute level for how to handle storage settings for the compute module
+    - really these should just be different configs, right? 
+        - Authzee configs
+            - raise_crits: NotRequired[bool]
+        - compute
+            - context_defs_page_size: NotRequired[int]
+            - identity_defs_page_size: NotRequired[int]
+            - resource_defs_page_size: NotRequired[int]
+            - grants_page_size: NotRequired[int]
+            - grant_refs_page_size: NotRequired[int]
+            - authorize_parallel_paging: NotRequired[bool]
+            - batch_authorize_parallel_paging: NotRequired[bool]
+        - storage
+            - context_defs_page_size: NotRequired[int]
+            - identity_defs_page_size: NotRequired[int]
+            - resource_defs_page_size: NotRequired[int]
+            - grants_page_size: NotRequired[int]
+            - grant_refs_page_size: NotRequired[int]
+    - but they all need to be passed at the Authzee level so it can manage how to pass them down
+        - AuthzeeConfig
+        - ComputeConfig
+        - StorageConfig
+    - Will just need to update the methods for the different config types
+    - But this doesn't make sense if I also want to override and authzee config like raise_crits
+    - **solution** - just add a compute override
 
 - [x] errors for putting and deleted and getting defs/grants
     - put and delete should not care if it exists either way
