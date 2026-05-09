@@ -48,6 +48,7 @@
 
 - [ ] update examples to use balloons. 
 
+- [ ] use orjson for fast json serialization
 
 
 

@@ -10,13 +10,6 @@ from authzee.storage.storage_module import StorageModule
 class ComputeModule:
 
 
-    def __init__(
-        self,
-        storage_kwargs: Dict[str, Any] | None = None
-    ):
-        self._storage_kwargs = storage_kwargs
-
-
     def start(
         self,
         execute: Callable[[str, Any], Any],

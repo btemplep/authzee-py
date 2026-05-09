@@ -6,7 +6,6 @@ __all__ = [
     "AuthzeeSpecError",
     "DefinitionError",
     "GrantError",
-    "AuthzeeOperationError",
     "EvaluationError",
     "RequestError",
     "AuthzeeSDKError",
@@ -18,13 +17,7 @@ __all__ = [
     "PageReferenceError"
 ]
 
-from authzee.dcs import (
-    GenericResult, 
-    AuditResultPage, 
-    AuthorizeResult, 
-    BatchAuditResultPage, 
-    BatchAuthorizeResult
-)
+from authzee.types import GenericResult
 
 
 class AuthzeeError(Exception):
@@ -39,12 +32,10 @@ class AuthzeeSpecError(AuthzeeError):
     
     def __init__(
         self, 
-        is_critical: bool,
         message: str, 
         result: GenericResult
     ):
         super().__init__(message)
-        self.is_critical = is_critical
         self.message = message
         self.result = result
 
@@ -54,29 +45,17 @@ class DefinitionError(AuthzeeSpecError):
     pass
 
 
+class EvaluationError(AuthzeeSpecError):
+    """Error when running an evaluation for a request."""
+    pass
+
+
 class GrantError(AuthzeeSpecError):
     """Error when validating grants."""
     pass
 
 
-class AuthzeeOperationError(AuthzeeSpecError):
-    """Errors specific to running Authzee operations. """
-
-    def __init__(
-        self, 
-        message: str, 
-        is_critical: bool,
-        result: AuditResultPage | AuthorizeResult | BatchAuditResultPage | BatchAuthorizeResult
-    ):
-        super().__init__(message, is_critical, result)
-
-
-class EvaluationError(AuthzeeOperationError):
-    """Error when running an evaluation for a request."""
-    pass
-
-
-class RequestError(AuthzeeOperationError):
+class RequestError(AuthzeeSpecError):
     """Error when validating a request or batch request."""
     pass
 
@@ -88,11 +67,10 @@ class AuthzeeSDKError(AuthzeeError):
     def __init__(
         self, 
         message: str, 
-        is_critical: bool,
         result: GenericResult
     ):
         super().__init__(message)
-        self.is_critical = is_critical
+        self.message = message
         self.result = result
 
 
@@ -100,18 +78,6 @@ class LocalityIncompatibilityError(AuthzeeSDKError):
     """The localities are not compatible.
 
     See `authzee.module_locality.ModuleLocality` for more info.
-    """
-    pass
-
-
-class ResourceNotFoundError(AuthzeeSDKError):
-    """The resource with a specific UUID or type was not found in the storage backend.
-    """
-    pass
-
-
-class StartError(AuthzeeSDKError):
-    """There was an error during initialization of the Authzee App and modules.
     """
     pass
 
@@ -134,3 +100,16 @@ class PageReferenceError(AuthzeeSDKError):
     """Error when processing a page reference.
     """
     pass
+
+
+class ResourceNotFoundError(AuthzeeSDKError):
+    """The resource with a specific UUID or type was not found in the storage backend.
+    """
+    pass
+
+
+class StartError(AuthzeeSDKError):
+    """There was an error during initialization of the Authzee App and modules.
+    """
+    pass
+
