@@ -1,3 +1,5 @@
+"""Authzee types."""
+
 __all__ = [
     "AnyJSON",
     "AuthzeeConfig",
@@ -1460,7 +1462,7 @@ class BatchAuthorizeResult(TypedDict):
             }
         ],
         "has_failed": False,
-        "errors": {
+        "critical_errors": {
             "evaluation": [ # not required
                 {
                     "is_critical": False,
@@ -1473,5 +1475,5 @@ class BatchAuthorizeResult(TypedDict):
     """
     batch_results: List[AuthorizeResult]
     has_failed: bool
-    errors: ResultErrors
+    critical_errors: ResultErrors
 

@@ -10,7 +10,7 @@ from authzee.storage.storage_module import StorageModule
 class ComputeModule:
 
 
-    def start(
+    async def start(
         self,
         execute: Callable[[str, Any], Any],
         storage_type: Type[StorageModule],
@@ -26,12 +26,12 @@ class ComputeModule:
         """
         self._execute = execute
         self._storage_type = storage_type
-        self._storage_kwargs = self._storage_kwargs if self._storage_kwargs is not None else storage_kwargs
+        self._storage_kwargs = storage_kwargs
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = False
 
 
-    def shutdown(self, config: AuthzeeConfig) -> GenericResult:
+    async def shutdown(self, config: AuthzeeConfig) -> GenericResult:
         """Shutdown Compute module.
 
         - clean up runtime resources
@@ -39,7 +39,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def construct(self, config: AuthzeeConfig) -> GenericResult:
+    async def construct(self, config: AuthzeeConfig) -> GenericResult:
         """Construct backend resources for compute.
 
         - one time setup
@@ -47,7 +47,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def destroy(self, config: AuthzeeConfig) -> GenericResult:
+    async def destroy(self, config: AuthzeeConfig) -> GenericResult:
         """Tear down backend resources.
 
         - destructive - may lose all long lasting compute resources
@@ -55,7 +55,40 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def validate_request(
+    async def validate_context_def(
+        self,
+        context_def: ContextDef,
+        config: AuthzeeConfig
+    ) -> GenericResult:
+        raise NotImplementedError()
+
+
+
+    async def validate_identity_def(
+        self,
+        identity_def: IdentityDef,
+        config: AuthzeeConfig
+    ) -> GenericResult:
+        raise NotImplementedError()
+
+
+    async def validate_resource_def(
+        self,
+        resource_def: ResourceDef,
+        config: AuthzeeConfig
+    ) -> GenericResult:
+        raise NotImplementedError()
+
+
+    async def validate_grant(
+        self,
+        grant: Grant,
+        config: AuthzeeConfig
+    ) -> GenericResult:
+        raise NotImplementedError()
+    
+
+    async def validate_request(
         self,
         request: AuthzeeRequest,
         config: AuthzeeConfig
@@ -65,7 +98,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def validate_batch_request(
+    async def validate_batch_request(
         self,
         batch_request: AuthzeeBatchRequest,
         config: AuthzeeConfig
@@ -75,7 +108,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def audit_page(
+    async def audit_page(
         self,
         request: AuthzeeRequest,
         page_ref: str | None,
@@ -88,7 +121,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def authorize(
+    async def authorize(
         self,
         request: AuthzeeRequest,
         config: AuthzeeConfig
@@ -98,7 +131,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def batch_audit_page(
+    async def batch_audit_page(
         self,
         batch_request: AuthzeeBatchRequest,
         page_ref: str | None,
@@ -111,7 +144,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    def batch_authorize(
+    async def batch_authorize(
         self,
         batch_request: AuthzeeBatchRequest,
         config: AuthzeeConfig

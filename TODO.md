@@ -1,5 +1,9 @@
 # TODO
 
+- [ ] in process compute validate_batch_request
+
+- [ ] example for SDK 
+- [ ] make a minimum product with the SDK. 
 
 - [ ] Higher level how do I want authzee classes to be used? 
     - At what point do you just scale out the Authzee processes vs having a single instance with multiple workers?
@@ -17,19 +21,30 @@
         - send out request to async workers that can process them 
     
 
-- [ ] fill out authzeeasync
-    - How to handle errors
-
-
 - [ ] define where authzee class and modules do the validation
     - Requests are handled by compute, 
     - defs are done at the authzee level
     - Need to document this in the SDK docs or just this packages at least
-    
 
-- [ ] switch reference to use jsonschema-rs and switch in the spec too
 
-- [ ] paginators 
+
+- [ ] regenerate __all__s
+    - [x] exceptions
+
+- [ ] update examples to use balloons. 
+
+- [ ] - ability to update schemas to make more strict, or less :|.
+
+
+
+- [x] where to validate 
+    - Most clear to just defer it all to the compute, right? 
+    - could split it up but just defer to compute and let it figure it out
+        - Any "decent" compute goes to compute - the module can decide how to handle it
+- [x] for iterators may need to manage own event loop instead of just using asyncio.run
+    - using pagination for now so no iterators that are async
+
+- [x] paginators 
     - def want something in the backend
         - Done
     - Should these be at the Authzee level? 
@@ -37,20 +52,13 @@
         - I think this would be nice to have, just return an async page generator
     - **Solution** - Should be a method for each list_grants, list_identity_defs etc
         - Also expose a general paginator if they want to go over each page for some reason
+        - only exposed general paginators for now.  Can always add the other lists later
 
+- [x] switch reference to use jsonschema-rs and switch in the spec too
+    - just switch here the in the sdk
 
-- [ ] make a minimum product with the SDK. 
-
-- [ ] regenerate __all__s
-    - [x] exceptions
-
-- [ ] for iterators may need to manage own event loop instead of just using asyncio.run
-
-- [ ] update examples to use balloons. 
-
-- [ ] use orjson for fast json serialization
-
-
+- [x] fill out authzeeasync
+    - How to handle errors
 
 - [x] update authzee to use dicts instead of DC
 

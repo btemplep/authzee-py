@@ -1,12 +1,19 @@
 
 from asyncio import create_task
-import json
 from typing import Any, Callable, Dict, Type
 
 import jsonschema_rs
 
 from authzee.compute.compute_module import ComputeModule
-from authzee.core import evaluate, paginator, validate_request_schema
+from authzee.core import (
+    evaluate, 
+    validate_context_def,
+    validate_identity_def,
+    validate_resource_def,
+    validate_grant,
+    validate_request_schema
+)
+from authzee.paginator import paginator_async
 from authzee.types import *
 from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
@@ -29,7 +36,7 @@ class InProcessCompute(ComputeModule):
             - locality - Compute [Module Locality](#module-locality)
             - has_parallel_paging - if the compute module supports processing grants with parallel paging
         """
-        super().start(
+        await super().start(
             execute=execute,
             storage_type=storage_type, 
             storage_kwargs=storage_kwargs,
@@ -38,6 +45,7 @@ class InProcessCompute(ComputeModule):
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = False
         self._storage = storage_type(**storage_kwargs)
+        await self._storage.start(config)
     
         return {
             "has_failed": False, 
@@ -67,6 +75,38 @@ class InProcessCompute(ComputeModule):
         - destructive - may lose all long lasting compute resources
         """
         pass
+
+
+    async def validate_context_def(
+        self,
+        context_def: ContextDef,
+        config: AuthzeeConfig
+    ) -> GenericResult:
+        return validate_context_def(context_def)
+
+
+    async def validate_identity_def(
+        self,
+        identity_def: IdentityDef,
+        config: AuthzeeConfig
+    ) -> GenericResult:
+        return validate_identity_def(identity_def)
+
+
+    async def validate_resource_def(
+        self,
+        resource_def: ResourceDef,
+        config: AuthzeeConfig
+    ) -> GenericResult:
+        return validate_resource_def(resource_def)
+
+
+    async def validate_grant(
+        self,
+        grant: Grant,
+        config: AuthzeeConfig
+    ) -> GenericResult:
+        return validate_grant(grant)
 
 
     async def validate_request(
@@ -197,13 +237,6 @@ class InProcessCompute(ComputeModule):
             "has_failed": False,
             "errors": {}
         }
-        val_result = await self.validate_request(request=request, config=config)
-        if val_result['has_failed'] is True:
-            result['has_failed'] = True
-            result['errors'] = val_result['errors']
-
-            return result
-
         grants_page = (
             await self._storage.get_grants_page(
                 effect=None,
@@ -263,7 +296,7 @@ class InProcessCompute(ComputeModule):
 
             return crit_result
 
-        async for page in paginator(
+        async for page in paginator_async(
             self._storage.get_grants_page,
             effect="deny",
             action=request['action'],
@@ -299,7 +332,7 @@ class InProcessCompute(ComputeModule):
                     }
 
         # got through all allow grants
-        async for page in paginator(
+        async for page in paginator_async(
             self._storage.get_grants_page,
             effect="allow",
             action=request['action'],

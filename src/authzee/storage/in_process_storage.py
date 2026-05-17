@@ -552,7 +552,7 @@ class InProcessStorage(StorageModule):
         """
         new_lut = {}
         for lu, l in self._storage_ptr['latches_lut'].items():
-            if l['created_at'] > before.isoformat():
+            if datetime.datetime.fromisoformat(l['created_at']) > before:
                 new_lut[lu] = l
         
         self._storage_ptr['latches_lut'] = new_lut

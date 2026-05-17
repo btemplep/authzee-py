@@ -1,8 +1,9 @@
 """Core functionality for the Authzee SDK. 
 
-The functionality of this module is optimized for SDK use and does not directly align with the reference implementation. 
+The functionality of this module is optimized for SDK use.  It conforms to the Authzee Specification but is not a one to one copy of the reference implementation.
 """
-from typing import Any, AsyncGenerator, Callable
+import copy
+from typing import Callable
 
 import jsonschema_rs 
 
@@ -10,9 +11,97 @@ from authzee.types import *
 from authzee import reference
 
 
-context_def_validator = jsonschema_rs.validator_for(reference.context_definition_schema)
-identity_def_validator = jsonschema_rs.validator_for(reference.identity_definition_schema)
-resource_def_validator = jsonschema_rs.validator_for(reference.resource_definition_schema)
+context_def_schema = copy.deepcopy(reference.context_definition_schema) | {
+    "title": "SDK Context Definition",
+    "additionalProperties": False
+}
+identity_def_schema = copy.deepcopy(reference.identity_definition_schema) | {
+    "title": "SDK Identity Definition",
+    "additionalProperties": False
+}
+resource_def_schema = copy.deepcopy(reference.resource_definition_schema) | {
+    "title": "SDK Resource Definition",
+    "additionalProperties": False
+}
+grant_schema = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "SDK Grant",
+    "description": "A grant is an object representing enacted authorization rules. SDK specific schema.",
+    "type": "object",
+    "additionalProperties": False,
+    "required": [
+        "uuid",
+        "name",
+        "description",
+        "tags",
+        "effect",
+        "actions",
+        "data",
+        "query",
+        "evaluation_handler",
+        "equality"
+    ],
+    "properties": {
+        "uuid": {
+            "type": "string",
+            "": ""
+        },
+        "name": {
+            "type": "string",
+            "description": "Short, people friendly name. Not unique."
+        },
+        "description": {
+            "type": "string",
+            "description": "Long, people friendly description."
+        },
+        "tags": {
+            "type": "object",
+            "description": "String key/value pairs to help organize grants.",
+            "properties": {
+                "patternProperties": {
+                    ".+": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "effect": {
+            "type": "string",
+            "enum": [
+                "allow",
+                "deny"
+            ],
+            "description": (
+                "Any applicable deny grant will always cause the request to be unauthorized. "
+                "If there are no applicable deny grants, and there is an applicable allow grant, the request is authorized. "
+                "If there no applicable allow or deny grants, requests are implicitly denied and is not authorized."
+            )
+        },
+        "actions": {
+            "type": "array",
+            "uniqueItems": True,
+            "items": reference._action_schema,
+            "description": "List of actions this grant applies to or null to match any resource action."
+        },
+        "data": {
+            "type": "object",
+            "description": "Data that is made available at query time for the grant evaluation. Easy place to store data so it doesn't have to be embedded in the query."
+        },
+        "query": {
+            "type": "string",
+            "description": "JSON query to run on the authorization data. {\"grant\": <grant>, \"request\": <request>}"
+        },
+        "evaluation_handler": reference._evaluation_handler_schema,
+        "equality": {
+            "description": "Expected value for the query to return.  If the query result matches this value the grant is a considered applicable to the request."
+        }
+    }
+}
+
+context_def_validator = jsonschema_rs.validator_for(context_def_schema)
+identity_def_validator = jsonschema_rs.validator_for(identity_def_schema)
+resource_def_validator = jsonschema_rs.validator_for(resource_def_schema)
+grant_validator = jsonschema_rs.validator_for(grant_schema)
 request_validator = jsonschema_rs.validator_for(reference.request_schema)
 batch_request_validator = jsonschema_rs.validator_for(reference.batch_request_schema)
 
@@ -119,6 +208,27 @@ def validate_resource_def(resource_def: ResourceDef) -> GenericResult:
     return {"has_failed": False, "errors": {}}
 
 
+def validate_grant(grant: Grant) -> GenericResult:
+    is_valid = grant_validator.is_valid(grant)
+    if not is_valid:
+        return {
+            "has_failed": True,
+            "errors": {
+                "grant": [
+                    {
+                        "is_critical": True,
+                        "message": "The grant is not valid against the Grant Schema." 
+                    }
+                ]
+            }
+        }
+
+    return {
+        "has_failed": False, 
+        "errors": {}
+    }
+
+
 def validate_request_schema(request: AuthzeeRequest) -> GenericResult:
     is_valid = request_validator.is_valid(request)
     if not is_valid:
@@ -136,16 +246,6 @@ def validate_request_schema(request: AuthzeeRequest) -> GenericResult:
 
     return {"has_failed": False, "errors": {}}
 
-
-async def paginator(coro, **kwargs) -> AsyncGenerator[Any, None]:
-    while True:
-        result = await coro(**kwargs)
-        
-        yield result
-
-        kwargs['page_ref'] = result['next_page_ref']
-        if result['next_page_ref'] is None:
-            break
 
 def evaluate(
     request: AuthzeeRequest, 

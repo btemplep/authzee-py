@@ -52,8 +52,7 @@ __all__ = [
 
 from typing import Callable, Dict, List, Union
 
-import jsonschema
-import jsonschema.exceptions
+import jsonschema_rs
 
 
 AnyJSON = Union[bool, str, int, float, None, list, dict]
@@ -75,8 +74,65 @@ _action_schema = {
     "minLength": 1,
     "maxLength": 512
 }
-_schema_schema = jsonschema.Draft202012Validator.META_SCHEMA
+# JSONSchema Meta schema 2020-12
+_schema_schema = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://json-schema.org/draft/2020-12/schema",
+    "$vocabulary": {
+        "https://json-schema.org/draft/2020-12/vocab/core": True,
+        "https://json-schema.org/draft/2020-12/vocab/applicator": True,
+        "https://json-schema.org/draft/2020-12/vocab/unevaluated": True,
+        "https://json-schema.org/draft/2020-12/vocab/validation": True,
+        "https://json-schema.org/draft/2020-12/vocab/meta-data": True,
+        "https://json-schema.org/draft/2020-12/vocab/format-annotation": True,
+        "https://json-schema.org/draft/2020-12/vocab/content": True
+    },
+    "$dynamicAnchor": "meta",
 
+    "title": "Core and Validation specifications meta-schema",
+    "allOf": [
+        {"$ref": "meta/core"},
+        {"$ref": "meta/applicator"},
+        {"$ref": "meta/unevaluated"},
+        {"$ref": "meta/validation"},
+        {"$ref": "meta/meta-data"},
+        {"$ref": "meta/format-annotation"},
+        {"$ref": "meta/content"}
+    ],
+    "type": ["object", "boolean"],
+    "$comment": "This meta-schema also defines keywords that have appeared in previous drafts in order to prevent incompatible extensions as they remain in common use.",
+    "properties": {
+        "definitions": {
+            "$comment": "\"definitions\" has been replaced by \"$defs\".",
+            "type": "object",
+            "additionalProperties": { "$dynamicRef": "#meta" },
+            "deprecated": True,
+            "default": {}
+        },
+        "dependencies": {
+            "$comment": "\"dependencies\" has been split and replaced by \"dependentSchemas\" and \"dependentRequired\" in order to serve their differing semantics.",
+            "type": "object",
+            "additionalProperties": {
+                "anyOf": [
+                    { "$dynamicRef": "#meta" },
+                    { "$ref": "meta/validation#/$defs/stringArray" }
+                ]
+            },
+            "deprecated": True,
+            "default": {}
+        },
+        "$recursiveAnchor": {
+            "$comment": "\"$recursiveAnchor\" has been replaced by \"$dynamicAnchor\".",
+            "$ref": "meta/core#/$defs/anchorString",
+            "deprecated": True
+        },
+        "$recursiveRef": {
+            "$comment": "\"$recursiveRef\" has been replaced by \"$dynamicRef\".",
+            "$ref": "meta/core#/$defs/uriReferenceString",
+            "deprecated": True
+        }
+    }
+}
 _context_type_schema = _type_schema | {
     "title": "Authzee Context Type",
     "description": "A unique name to identity this context type."
@@ -744,8 +800,8 @@ def validate_context_defs(context_defs: List[Dict[str, AnyJSON]]) -> Dict[str, A
     context_types = set()
     for c_def in context_defs:
         try:
-            jsonschema.validate(c_def, context_definition_schema)
-        except jsonschema.exceptions.ValidationError as exc:
+            jsonschema_rs.validate(context_definition_schema, c_def)
+        except jsonschema_rs.ValidationError as exc:
             errors.append(
                 {
                     "is_critical": True,
@@ -782,9 +838,11 @@ def validate_identity_defs(identity_defs: List[Dict[str, AnyJSON]]) -> Dict[str,
     errors = []
     id_types = []
     for id_def in identity_defs:
+        print(id_def)
         try:
-            jsonschema.validate(id_def, identity_definition_schema)
-        except jsonschema.exceptions.ValidationError as exc:
+            jsonschema_rs.validate(identity_definition_schema, id_def)
+        except jsonschema_rs.ValidationError as exc:
+            print(exc)
             errors.append(
                 {
                     "is_critical": True,
@@ -822,8 +880,8 @@ def validate_resource_defs(resource_defs: List[Dict[str, AnyJSON]]) -> Dict[str,
     r_types = set()
     for r_def in resource_defs:
         try:
-            jsonschema.validate(r_def, resource_definition_schema)
-        except jsonschema.exceptions.ValidationError as exc:
+            jsonschema_rs.validate(resource_definition_schema, r_def)
+        except jsonschema_rs.ValidationError as exc:
             errors.append(
                 {
                     "is_critical": True,
@@ -862,8 +920,8 @@ def validate_grants(
     errors = []
     for g in grants:
         try:
-            jsonschema.validate(g, grant_schema)
-        except jsonschema.exceptions.ValidationError as exc:
+            jsonschema_rs.validate(grant_schema, g)
+        except jsonschema_rs.ValidationError as exc:
             errors.append(
                 {
                     "is_critical": True,
@@ -892,8 +950,8 @@ def _validate_request_identities(
         else:
             for identity, i_num in zip(identities[i_type], range(len(identities[i_type]))):
                 try:
-                    jsonschema.validate(identity, identity_lut[i_type]['schema'])
-                except jsonschema.exceptions.ValidationError as exc:
+                    jsonschema_rs.validate(identity_lut[i_type]['schema'], identity)
+                except jsonschema_rs.ValidationError as exc:
                     errors.append(
                         {
                             "is_critical": True,
@@ -918,8 +976,8 @@ def _validate_request_resource(
         )
     else:
         try:
-            jsonschema.validate(resource, resource_lut[resource_type]['schema'])
-        except jsonschema.exceptions.ValidationError as exc:
+            jsonschema_rs.validate(resource_lut[resource_type]['schema'], resource)
+        except jsonschema_rs.ValidationError as exc:
             errors.append(
                 {
                     "is_critical": True,
@@ -950,8 +1008,8 @@ def _validate_request_context(
         )
     else:
         try:
-            jsonschema.validate(context, context_lut[context_type]['schema'])
-        except jsonschema.exceptions.ValidationError as exc:
+            jsonschema_rs.validate(context_lut[context_type]['schema'], context)
+        except jsonschema_rs.ValidationError as exc:
             errors.append(
                 {
                     "is_critical": True,
@@ -967,8 +1025,8 @@ def validate_request(
     resource_defs: List[Dict[str, AnyJSON]]
 ) -> Dict[str, AnyJSON]:
     try:
-        jsonschema.validate(request, request_schema)
-    except jsonschema.exceptions.ValidationError as exc:
+        jsonschema_rs.validate(request_schema, request)
+    except jsonschema_rs.ValidationError as exc:
         return {
             "is_valid": False,
             "errors" : [
@@ -1012,8 +1070,8 @@ def validate_batch_request(
     resource_defs: List[Dict[str, AnyJSON]]
 ) -> Dict[str, AnyJSON]:
     try:
-        jsonschema.validate(batch_request, batch_request_schema)
-    except jsonschema.exceptions.ValidationError as exc:
+        jsonschema_rs.validate(batch_request_schema, batch_request)
+    except jsonschema_rs.ValidationError as exc:
         return {
             "is_valid": False,
             "errors" : [
@@ -1125,7 +1183,7 @@ def evaluate_one(
             )
             or is_q_val_crit is True
         ):
-            result['errors']['query'] = [
+            result['errors']['evaluation'] = [
                 {
                     "is_critical": is_q_val_crit,
                     "message": f"A JSON Query error has occurred: {query_result['error_message']}."

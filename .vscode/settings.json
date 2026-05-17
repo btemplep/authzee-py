@@ -1,6 +1,7 @@
 {
     "autoDocstring.docstringFormat": "numpy",
     "cSpell.words": [
+        "afunc",
         "aioboto",
         "aiosqlite",
         "argnames",

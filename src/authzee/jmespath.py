@@ -1,4 +1,4 @@
-
+"""JMESPath custom function provided by Authzee"""
 
 
 import re
