@@ -100,9 +100,8 @@ class InProcessStorage(StorageModule):
                 "context_def": None,
                 "has_failed": True,
                 "errors": {
-                    "sdk": [
+                    "resource_not_found": [
                         {
-                            "error_type": "ResourceNotFoundError",
                             "is_critical": True,
                             "message": f"Context type '{context_type}' was not found."
                         }
@@ -187,9 +186,8 @@ class InProcessStorage(StorageModule):
                 "identity_def": None,
                 "has_failed": True,
                 "errors": {
-                    "sdk": [
+                    "resource_not_found": [
                         {
-                            "error_type": "ResourceNotFoundError",
                             "is_critical": True,
                             "message": f"identity type '{identity_type}' was not found."
                         }
@@ -272,9 +270,8 @@ class InProcessStorage(StorageModule):
                 "resource_def": None,
                 "has_failed": True,
                 "errors": {
-                    "sdk": [
+                    "resource_not_found": [
                         {
-                            "error_type": "ResourceNotFoundError",
                             "is_critical": True,
                             "message": f"resource type '{resource_type}' was not found."
                         }
@@ -363,9 +360,8 @@ class InProcessStorage(StorageModule):
                 "grant": None,
                 "has_failed": True,
                 "errors": {
-                    "sdk": [
+                    "resource_not_found": [
                         {
-                            "error_type": "ResourceNotFoundError",
                             "is_critical": True,
                             "message": f"Grant with UUID '{grant_uuid}' was not found."
                         }
@@ -489,9 +485,8 @@ class InProcessStorage(StorageModule):
                 "storage_latch": None,
                 "has_failed": True,
                 "errors": {
-                    "sdk": [
+                    "resource_not_found": [
                         {
-                            "error_type": "ResourceNotFoundError",
                             "is_critical": True,
                             "message": f"Storage latch with UUID '{storage_latch_uuid}' was not found."
                         }
