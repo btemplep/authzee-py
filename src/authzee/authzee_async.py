@@ -141,7 +141,7 @@ class AuthzeeAsync:
             ),
             self._storage.start(config)
         )
-        self._combine_errors(result, compute_results, storage_result)
+        core.combine_errors(result, compute_results, storage_result)
         self._raise_result(result, config)
 
         return result
@@ -160,7 +160,7 @@ class AuthzeeAsync:
             self._compute.shutdown(config),
             self._storage.shutdown(config)
         )
-        self._combine_errors(result, compute_result, storage_result)
+        core.combine_errors(result, compute_result, storage_result)
         self._raise_result(result, config)
 
         return result
@@ -179,7 +179,7 @@ class AuthzeeAsync:
             self._compute.construct(config),
             self._storage.construct(config)
         )
-        self._combine_errors(result, compute_result, storage_result)
+        core.combine_errors(result, compute_result, storage_result)
         self._raise_result(result, config)
 
         return result
@@ -198,7 +198,7 @@ class AuthzeeAsync:
             self._compute.destroy(config),
             self._storage.destroy(config)
         )
-        self._combine_errors(result, compute_result, storage_result)
+        core.combine_errors(result, compute_result, storage_result)
         self._raise_result(result, config)
 
         return result

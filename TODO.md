@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] in process compute validate_batch_request
+- [ ] in process compute validate_batch_request, and test batch calls
 
 - [ ] example for SDK 
 - [ ] make a minimum product with the SDK. 
@@ -26,8 +26,6 @@
     - defs are done at the authzee level
     - Need to document this in the SDK docs or just this packages at least
 
-
-
 - [ ] regenerate __all__s
     - [x] exceptions
 
@@ -35,6 +33,16 @@
 
 - [ ] - ability to update schemas to make more strict, or less :|.
 
+- [ ] better batch request verification
+    - this is a very inefficient way to do this 
+    - try and reuse as needed and only do partial verification of new fields 
+
+- [ ] where to do caching? 
+    - Easier on the storage side to just set and forget
+    - more consistent if done on compute side but how would you share that cache???
+
+- [ ] batch functions seem like they should be background - do slowly as needed kind of stuff
+    - different name for batch??
 
 
 - [x] where to validate 

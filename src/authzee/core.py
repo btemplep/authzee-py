@@ -244,7 +244,31 @@ def validate_request_schema(request: AuthzeeRequest) -> GenericResult:
             }
         }
 
-    return {"has_failed": False, "errors": {}}
+    return {
+        "has_failed": False, 
+        "errors": {}
+    }
+
+
+def validate_batch_request_schema(batch_request: AuthzeeBatchRequest) -> GenericResult:
+    is_valid = batch_request_validator.is_valid(batch_request)
+    if not is_valid:
+        return {
+            "has_failed": True,
+            "errors": {
+                "definition": [
+                    {
+                        "is_critical": True,
+                        "message": "The given batch request is not valid against the batch request JSON Schema."
+                    }
+                ]
+            }
+        }
+
+    return {
+        "has_failed": False, 
+        "errors": {}
+    }
 
 
 def evaluate(
@@ -290,3 +314,19 @@ def evaluate(
                 result['has_failed'] = True
 
     return result
+
+
+def combine_errors(result: GenericResult, *args: dict) ->  None:
+    errors = result['errors']
+    for new_result in args:
+        if new_result['has_failed'] is True:
+            result['has_failed'] = True
+
+        new_errors = new_result['errors']
+        for k in errors:
+            if k in new_errors:
+                errors[k] += new_errors[k]
+            
+        for k in new_errors:
+            if k not in errors:
+                errors[k] = new_errors[k]

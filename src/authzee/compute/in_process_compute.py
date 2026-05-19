@@ -1,17 +1,19 @@
 
-from asyncio import create_task
-from typing import Any, Callable, Dict, Type
+from asyncio import as_completed, create_task, Task
+from typing import Any, Callable, Dict, List, Type
 
 import jsonschema_rs
 
 from authzee.compute.compute_module import ComputeModule
 from authzee.core import (
+    combine_errors,
     evaluate, 
     validate_context_def,
     validate_identity_def,
     validate_resource_def,
     validate_grant,
-    validate_request_schema
+    validate_request_schema,
+    validate_batch_request_schema
 )
 from authzee.paginator import paginator_async
 from authzee.types import *
@@ -217,7 +219,42 @@ class InProcessCompute(ComputeModule):
     ) -> GenericResult:
         """Validate a batch request.
         """
-        raise NotImplementedError()
+        # this is a very inefficient way to do this 
+        # TODO try and reuse as needed and only do partial verification of new fields 
+        result = validate_batch_request_schema(batch_request)
+        if result['has_failed'] is True:
+            return result
+
+        base_request: AuthzeeBatchRequest = batch_request.copy(batch_request)
+        base_request.pop("batch")
+        base_result = await self.validate_request(
+            request=base_request,
+            config=config
+        )
+        combine_errors(result['errors'], base_result['errors'])
+        if base_result['has_failed'] is True:
+            result['has_failed'] = True
+            
+            return result
+
+        batch_tasks: List[Task] = []
+        for item in batch_request['batch']:
+            batch_tasks.append(
+                create_task(
+                    self.validate_request(
+                        request=base_request | item,
+                        config=config
+                    )
+                )
+            )
+        
+        async for bt in as_completed(batch_tasks):
+            bt: GenericResult
+            combine_errors(result['errors'], bt['errors'])
+            if bt['has_failed'] is True:
+                result['has_failed'] = True
+        
+        return result
 
 
     async def audit_page(
@@ -283,19 +320,13 @@ class InProcessCompute(ComputeModule):
     ) -> AuthorizeResult:
         """Run the Authorize Operation.
         """
-        crit_result = {
+        result = {
             "is_authorized": False,
             "grant": None,
             "message": "A critical error has occurred. Therefore, the request is not authorized.",
             "has_failed": True,
             "critical_errors": {}
         }
-        val_result = await self.validate_request(request=request, config=config)
-        if val_result['has_failed'] is True:
-            crit_result['critical_errors'] = val_result['errors']
-
-            return crit_result
-
         async for page in paginator_async(
             self._storage.get_grants_page,
             effect="deny",
@@ -305,9 +336,9 @@ class InProcessCompute(ComputeModule):
         ):
             page: GrantsPage
             if page['has_failed'] is True:
-                crit_result['critical_errors'] = page['errors']
+                result['critical_errors'] = page['errors']
 
-                return crit_result
+                return result
         
             for grant in page['grants']:
                 eval_result = evaluate(
@@ -317,10 +348,10 @@ class InProcessCompute(ComputeModule):
                     only_crits=True
                 )
                 if eval_result['has_failed'] is True:
-                    crit_result['grant'] = grant
-                    crit_result['critical_errors'] = eval_result['errors']
+                    result['grant'] = grant
+                    result['critical_errors'] = eval_result['errors']
 
-                    return crit_result
+                    return result
 
                 if eval_result['is_applicable'] is True:
                     return {
@@ -341,9 +372,9 @@ class InProcessCompute(ComputeModule):
         ):
             page: GrantsPage
             if page['has_failed'] is True:
-                crit_result['critical_errors'] = page['errors']
+                result['critical_errors'] = page['errors']
 
-                return crit_result
+                return result
         
             for grant in page['grants']:
                 eval_result = evaluate(
@@ -353,10 +384,10 @@ class InProcessCompute(ComputeModule):
                     only_crits=True
                 )
                 if eval_result['has_failed'] is True:
-                    crit_result['grant'] = grant
-                    crit_result['critical_errors'] = eval_result['errors']
+                    result['grant'] = grant
+                    result['critical_errors'] = eval_result['errors']
 
-                    return crit_result
+                    return result
 
                 if eval_result['is_applicable'] is True:
                     return {
@@ -386,7 +417,60 @@ class InProcessCompute(ComputeModule):
 
         Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise NotImplementedError()
+        batch_result = {
+            "grants": [],
+            "batch_results": [],
+            "next_page_ref": None,
+            "has_failed": False,
+            "errors": {}
+        }
+        grants_page = (
+            await self._storage.get_grants_page(
+                effect=None,
+                action=batch_request['action'],
+                page_ref=page_ref,
+                config=config
+            )
+        )
+        batch_result['errors'] = grants_page['errors']
+        if grants_page['has_failed'] is True:
+            batch_result['has_failed'] = True
+
+            return batch_result
+        
+        batch_result['next_page_ref'] = grants_page['next_page_ref']
+        for _ in range(len(batch_request['batch'])):
+            batch_result['batch_results'].append(
+                {
+                    "results": [],
+                    "has_failed": False,
+                    "errors": {}
+                }
+            )
+        
+        base_request = batch_request.copy()
+        base_request.pop("batch")
+        for grant in grants_page['grants']:
+            for request, result in zip(batch_request['batch'], batch_result['batch_results']):
+                if result['has_failed'] is True:
+                    continue
+
+                eval_result = evaluate(
+                    request=base_request | request,
+                    grant=grant,
+                    execute=self._execute,
+                    only_crits=False
+                )
+                if eval_result['has_failed'] is True:
+                    result['has_failed'] = True
+                    result['errors']['evaluation'] = [
+                        {
+                            "is_critical": True,
+                            "message": f"A critical error occurred when evaluation grants[{len(result['results']) - 1}]."
+                        }
+                    ]
+
+        return result
 
 
     async def batch_authorize(
@@ -396,4 +480,105 @@ class InProcessCompute(ComputeModule):
     ) -> BatchAuthorizeResult:
         """Run the Batch Authorize Operation.
         """
-        raise NotImplementedError()
+        batch_result = {
+            "batch_results": [],
+            "has_failed": False,
+            "critical_errors": []
+        }
+        for _ in range(len(batch_request['batch'])):
+            batch_result.append(
+                {
+                    "is_authorized": False,
+                    "grant": None,
+                    "message": "",
+                    "has_failed": False,
+                    "critical_errors": {},
+                    "__complete": False
+                }
+            )
+
+        base_request = batch_request.copy()
+        base_request.pop("batch")
+        async for page in paginator_async(
+            self._storage.get_grants_page,
+            effect="deny",
+            action=base_request['action'],
+            page_ref=None,
+            config=config
+        ):
+            page: GrantsPage
+            if page['has_failed'] is True:
+                result['critical_errors'] = page['errors']
+
+                return result
+
+            for grant in page['grants']:
+                for request, result in zip(batch_request['batch'], batch_result['batch_results']):
+                    if result['__complete'] is True:
+                        continue
+            
+                    eval_result = evaluate(
+                        request=base_request | request,
+                        grant=grant,
+                        execute=self._execute,
+                        only_crits=True
+                    )
+                    if eval_result['has_failed'] is True:
+                        result['grant'] = grant
+                        result['message'] = "A critical error has occurred. Therefore, the request is not authorized."
+                        result['has_failed'] = True
+                        result['critical_errors'] = eval_result['errors']
+                        result['__complete'] = True
+                        continue
+
+                    if eval_result['is_applicable'] is True:
+                        result['grant'] = grant
+                        result['message'] = "A deny grant is applicable to the request. Therefore, the request is not authorized."
+                        result['__complete'] = True
+                        continue
+
+        async for page in paginator_async(
+            self._storage.get_grants_page,
+            effect="allow",
+            action=request['action'],
+            page_ref=None,
+            config=config
+        ):
+            page: GrantsPage
+            if page['has_failed'] is True:
+                result['critical_errors'] = page['errors']
+
+                return result
+        
+            for grant in page['grants']:
+                for request, result in zip(batch_request['batch'], batch_result['batch_results']):
+                    if result['__complete'] is True:
+                        continue
+
+                    eval_result = evaluate(
+                        request=base_request | request,
+                        grant=grant,
+                        execute=self._execute,
+                        only_crits=True
+                    )
+                    if eval_result['has_failed'] is True:
+                        result['grant'] = grant
+                        result['message'] = "A critical error has occurred. Therefore, the request is not authorized."
+                        result['has_failed'] = True
+                        result['critical_errors'] = eval_result['errors']
+                        result['__complete'] = True
+                        continue
+
+                    if eval_result['is_applicable'] is True:
+                        result['is_authorized'] = True
+                        result['grant'] = grant
+                        result['message'] = "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized."
+                        result['__complete'] = True
+                        continue
+
+        for result in batch_result['batch_results']:
+            is_complete = result.pop("__complete")
+            if is_complete is False:
+                result['message'] = "No grants are applicable to the request. Therefore, the request is implicitly denied and is not authorized."
+
+        return batch_result
