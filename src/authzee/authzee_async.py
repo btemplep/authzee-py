@@ -528,8 +528,8 @@ class AuthzeeAsync:
 
     async def get_grants_page(
         self,
-        effect: str | None, 
-        action: str | None, 
+        effect: str | None = None, 
+        action: str | None = None, 
         page_ref: str | None = None, 
         config: AuthzeeConfig | None = None
     ) -> GrantsPage:
@@ -547,8 +547,8 @@ class AuthzeeAsync:
 
     async def get_grant_refs_page(
         self,
-        effect: str | None, 
-        action: str | None, 
+        effect: str | None = None, 
+        action: str | None = None, 
         page_ref: str | None = None, 
         config: AuthzeeConfig | None = None
     ) -> PageRefsPage:

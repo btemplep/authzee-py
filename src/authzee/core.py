@@ -30,7 +30,7 @@ grant_schema = {
     "type": "object",
     "additionalProperties": False,
     "required": [
-        "uuid",
+        "grant_uuid",
         "name",
         "description",
         "tags",
@@ -42,9 +42,9 @@ grant_schema = {
         "equality"
     ],
     "properties": {
-        "uuid": {
+        "grant_uuid": {
             "type": "string",
-            "": ""
+            "format": "uuid"
         },
         "name": {
             "type": "string",

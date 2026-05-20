@@ -225,13 +225,13 @@ class InProcessCompute(ComputeModule):
         if result['has_failed'] is True:
             return result
 
-        base_request: AuthzeeBatchRequest = batch_request.copy(batch_request)
+        base_request: AuthzeeBatchRequest = batch_request.copy()
         base_request.pop("batch")
         base_result = await self.validate_request(
             request=base_request,
             config=config
         )
-        combine_errors(result['errors'], base_result['errors'])
+        combine_errors(result, base_result)
         if base_result['has_failed'] is True:
             result['has_failed'] = True
             
@@ -248,9 +248,9 @@ class InProcessCompute(ComputeModule):
                 )
             )
         
-        async for bt in as_completed(batch_tasks):
-            bt: GenericResult
-            combine_errors(result['errors'], bt['errors'])
+        for bt in as_completed(batch_tasks):
+            bt: GenericResult = await bt
+            combine_errors(result, bt)
             if bt['has_failed'] is True:
                 result['has_failed'] = True
         
@@ -438,6 +438,7 @@ class InProcessCompute(ComputeModule):
 
             return batch_result
         
+        batch_result['grants'] = grants_page['grants']
         batch_result['next_page_ref'] = grants_page['next_page_ref']
         for _ in range(len(batch_request['batch'])):
             batch_result['batch_results'].append(
@@ -469,8 +470,10 @@ class InProcessCompute(ComputeModule):
                             "message": f"A critical error occurred when evaluation grants[{len(result['results']) - 1}]."
                         }
                     ]
+                else:
+                    result['results'].append(eval_result)
 
-        return result
+        return batch_result
 
 
     async def batch_authorize(
@@ -486,7 +489,7 @@ class InProcessCompute(ComputeModule):
             "critical_errors": []
         }
         for _ in range(len(batch_request['batch'])):
-            batch_result.append(
+            batch_result['batch_results'].append(
                 {
                     "is_authorized": False,
                     "grant": None,
@@ -502,7 +505,7 @@ class InProcessCompute(ComputeModule):
         async for page in paginator_async(
             self._storage.get_grants_page,
             effect="deny",
-            action=base_request['action'],
+            action=batch_request['action'],
             page_ref=None,
             config=config
         ):
@@ -540,7 +543,7 @@ class InProcessCompute(ComputeModule):
         async for page in paginator_async(
             self._storage.get_grants_page,
             effect="allow",
-            action=request['action'],
+            action=batch_request['action'],
             page_ref=None,
             config=config
         ):
