@@ -1,4 +1,9 @@
 
+__all__ = [
+    "ModuleLocality",
+    "locality_compatibility",
+]
+
 from enum import Enum
 
 
@@ -37,4 +42,4 @@ locality_compatibility = {
         ModuleLocality.NETWORK
     }
 }
-"""Map of Compatibility from compute or authzee app to storage localities."""
+"""Map of Compatibility from compute to storage localities."""

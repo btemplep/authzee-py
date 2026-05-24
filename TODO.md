@@ -1,9 +1,22 @@
 # TODO
 
-- [ ] in process compute validate_batch_request, and test batch calls
+- [ ] Update Docs
+- [ ] docstrings with examples for everything
 
-- [ ] example for SDK 
-- [ ] make a minimum product with the SDK. 
+
+- [ ] better batch request verification
+    - this is a very inefficient way to do this 
+    - try and reuse as needed and only do partial verification of new fields 
+
+- [ ] where to do caching? 
+    - Easier on the storage side to just set and forget
+    - more consistent if done on compute side but how would you share that cache???
+    - grants we don't really want to cache unless it's a small amount
+    - our biggest caching is for request and batch request validation
+        - for request validation we want to cache across mulitiple requests within a window acceptable for latency of updates
+        - for batch requests, we also want that by we should cache in compute
+            - both for performance
+            - and for consistency when validating the batch request
 
 - [ ] Higher level how do I want authzee classes to be used? 
     - At what point do you just scale out the Authzee processes vs having a single instance with multiple workers?
@@ -19,32 +32,20 @@
         - push out a request per a process
         - fan out a request to multiple workers for parallel pagination
         - send out request to async workers that can process them 
-    
 
-- [ ] define where authzee class and modules do the validation
+
+- [x] authzee sync
+- [x] finalize API
+- [x] regenerate __all__s
+- [x] define where authzee class and modules do the validation
     - Requests are handled by compute, 
     - defs are done at the authzee level
     - Need to document this in the SDK docs or just this packages at least
-
-- [ ] regenerate __all__s
-    - [x] exceptions
-
-- [ ] update examples to use balloons. 
-
-- [ ] - ability to update schemas to make more strict, or less :|.
-
-- [ ] better batch request verification
-    - this is a very inefficient way to do this 
-    - try and reuse as needed and only do partial verification of new fields 
-
-- [ ] where to do caching? 
-    - Easier on the storage side to just set and forget
-    - more consistent if done on compute side but how would you share that cache???
-
-- [ ] batch functions seem like they should be background - do slowly as needed kind of stuff
-    - different name for batch??
-
-
+    - **solution** compute does all
+- [x] example for SDK 
+- [x] how the sdk example would look for C, Rust, or other languages
+- [x] make a minimum product with the SDK. 
+- [x] in process compute validate_batch_request, and test batch calls
 - [x] where to validate 
     - Most clear to just defer it all to the compute, right? 
     - could split it up but just defer to compute and let it figure it out

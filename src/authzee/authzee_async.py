@@ -1,9 +1,11 @@
 
+__all__ = [
+    "AuthzeeAsync",
+]
+
 from asyncio import gather
-import copy
 import datetime
 from typing import Any, Callable, Dict, Type
-from uuid import UUID
 
 from authzee.types import *
 from authzee.exceptions import *
@@ -66,7 +68,10 @@ class AuthzeeAsync:
     
     Examples
     --------
-    Example here
+    
+    ```python
+
+    ```
     """
 
     def __init__(
@@ -143,6 +148,14 @@ class AuthzeeAsync:
         )
         core.combine_errors(result, compute_results, storage_result)
         self._raise_result(result, config)
+
+        if self._storage.locality not in locality_compatibility[self._compute.locality]:
+            result['errors']['locality_incompatibility'] = [
+                {
+                    "is_critical": False,
+                    "message": f"The '{self._storage.locality}' storage locality is not compatible with the '{self._compute.locality}' compute locality."
+                }
+            ]
 
         return result
 
@@ -496,7 +509,7 @@ class AuthzeeAsync:
         
     async def repeal(
         self, 
-        grant_uuid: UUID, 
+        grant_uuid: str, 
         purge: bool,
         config: AuthzeeConfig | None = None
     ) -> GenericResult:
@@ -513,7 +526,7 @@ class AuthzeeAsync:
 
     async def get_grant(
         self, 
-        grant_uuid: UUID,
+        grant_uuid: str,
         config: AuthzeeConfig | None = None
     ) -> GrantResult:
         config = self._config if config is None else self._config | config

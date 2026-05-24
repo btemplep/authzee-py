@@ -1,4 +1,8 @@
 
+__all__ = [
+    "InProcessCompute",
+]
+
 from asyncio import as_completed, create_task, Task
 from typing import Any, Callable, Dict, List, Type
 
@@ -62,13 +66,21 @@ class InProcessCompute(ComputeModule):
         """
         await self._storage.shutdown()
 
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
+
 
     async def construct(self, config: AuthzeeConfig) -> GenericResult:
         """Construct backend resources for compute.
 
         - one time setup
         """
-        pass
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def destroy(self, config: AuthzeeConfig) -> GenericResult:
@@ -76,7 +88,10 @@ class InProcessCompute(ComputeModule):
 
         - destructive - may lose all long lasting compute resources
         """
-        pass
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def validate_context_def(

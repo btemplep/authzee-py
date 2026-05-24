@@ -1,14 +1,18 @@
-
+"""_summary_
+"""
 
 __version__ = "0.2.0"
 
 __all__ = [
     "Authzee",
     "AuthzeeAsync",
+    "context_def_schema",
+    "identity_def_schema",
+    "resource_def_schema",
+    "grant_schema",
     "paginator",
     "paginator_async",
     "exceptions",
-    "jmespath",
     "reference",
     "types"
 ]
@@ -18,8 +22,14 @@ logger.disable("authzee")
 
 from authzee.authzee import Authzee
 from authzee.authzee_async import AuthzeeAsync
+from authzee.core import (
+    context_def_schema,
+    identity_def_schema,
+    resource_def_schema,
+    grant_schema
+)
 from authzee.paginator import paginator, paginator_async
-from authzee import exceptions, jmespath, reference, types
+from authzee import exceptions, reference, types
 
 from authzee.compute import *
 from authzee.compute import __all__ as compute_all

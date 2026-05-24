@@ -1,5 +1,9 @@
 
 
+__all__ = [
+    "ComputeModule",
+]
+
 from typing import Any, Callable, Dict, Type
 
 from authzee.types import *

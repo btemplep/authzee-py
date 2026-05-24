@@ -1,7 +1,10 @@
 
 
+__all__ = [
+    "StorageModule",
+]
+
 import datetime
-from uuid import UUID
 
 from authzee.types import *
 from authzee.exceptions import NotImplementedError
@@ -190,7 +193,7 @@ class StorageModule:
 
     async def repeal(
         self, 
-        grant_uuid: UUID, 
+        grant_uuid: str, 
         purge: bool,
         config: AuthzeeConfig
     ) -> GenericResult:
@@ -201,7 +204,7 @@ class StorageModule:
 
     async def get_grant(
         self, 
-        grant_uuid: UUID,
+        grant_uuid: str,
         config: AuthzeeConfig
     ) -> GrantResult:
         """Get a grant by UUID.
@@ -248,7 +251,7 @@ class StorageModule:
 
     async def get_latch(
         self, 
-        storage_latch_uuid: UUID,
+        storage_latch_uuid: str,
         config: AuthzeeConfig
     ) -> StorageLatchResult:
         """Get a [storage latch](#storage-latches) by UUID.
@@ -258,7 +261,7 @@ class StorageModule:
 
     async def set_latch(
         self, 
-        storage_latch_uuid: UUID,
+        storage_latch_uuid: str,
         config: AuthzeeConfig
     ) -> StorageLatchResult:
         """Set a [storage latch](#storage-latches) by UUID.
@@ -268,7 +271,7 @@ class StorageModule:
 
     async def delete_latch(
         self, 
-        storage_latch_uuid: UUID,
+        storage_latch_uuid: str,
         config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a [storage latch](#storage-latches) by UUID.

@@ -1,19 +1,23 @@
 
 
+__all__ = [
+    "DictStorage",
+]
+
 import datetime
 from typing import List
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from authzee.storage.storage_module import StorageModule
 from authzee.types import *
 from authzee.module_locality import ModuleLocality
 
 
-class InProcessStorage(StorageModule):
+class DictStorage(StorageModule):
 
-    def __init__(self, storage_ptr: dict): 
+    def __init__(self, storage_dict: dict): 
         super().__init__()
-        self._storage_ptr = storage_ptr
+        self._storage_dict = storage_dict
 
 
     async def start(self, config: AuthzeeConfig) -> GenericResult:
@@ -26,11 +30,6 @@ class InProcessStorage(StorageModule):
         """
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = True
-        self._storage_ptr['context_defs_lut'] = {}
-        self._storage_ptr['identity_defs_lut'] = {}
-        self._storage_ptr['resource_defs_lut'] = {}
-        self._storage_ptr['grants_lut'] = {}
-        self._storage_ptr['latches_lut'] = {}
    
         return {
             "has_failed": False, 
@@ -43,7 +42,10 @@ class InProcessStorage(StorageModule):
 
         - clean up runtime resources
         """
-        pass
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def construct(self, config: AuthzeeConfig) -> GenericResult:
@@ -51,7 +53,16 @@ class InProcessStorage(StorageModule):
 
         - one time setup
         """
-        pass
+        self._storage_dict['context_defs_lut'] = {}
+        self._storage_dict['identity_defs_lut'] = {}
+        self._storage_dict['resource_defs_lut'] = {}
+        self._storage_dict['grants_lut'] = {}
+        self._storage_dict['latches_lut'] = {}
+
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def destroy(self, config: AuthzeeConfig) -> GenericResult:
@@ -59,7 +70,16 @@ class InProcessStorage(StorageModule):
 
         - destructive - may lose all long lasting storage resources
         """
-        pass
+        self._storage_dict.pop("context_defs_lut", None)
+        self._storage_dict.pop("identity_defs_lut", None)
+        self._storage_dict.pop("resource_defs_lut", None)
+        self._storage_dict.pop("grants_lut", None)
+        self._storage_dict.pop("latches_lut", None)
+
+        return {
+            "has_failed": False, 
+            "errors": {}
+        }
 
 
     async def get_context_defs_page(
@@ -76,7 +96,7 @@ class InProcessStorage(StorageModule):
         else:
             start_index = int(page_ref)
 
-        context_defs = list(self._storage_ptr['context_defs_lut'].values())
+        context_defs = list(self._storage_dict['context_defs_lut'].values())
         end_index = start_index + config['context_defs_page_size']  
         
         return {
@@ -94,7 +114,7 @@ class InProcessStorage(StorageModule):
     ) -> ContextDefResult:
         """Get a context definition by type.
         """
-        context_def = self._storage_ptr['context_defs_lut'].get(context_type, None)
+        context_def = self._storage_dict['context_defs_lut'].get(context_type, None)
         if context_def is None:
             return {
                 "context_def": None,
@@ -125,7 +145,7 @@ class InProcessStorage(StorageModule):
 
         Validated by authzee class
         """
-        self._storage_ptr['context_defs_lut'][context_def['context_type']] = context_def
+        self._storage_dict['context_defs_lut'][context_def['context_type']] = context_def
 
         return {
             "has_failed": False, 
@@ -140,7 +160,7 @@ class InProcessStorage(StorageModule):
     ) -> GenericResult:
         """Delete a context definition by type.
         """
-        self._storage_ptr['context_defs_lut'].pop(context_type, None)
+        self._storage_dict['context_defs_lut'].pop(context_type, None)
         
         return {
             "has_failed": False, 
@@ -162,7 +182,7 @@ class InProcessStorage(StorageModule):
         else:
             start_index = int(page_ref)
 
-        identity_defs = list(self._storage_ptr['identity_defs_lut'].values())
+        identity_defs = list(self._storage_dict['identity_defs_lut'].values())
         end_index = start_index + config['identity_defs_page_size']       
         
         return {
@@ -180,7 +200,7 @@ class InProcessStorage(StorageModule):
     ) -> IdentityDefResult:
         """Get an identity definition by type.
         """
-        identity_def = self._storage_ptr['identity_defs_lut'].get(identity_type, None)
+        identity_def = self._storage_dict['identity_defs_lut'].get(identity_type, None)
         if identity_def is None:
             return {
                 "identity_def": None,
@@ -209,7 +229,7 @@ class InProcessStorage(StorageModule):
     ) -> GenericResult:
         """Add a new Identity Definition or update an existing one.
         """
-        self._storage_ptr['identity_defs_lut'][identity_def['identity_type']] = identity_def
+        self._storage_dict['identity_defs_lut'][identity_def['identity_type']] = identity_def
 
         return {
             "has_failed": False, 
@@ -224,7 +244,7 @@ class InProcessStorage(StorageModule):
     ) -> GenericResult:
         """Delete an identity definition by type.
         """
-        self._storage_ptr['identity_defs_lut'].pop(identity_type, None)
+        self._storage_dict['identity_defs_lut'].pop(identity_type, None)
         
         return {
             "has_failed": False, 
@@ -246,7 +266,7 @@ class InProcessStorage(StorageModule):
         else:
             start_index = int(page_ref)
 
-        resource_defs = list(self._storage_ptr['resource_defs_lut'].values())
+        resource_defs = list(self._storage_dict['resource_defs_lut'].values())
         end_index = start_index + config['resource_defs_page_size'] 
         
         return {
@@ -264,7 +284,7 @@ class InProcessStorage(StorageModule):
     ) -> ResourceDefResult:
         """Get a resource definition by type.
         """
-        resource_def = self._storage_ptr['resource_defs_lut'].get(resource_type, None)
+        resource_def = self._storage_dict['resource_defs_lut'].get(resource_type, None)
         if resource_def is None:
             return {
                 "resource_def": None,
@@ -293,7 +313,7 @@ class InProcessStorage(StorageModule):
     ) -> GenericResult:
         """Add a new Resource Definition or update an existing one.
         """
-        self._storage_ptr['resource_defs_lut'][resource_def['resource_type']] = resource_def
+        self._storage_dict['resource_defs_lut'][resource_def['resource_type']] = resource_def
 
         return {
             "has_failed": False, 
@@ -308,7 +328,7 @@ class InProcessStorage(StorageModule):
     ) -> GenericResult:
         """Delete a resource definition by type.
         """
-        self._storage_ptr['resource_defs_lut'].pop(resource_type, None)
+        self._storage_dict['resource_defs_lut'].pop(resource_type, None)
         
         return {
             "has_failed": False, 
@@ -323,7 +343,7 @@ class InProcessStorage(StorageModule):
     ) -> GenericResult:
         """Add a new grant.
         """
-        self._storage_ptr['grants_lut'][grant['grant_uuid']] = grant
+        self._storage_dict['grants_lut'][grant['grant_uuid']] = grant
 
         return {
             "has_failed": False, 
@@ -333,13 +353,13 @@ class InProcessStorage(StorageModule):
 
     async def repeal(
         self, 
-        grant_uuid: UUID, 
+        grant_uuid: str, 
         purge: bool,
         config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a grant.
         """
-        self._storage_ptr['grants_lut'].pop(grant_uuid, None)
+        self._storage_dict['grants_lut'].pop(grant_uuid, None)
 
         return {
             "has_failed": False, 
@@ -349,12 +369,12 @@ class InProcessStorage(StorageModule):
 
     async def get_grant(
         self, 
-        grant_uuid: UUID,
+        grant_uuid: str,
         config: AuthzeeConfig
     ) -> GrantResult:
         """Get a grant by UUID.
         """
-        grant = self._storage_ptr['grants_lut'].get(grant_uuid, None)
+        grant = self._storage_dict['grants_lut'].get(grant_uuid, None)
         if grant is None:
             return {
                 "grant": None,
@@ -392,7 +412,7 @@ class InProcessStorage(StorageModule):
         else:
             start_index = int(page_ref)
 
-        grants: List[Grant] = list(self._storage_ptr['grants_lut'].values())
+        grants: List[Grant] = list(self._storage_dict['grants_lut'].values())
         if effect is not None:
             grants = [g for g in grants if g['effect'] == effect]
         
@@ -428,7 +448,7 @@ class InProcessStorage(StorageModule):
         else:
             start_index = int(page_ref)
 
-        grants: List[Grant] = list(self._storage_ptr['grants_lut'].values())
+        grants: List[Grant] = list(self._storage_dict['grants_lut'].values())
         if effect is not None:
             grants = [g for g in grants if g['effect'] == effect]
         
@@ -461,9 +481,9 @@ class InProcessStorage(StorageModule):
         latch = {
             "storage_latch_uuid": latch_uuid,
             "is_set": False,
-            "created_at": datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+            "created_at": datetime.datetime.now(tz=datetime.timezone.utc)
         }
-        self._storage_ptr['latches_lut'][latch_uuid] = latch
+        self._storage_dict['latches_lut'][latch_uuid] = latch
 
         return {
             "storage_latch": latch,
@@ -474,12 +494,12 @@ class InProcessStorage(StorageModule):
 
     async def get_latch(
         self, 
-        storage_latch_uuid: UUID,
+        storage_latch_uuid: str,
         config: AuthzeeConfig
     ) -> StorageLatchResult:
         """Get a [storage latch](#storage-latches) by UUID.
         """
-        latch = self._storage_ptr['latches_lut'].get(storage_latch_uuid, None)
+        latch = self._storage_dict['latches_lut'].get(storage_latch_uuid, None)
         if latch is None:
             return {
                 "storage_latch": None,
@@ -503,7 +523,7 @@ class InProcessStorage(StorageModule):
 
     async def set_latch(
         self, 
-        storage_latch_uuid: UUID,
+        storage_latch_uuid: str,
         config: AuthzeeConfig
     ) -> StorageLatchResult:
         """Set a [storage latch](#storage-latches) by UUID.
@@ -522,12 +542,12 @@ class InProcessStorage(StorageModule):
 
     async def delete_latch(
         self, 
-        storage_latch_uuid: UUID,
+        storage_latch_uuid: str,
         config: AuthzeeConfig
     ) -> GenericResult:
         """Delete a [storage latch](#storage-latches) by UUID.
         """
-        self._storage_ptr['latches_lut'].pop(storage_latch_uuid, None)
+        self._storage_dict['latches_lut'].pop(storage_latch_uuid, None)
 
         return {
             "has_failed": False, 
@@ -546,11 +566,11 @@ class InProcessStorage(StorageModule):
         - operations should clean up their own latches, but in case of a failure this can be used to clean up zombie latches.
         """
         new_lut = {}
-        for lu, l in self._storage_ptr['latches_lut'].items():
-            if datetime.datetime.fromisoformat(l['created_at']) > before:
+        for lu, l in self._storage_dict['latches_lut'].items():
+            if l['created_at'] > before:
                 new_lut[lu] = l
         
-        self._storage_ptr['latches_lut'] = new_lut
+        self._storage_dict['latches_lut'] = new_lut
         
         return {
             "has_failed": False, 
