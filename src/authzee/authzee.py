@@ -1,4 +1,4 @@
-
+"""See {py:class}`authzee.authzee.Authzee`"""
 __all__ = [
     "Authzee",
 ]
@@ -14,7 +14,7 @@ from authzee.authzee_async import AuthzeeAsync
 
 
 class Authzee:
-    """Authzee application with asyncio.
+    """Authzee application.
 
     Parameters
     ----------

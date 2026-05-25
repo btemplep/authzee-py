@@ -2,6 +2,7 @@
 
 - [ ] Update Docs
 - [ ] docstrings with examples for everything
+- [ ] update custom jmespath functions 
 
 
 - [ ] better batch request verification

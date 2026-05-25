@@ -1,4 +1,4 @@
-
+"""Enum for locality and compatibility"""
 __all__ = [
     "ModuleLocality",
     "locality_compatibility",

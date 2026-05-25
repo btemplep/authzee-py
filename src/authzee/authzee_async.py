@@ -1,4 +1,4 @@
-
+"""See {py:class}`authzee.authzee_async.AuthzeeAsync`"""
 __all__ = [
     "AuthzeeAsync",
 ]
@@ -70,7 +70,259 @@ class AuthzeeAsync:
     --------
     
     ```python
+    import asyncio
+    from typing import Any
+    from uuid import uuid4
 
+    import jmespath
+    from loguru import logger
+
+    from authzee import AuthzeeAsync, InProcessCompute, DictStorage
+
+
+    def execute(expression: str, data: Any) -> dict:
+        query_result = None
+        try:
+            query_result = jmespath.search(expression, data)
+        except Exception as exc:
+            return {
+                "result": None,
+                "has_failed": True,
+                "error_message": f"A JMESPath Query error has occurred: {exc}"
+            }
+
+        return {
+            "result": query_result,
+            "has_failed": False,
+            "error_message": None
+        }
+
+
+    storage_dict = {}
+    authz = AuthzeeAsync(
+        execute=execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        }, 
+        # compute_storage_kwargs={},
+        # config={
+        #     "raise_crits": False
+        # },
+        # compute_config={}
+    )
+
+
+    async def main():
+        await authz.start()
+        result = await authz.put_context_def(
+            {
+                "context_type": "NONE",
+                "schema": {
+                    "type": "object",
+                    "additionalProperties": False
+                }
+            }
+        )
+        result = await authz.get_context_defs_page()
+        result = await authz.get_context_def("NONE")
+        # result = await authz.delete_context_def("NONE")
+        # result = await authz.get_context_defs_page()
+        # result = await authz.get_context_def("NONE")
+        result = await authz.put_identity_def(
+            identity_def={
+                "identity_type": "user",
+                "schema": {
+                    "type":"object",
+                    "required": [
+                        "username",
+                        "groups"
+                    ],
+                    "additionalProperties": False,
+                    "properties": {
+                        "username": {
+                            "type": "string"
+                        },
+                        "groups": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "roles": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        )
+        await authz.put_resource_def(
+            resource_def={
+                "resource_type": "balloon",
+                "actions": [
+                    "balloon:read",
+                    "balloon:inflate",
+                    "balloon:pop"
+                ],
+                "schema": {
+                    "type": "object",
+                    "required": [
+                        "color",
+                        "is_inflated"
+                    ],
+                    "additionalProperties": False,
+                    "properties": {
+                        "color": {
+                            "type": "string"
+                        },
+                        "is_inflated": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        )
+        for _ in range(1000):
+            await authz.enact(
+                {
+                    "grant_uuid": str(uuid4()),
+                    "name": "tester",
+                    "description": "tester",
+                    "tags": {},
+                    "effect": "allow",
+                    "actions": [
+                        "balloon:read",
+                        "balloon:inflate"
+                    ],
+                    "query": "length(request.identities.user[?contains(roles, 'admin199')]) > `0`",
+                    "evaluation_handler": "evaluate",
+                    "equality": True,
+                    "data": {}
+                }
+            )
+        for _ in range(1000):
+            await authz.enact(
+                {
+                    "grant_uuid": str(uuid4()),
+                    "name": "tester",
+                    "description": "tester",
+                    "tags": {},
+                    "effect": "deny",
+                    "actions": [
+                        "balloon:nothing"
+                    ],
+                    "query": "length(request.identities.user[?contains(roles, 'admin199')]) > `0`",
+                    "evaluation_handler": "evaluate",
+                    "equality": True,
+                    "data": {}
+                }
+            )
+        admin_grant_uuid = str(uuid4())
+        await authz.enact(
+            grant={
+                "grant_uuid": admin_grant_uuid,
+                "name": "Allow inflate for admins",
+                "description": "Administrators are allowed to read and inflate all balloons.",
+                "tags": {},
+                "effect": "allow",
+                "actions": [
+                    "balloon:read",
+                    "balloon:inflate"
+                ],
+                "query": "length(request.identities.user[?contains(roles, 'admin')]) > `0`",
+                "evaluation_handler": "evaluate",
+                "equality": True,
+                "data": {}
+            }
+        )
+        result = await authz.get_grant(admin_grant_uuid)
+        print(json.dumps(result, indent=4))
+        exit()
+        request = {
+            "identities": {
+                "user": [
+                    {
+                        "username": "balloon_person",
+                        "groups": [],
+                        "roles": [
+                            "popper",
+                            "admin"
+                        ]
+                    }
+                ]
+            },
+            "action": "balloon:inflate",
+            "resource_type": "balloon",
+            "resource": {
+                "color": "inflated",
+                "is_inflated": False
+            },
+            "evaluation_handler": "grant",
+            "context_type": "NONE",
+            "context": {}
+        }
+        result = await authz.audit_page(request)
+        result = await authz.authorize(request)
+        batch_request = {
+            "identities": {
+                "user": [
+                    {
+                        "username": "balloon_person",
+                        "groups": [],
+                        "roles": [
+                            "popper",
+                            "admin"
+                        ]
+                    }
+                ]
+            },
+            "action": "balloon:inflate",
+            "resource_type": "balloon",
+            "resource": {
+                "color": "inflated",
+                "is_inflated": False
+            },
+            "evaluation_handler": "grant",
+            "context_type": "NONE",
+            "context": {}, 
+            "batch": [
+                {},
+                {
+                    "resource": {
+                        "color": "deflated",
+                        "is_inflated": True
+                    }
+                },
+                {
+                    "identities": {
+                        "user": [
+                            {
+                                "username": "balloon_person",
+                                "groups": [],
+                                "roles": [
+                                    "popper"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "identities": {
+                    }
+                }
+            ]
+        }
+
+        result = await authz.batch_audit_page(batch_request)
+        result = await authz.batch_authorize(batch_request)
+        print(json.dumps(result, indent=4))
+
+    asyncio.run(main())
     ```
     """
 

@@ -1,4 +1,4 @@
-"""Module for Authzee Exceptions
+"""Module for Authzee Exceptions.
 """
 
 __all__ = [

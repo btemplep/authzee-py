@@ -1,5 +1,8 @@
 """A reference implementation for the Authzee specification.
 
+SDK may only use part of this reference implementation or none at all. 
+See {py:mod}`authzee.core` for internally focused SDK code. 
+
 Core workflow:
 
 1. Context, identity, and resource definitions are created to limit inputs.

@@ -28,6 +28,13 @@ from authzee.core import (
     resource_def_schema,
     grant_schema
 )
+try:
+    from authzee.jmespath import *
+    from authzee.jmespath import __all__ as jmespath_all
+    __all__ += jmespath_all
+except ModuleNotFoundError:
+    pass
+
 from authzee.paginator import paginator, paginator_async
 from authzee import exceptions, reference, types
 

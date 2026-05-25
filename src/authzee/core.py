@@ -1,6 +1,8 @@
 """Core functionality for the Authzee SDK. 
 
 The functionality of this module is optimized for SDK use.  It conforms to the Authzee Specification but is not a one to one copy of the reference implementation.
+
+For reference implementation see {py:mod}`authzee.reference`
 """
 
 __all__ = [
