@@ -1,5 +1,6 @@
 # TODO
 
+- [ ] change get_something_page to just list_something??
 - [ ] Update Docs
 - [ ] docstrings with examples for everything
 - [ ] update custom jmespath functions 
