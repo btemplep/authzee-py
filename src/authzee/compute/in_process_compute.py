@@ -290,7 +290,7 @@ class InProcessCompute(ComputeModule):
             "errors": {}
         }
         grants_page = (
-            await self._storage.get_grants_page(
+            await self._storage.list_grants(
                 effect=None,
                 action=request['action'],
                 page_ref=page_ref,
@@ -343,7 +343,7 @@ class InProcessCompute(ComputeModule):
             "critical_errors": {}
         }
         async for page in paginator_async(
-            self._storage.get_grants_page,
+            self._storage.list_grants,
             effect="deny",
             action=request['action'],
             page_ref=None,
@@ -379,7 +379,7 @@ class InProcessCompute(ComputeModule):
 
         # got through all allow grants
         async for page in paginator_async(
-            self._storage.get_grants_page,
+            self._storage.list_grants,
             effect="allow",
             action=request['action'],
             page_ref=None,
@@ -440,7 +440,7 @@ class InProcessCompute(ComputeModule):
             "errors": {}
         }
         grants_page = (
-            await self._storage.get_grants_page(
+            await self._storage.list_grants(
                 effect=None,
                 action=batch_request['action'],
                 page_ref=page_ref,
@@ -518,7 +518,7 @@ class InProcessCompute(ComputeModule):
         base_request = batch_request.copy()
         base_request.pop("batch")
         async for page in paginator_async(
-            self._storage.get_grants_page,
+            self._storage.list_grants,
             effect="deny",
             action=batch_request['action'],
             page_ref=None,
@@ -556,7 +556,7 @@ class InProcessCompute(ComputeModule):
                         continue
 
         async for page in paginator_async(
-            self._storage.get_grants_page,
+            self._storage.list_grants,
             effect="allow",
             action=batch_request['action'],
             page_ref=None,

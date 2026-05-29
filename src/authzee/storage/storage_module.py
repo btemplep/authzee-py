@@ -55,7 +55,7 @@ class StorageModule:
         raise NotImplementedError()
 
 
-    async def get_context_defs_page(
+    async def list_context_defs(
         self,
         page_ref: str | None,
         config: AuthzeeConfig
@@ -97,7 +97,7 @@ class StorageModule:
         raise NotImplementedError()
 
 
-    async def get_identity_defs_page(
+    async def list_identity_defs(
         self,
         page_ref: str | None,
         config: AuthzeeConfig
@@ -139,7 +139,7 @@ class StorageModule:
         raise NotImplementedError()
 
 
-    async def get_resource_defs_page(
+    async def list_resource_defs(
         self,
         page_ref: str | None,
         config: AuthzeeConfig
@@ -212,7 +212,7 @@ class StorageModule:
         raise NotImplementedError()
 
 
-    async def get_grants_page(
+    async def list_grants(
         self,
         effect: str | None,
         action: str | None,
@@ -226,7 +226,7 @@ class StorageModule:
         raise NotImplementedError()
 
 
-    async def get_grant_refs_page(
+    async def list_grant_refs(
         self,
         effect: str | None,
         action: str | None,

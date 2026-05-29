@@ -1,16 +1,28 @@
 # TODO
 
-- [ ] change get_something_page to just list_something??
-- [ ] Update Docs
-- [ ] docstrings with examples for everything
-- [ ] update custom jmespath functions 
 
+- [ ] update custom jmespath functions 
+- [ ] short dev guide to describe compute and storage module dev
+    - caching 
+        - request and batch request validation should cache stuff within for the request
+        - all other caching should be setup on the storage engine. 
+
+
+- [ ] unit tests
+- [ ] full docs
+- [ ] SQL storage
+- [ ] mongo storage
+- [ ] redis storage
+
+- [ ] mp compute
+- [ ] fan out compute
 
 - [ ] better batch request verification
     - this is a very inefficient way to do this 
     - try and reuse as needed and only do partial verification of new fields 
 
-- [ ] where to do caching? 
+
+- [x] where to do caching? 
     - Easier on the storage side to just set and forget
     - more consistent if done on compute side but how would you share that cache???
     - grants we don't really want to cache unless it's a small amount
@@ -19,8 +31,10 @@
         - for batch requests, we also want that by we should cache in compute
             - both for performance
             - and for consistency when validating the batch request
-
-- [ ] Higher level how do I want authzee classes to be used? 
+    - **Solution**
+        - request and batch request validation should cache stuff within for the request
+        - all other caching should be setup on the storage engine. 
+- [x] Higher level how do I want authzee classes to be used? 
     - At what point do you just scale out the Authzee processes vs having a single instance with multiple workers?
     - For storage it can very easily have multiple requests per process
     - storage types
@@ -30,12 +44,23 @@
         - redis
         - later
             - mongodb
-    - For compute we really just need the ability to
-        - push out a request per a process
+    - What do we really need compute wise? 
+        - In process 
+            - obv
+            - done
+        - push out a request per a process?
+            - why not just leave it up to them to scale this out as needed? 
+            - multi microservices with a single process? 
+            - This would let you off load compute while still being able to serve listing grants and things
+                - Good for a web app or just general purpose asyncio
         - fan out a request to multiple workers for parallel pagination
+            - this is needed if you want parallel pagination to process faster
         - send out request to async workers that can process them 
-
-
+            - This is cool, but is so out of scope it would be its own project to create this from scratch
+                - async distributed compute type of stuff
+- [x] Update Docs
+- [x] docstrings with examples for everything
+- [x] change get_something_page to just list_something??
 - [x] authzee sync
 - [x] finalize API
 - [x] regenerate __all__s

@@ -29,7 +29,7 @@ def paginator(func: Callable, **kwargs) -> Generator[Any, None]:
     from authzee import paginator
 
     # Assume authz is an Authzee instance
-    for page in paginator(authz.get_grants_page):
+    for page in paginator(authz.list_grants):
         for grant in page['grants']:
             print(grant['grant_uuid'])
     ```
@@ -65,7 +65,7 @@ async def paginator_async(afunc: Callable, **kwargs) -> AsyncGenerator[Any, None
     from authzee import paginator_async
 
     # Assume authz is an AuthzeeAsync instance, and this is within an event loop
-    async for page in paginator(authz.get_grants_page):
+    async for page in paginator(authz.list_grants):
         for grant in page['grants']:
             print(grant['grant_uuid'])
     ```

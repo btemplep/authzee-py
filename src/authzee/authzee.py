@@ -222,8 +222,9 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.start(
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -245,7 +246,7 @@ class Authzee:
                 "errors": {
                     "start": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -277,8 +278,9 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.shutdown(
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -300,7 +302,7 @@ class Authzee:
                 "errors": {
                     "start": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -330,8 +332,9 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.construct(
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -353,7 +356,7 @@ class Authzee:
                 "errors": {
                     "start": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -383,8 +386,9 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.destroy(
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -406,7 +410,7 @@ class Authzee:
                 "errors": {
                     "start": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -439,6 +443,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.validate_context_def(
             context_def={
                 "context_type": "NONE",
@@ -447,7 +452,7 @@ class Authzee:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -469,7 +474,7 @@ class Authzee:
                 "errors": {
                     "definition": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -490,7 +495,7 @@ class Authzee:
         )
 
 
-    def get_context_defs_page(
+    def list_context_defs(
         self, 
         page_ref: str | None = None,
         config: AuthzeeConfig | None = None
@@ -507,9 +512,10 @@ class Authzee:
         Examples
         --------
         ```python
-        result = authz.get_context_defs_page(
+        # Assumes authz is an Authzee instance
+        result = authz.list_context_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -526,7 +532,8 @@ class Authzee:
         ```python
         from authzee import paginator
 
-        for page in paginator(authz.get_context_defs_page):
+        # Assumes authz is an Authzee instance
+        for page in paginator(authz.list_context_defs):
             for context_def in page['context_defs']:
                 print(context_def['context_type'])
         ```
@@ -550,7 +557,7 @@ class Authzee:
                 "errors": {
                     "page_reference": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -564,7 +571,7 @@ class Authzee:
             If the page reference is invalid.
         """
         return asyncio.run(
-            self._authzee_async.get_context_defs_page(
+            self._authzee_async.list_context_defs(
                 page_ref=page_ref,
                 config=config
             )
@@ -588,9 +595,10 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.get_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -619,7 +627,7 @@ class Authzee:
                 "errors": {
                     "resource_not_found": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -657,6 +665,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.put_context_def(
             context_def={
                 "context_type": "NONE",
@@ -665,7 +674,7 @@ class Authzee:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -687,7 +696,7 @@ class Authzee:
                 "errors": {
                     "definition": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -725,9 +734,10 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.delete_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -749,7 +759,7 @@ class Authzee:
                 "errors": {
                     "resource_not_found": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -787,6 +797,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.validate_identity_def(
             identity_def={
                 "identity_type": "user",
@@ -802,7 +813,7 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -824,7 +835,7 @@ class Authzee:
                 "errors": {
                     "definition": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -845,7 +856,7 @@ class Authzee:
         )
 
 
-    def get_identity_defs_page(
+    def list_identity_defs(
         self, 
         page_ref: str | None = None,
         config: AuthzeeConfig | None = None
@@ -862,9 +873,10 @@ class Authzee:
         Examples
         --------
         ```python
-        result = authz.get_identity_defs_page(
+        # Assumes authz is an Authzee instance
+        result = authz.list_identity_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -881,7 +893,8 @@ class Authzee:
         ```python
         from authzee import paginator
 
-        for page in paginator(authz.get_identity_defs_page):
+        # Assumes authz is an Authzee instance
+        for page in paginator(authz.list_identity_defs):
             for identity_def in page['identity_defs']:
                 print(identity_def['identity_type'])
         ```
@@ -909,7 +922,7 @@ class Authzee:
                 "errors": {
                     "page_reference": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -923,7 +936,7 @@ class Authzee:
             If the page reference is invalid.
         """
         return asyncio.run(
-            self._authzee_async.get_identity_defs_page(
+            self._authzee_async.list_identity_defs(
                 page_ref=page_ref,
                 config=config
             )
@@ -947,9 +960,10 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.get_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -982,7 +996,7 @@ class Authzee:
                 "errors": {
                     "resource_not_found": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1020,6 +1034,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.put_identity_def(
             identity_def={
                 "identity_type": "user",
@@ -1035,7 +1050,7 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1057,7 +1072,7 @@ class Authzee:
                 "errors": {
                     "definition": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1095,9 +1110,10 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.delete_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1119,7 +1135,7 @@ class Authzee:
                 "errors": {
                     "resource_not_found": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1157,6 +1173,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.validate_resource_def(
             resource_def={
                 "resource_type": "balloon",
@@ -1177,7 +1194,7 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1199,7 +1216,7 @@ class Authzee:
                 "errors": {
                     "definition": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1220,7 +1237,7 @@ class Authzee:
         )
 
 
-    def get_resource_defs_page(
+    def list_resource_defs(
         self, 
         page_ref: str | None = None,
         config: AuthzeeConfig | None = None
@@ -1237,9 +1254,10 @@ class Authzee:
         Examples
         --------
         ```python
-        result = authz.get_resource_defs_page(
+        # Assumes authz is an Authzee instance
+        result = authz.list_resource_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1256,7 +1274,8 @@ class Authzee:
         ```python
         from authzee import paginator
 
-        for page in paginator(authz.get_resource_defs_page):
+        # Assumes authz is an Authzee instance
+        for page in paginator(authz.list_resource_defs):
             for resource_def in page['resource_defs']:
                 print(resource_def['resource_type'])
         ```
@@ -1288,7 +1307,7 @@ class Authzee:
                 "errors": {
                     "page_reference": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1302,7 +1321,7 @@ class Authzee:
             If the page reference is invalid.
         """
         return asyncio.run(
-            self._authzee_async.get_resource_defs_page(
+            self._authzee_async.list_resource_defs(
                 page_ref=page_ref,
                 config=config
             )
@@ -1326,9 +1345,10 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.get_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1365,7 +1385,7 @@ class Authzee:
                 "errors": {
                     "resource_not_found": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1403,6 +1423,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.put_resource_def(
             resource_def={
                 "resource_type": "balloon",
@@ -1423,7 +1444,7 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1445,7 +1466,7 @@ class Authzee:
                 "errors": {
                     "definition": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1483,9 +1504,10 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.delete_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1507,7 +1529,7 @@ class Authzee:
                 "errors": {
                     "resource_not_found": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1545,6 +1567,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.validate_grant(
             grant={
                 "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
@@ -1562,7 +1585,7 @@ class Authzee:
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1584,7 +1607,7 @@ class Authzee:
                 "errors": {
                     "grant": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1622,6 +1645,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.enact(
             grant={
                 "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
@@ -1639,7 +1663,7 @@ class Authzee:
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1661,7 +1685,7 @@ class Authzee:
                 "errors": {
                     "grant": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1702,10 +1726,11 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.repeal(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             purge=True,
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1727,7 +1752,7 @@ class Authzee:
                 "errors": {
                     "resource_not_found": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1766,9 +1791,10 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.get_grant(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1806,7 +1832,7 @@ class Authzee:
                 "errors": {
                     "resource_not_found": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1827,7 +1853,7 @@ class Authzee:
         )
 
 
-    def get_grants_page(
+    def list_grants(
         self,
         effect: str | None = None, 
         action: str | None = None, 
@@ -1850,11 +1876,12 @@ class Authzee:
         Examples
         --------
         ```python
-        result = authz.get_grants_page(
+        # Assumes authz is an Authzee instance
+        result = authz.list_grants(
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1871,7 +1898,8 @@ class Authzee:
         ```python
         from authzee import paginator
 
-        for page in paginator(authz.get_grants_page, effect="allow"):
+        # Assumes authz is an Authzee instance
+        for page in paginator(authz.list_grants, effect="allow"):
             for grant in page['grants']:
                 print(grant['grant_uuid'])
         ```
@@ -1904,7 +1932,7 @@ class Authzee:
                 "errors": {
                     "page_reference": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -1918,7 +1946,7 @@ class Authzee:
             If the page reference is invalid.
         """
         return asyncio.run(
-            self._authzee_async.get_grants_page(
+            self._authzee_async.list_grants(
                 effect=effect,
                 action=action,
                 page_ref=page_ref,
@@ -1927,7 +1955,7 @@ class Authzee:
         )
 
 
-    def get_grant_refs_page(
+    def list_grant_refs(
         self,
         effect: str | None = None, 
         action: str | None = None, 
@@ -1950,11 +1978,12 @@ class Authzee:
         Examples
         --------
         ```python
-        result = authz.get_grant_refs_page(
+        # Assumes authz is an Authzee instance
+        result = authz.list_grant_refs(
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -1971,7 +2000,8 @@ class Authzee:
         ```python
         from authzee import paginator
 
-        for page in paginator(authz.get_grant_refs_page, effect="allow"):
+        # Assumes authz is an Authzee instance
+        for page in paginator(authz.list_grant_refs, effect="allow"):
             for ref in page['page_refs']:
                 print(ref)
         ```
@@ -1990,7 +2020,7 @@ class Authzee:
                 "errors": {
                     "page_reference": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -2006,7 +2036,7 @@ class Authzee:
             If the storage backend does not support parallel pagination.
         """
         return asyncio.run(
-            self._authzee_async.get_grant_refs_page(
+            self._authzee_async.list_grant_refs(
                 effect=effect,
                 action=action,
                 page_ref=page_ref,
@@ -2037,9 +2067,10 @@ class Authzee:
         ```python
         import datetime
 
+        # Assumes authz is an Authzee instance
         result = authz.cleanup_latches(
             before=datetime.datetime(2026, 1, 1),
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -2061,7 +2092,7 @@ class Authzee:
                 "errors": {
                     "start": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -2102,6 +2133,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.audit_page(
             request={
                 "identities": {
@@ -2123,7 +2155,7 @@ class Authzee:
                 "context": {}
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -2141,6 +2173,7 @@ class Authzee:
         from authzee import paginator
 
         for page in paginator(
+        # Assumes authz is an Authzee instance
             authz.audit_page,
             request={ F
                 "identities": {
@@ -2199,7 +2232,7 @@ class Authzee:
                 "errors": {
                     "request": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -2242,6 +2275,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.authorize(
             request={
                 "identities": {
@@ -2262,7 +2296,7 @@ class Authzee:
                 "context_type": "NONE",
                 "context": {}
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -2300,7 +2334,7 @@ class Authzee:
                 "critical_errors": {
                     "evaluation": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -2343,6 +2377,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.batch_audit_page(
             batch_request={
                 "identities": {
@@ -2372,7 +2407,7 @@ class Authzee:
                 ]
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -2390,6 +2425,7 @@ class Authzee:
         from authzee import paginator
 
         for page in paginator(
+        # Assumes authz is an Authzee instance
             authz.batch_audit_page,
             batch_request={
                 "identities": {
@@ -2463,7 +2499,7 @@ class Authzee:
                 "errors": {
                     "request": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
@@ -2506,6 +2542,7 @@ class Authzee:
         Examples
         --------
         ```python
+        # Assumes authz is an Authzee instance
         result = authz.batch_authorize(
             batch_request={
                 "identities": {
@@ -2534,7 +2571,7 @@ class Authzee:
                     }
                 ]
             },
-            config={  # optional - AuthzeeConfig | None
+            config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
                 "resource_defs_page_size": 100,
@@ -2585,7 +2622,7 @@ class Authzee:
                 "critical_errors": {
                     "evaluation": [
                         {
-                            "is_critical": True,
+                            "is_critical": False,
                             "message": "Error message."
                         }
                     ]
