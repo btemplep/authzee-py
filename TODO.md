@@ -1,7 +1,5 @@
 # TODO
 
-
-- [ ] update custom jmespath functions 
 - [ ] short dev guide to describe compute and storage module dev
     - caching 
         - request and batch request validation should cache stuff within for the request
@@ -22,6 +20,7 @@
     - try and reuse as needed and only do partial verification of new fields 
 
 
+- [x] update custom jmespath functions 
 - [x] where to do caching? 
     - Easier on the storage side to just set and forget
     - more consistent if done on compute side but how would you share that cache???
