@@ -4,6 +4,7 @@
 __version__ = "0.1.0a4"
 
 __all__ = [
+    "authzee_specification_version",
     "Authzee",
     "AuthzeeAsync",
     "context_def_schema",
@@ -20,6 +21,8 @@ __all__ = [
 from loguru import logger
 logger.disable("authzee")
 
+authzee_specification_version = "0.3.0"
+
 from authzee.authzee import Authzee
 from authzee.authzee_async import AuthzeeAsync
 from authzee.core import (
@@ -35,7 +38,7 @@ try:
 except ModuleNotFoundError:
     pass
 
-from authzee.paginator import paginator, paginator_async
+from authzee.paginators import paginator, paginator_async
 from authzee import exceptions, reference, types
 
 from authzee.compute import *

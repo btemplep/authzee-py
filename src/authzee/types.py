@@ -119,65 +119,35 @@ class GenericError(TypedDict):
     message: str
 
 
-class SDKError(TypedDict):
-    """```python
-    Dict[str, Any]
-    ```
-
-    SDK Error Type
+ResultErrors = Dict[
+    Literal[
+        "definition",
+        "grant",
+        "request",
+        "evaluation",
+        "locality_incompatibility",
+        "not_implemented",
+        "parallel_pagination_not_supported",
+        "page_reference",
+        "resource_not_found",
+        "start"
+    ],
+    List[GenericError]
+]
+"""Result errors for all responses
 
     Examples
     --------
     ```python
     {
-        "error_type": "sdk_error_type_string",
-        "is_critical": False,
-        "message": "Error message here"
-    }
-    ```
-    """
-    error_type: str
-    is_critical: bool
-    message: str
-
-
-class ResultErrors(TypedDict):
-    """```python
-    Dict[str, Any]
-    ```
-
-    Examples
-    --------
-    **All base fields are not required.**
-    ```python
-    {
-        "definition": [ # not required
+        "<error_type>": [ 
             {
                 "is_critical": False,
                 "message": "Error message."
             }
         ],
-        "grant": [ # not required
+        "<other_error_type>": [
             {
-                "is_critical": False,
-                "message": "Error message."
-            }
-        ],
-        "request": [ # not required
-            {
-                "is_critical": False,
-                "message": "Error message."
-            }
-        ],
-        "evaluation": [ # not required
-            {
-                "is_critical": False,
-                "message": "Error message."
-            }
-        ],
-        "sdk": [ # not required
-            {
-                "error_type": "sdk_error_type_string",
                 "is_critical": False,
                 "message": "Error message."
             }
@@ -185,12 +155,6 @@ class ResultErrors(TypedDict):
     }
     ```
     """
-    definition: NotRequired[List[GenericError]]
-    grant: NotRequired[List[GenericError]]
-    request: NotRequired[List[GenericError]]
-    evaluation: NotRequired[List[GenericError]]
-    sdk: NotRequired[List[SDKError]]
-
 
 class GenericResult(TypedDict):
     """```python
@@ -203,33 +167,8 @@ class GenericResult(TypedDict):
     {
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -291,33 +230,8 @@ class ContextDefResult(TypedDict):
         },
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -356,33 +270,8 @@ class ContextDefsPage(TypedDict):
         "next_page_ref": "abc12": # str | None
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -444,33 +333,8 @@ class IdentityDefResult(TypedDict):
         },
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -509,33 +373,8 @@ class IdentityDefsPage(TypedDict):
         "next_page_ref": "abc12": # str | None
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -604,33 +443,8 @@ class ResourceDefResult(TypedDict):
         },
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -672,33 +486,8 @@ class ResourceDefsPage(TypedDict):
         "next_page_ref": "abc12": # str | None
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -786,33 +575,8 @@ class GrantResult(TypedDict):
         },
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -858,33 +622,8 @@ class GrantsPage(TypedDict):
         "next_page_ref": "abc123", # str | None
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -914,33 +653,8 @@ class PageRefsPage(TypedDict):
         "next_page_ref": "abc123", # str | None
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -991,33 +705,8 @@ class StorageLatchResult(TypedDict):
         },
         "has_failed": False,
         "errors": {
-            "definition": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "grant": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "request": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "evaluation": [ # not required
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ],
-            "sdk": [ # not required
-                {
-                    "error_type": "sdk_error_type_string",
                     "is_critical": False,
                     "message": "Error message."
                 }
@@ -1039,18 +728,24 @@ class AuthzeeRequest(TypedDict):
     --------
     ```python
     {
-        identities: Dict[str, List[Dict[str, AnyJSON]]]
-        action: str
-        resource_type: str
-        resource: Dict[str, AnyJSON]
-        evaluation_handler: Literal[
-            "grant",
-            "evaluate",
-            "error",
-            "critical"
-        ]
-        context_type: str
-        context: Dict[str, AnyJSON]
+        "identities": {
+            "ADUser": [
+                {
+                    "cn": "authzee_user_1"
+                }
+            ]
+        },
+        "action": "Balloon.CreateBalloon",
+        "resource_type": "Balloon",
+        "resource": {
+            "color": "blue",
+            "size": 27.0
+        },
+        "evaluation_handler": "evaluate", # grant | evaluate | error | critical
+        "context_type": "MyContext",
+        "context": {
+            "allowed_sizes": [20.0, 27.0]
+        }
     }
     ```
     """
@@ -1194,7 +889,7 @@ class EvaluateResult(TypedDict):
         "query_result": True,
         "has_failed": False,
         "errors": {
-            "evaluation": [ # not required
+            "<error_type>": [ 
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -1222,7 +917,7 @@ class AuditResultItem(TypedDict):
         "is_applicable": True,
         "query_result": True,
         "errors": {
-            "evaluation": [ # not required
+            "<error_type>": [ 
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -1264,13 +959,20 @@ class AuditResultPage(TypedDict):
             {
                 "is_applicable": True,
                 "query_result": True,
-                "errors": {}
+                "errors": { # result errors
+                    "<error_type>": [ 
+                        {
+                            "is_critical": False,
+                            "message": "Error message."
+                        }
+                    ]
+                }
             }
         ],
         "next_page_ref": "abc123", # str | None
         "has_failed": False,
-        "errors": {
-            "evaluation": [ # not required
+        "errors": { # request errors and propagated result errors
+            "<error_type>": [ 
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -1314,9 +1016,9 @@ class AuthorizeResult(TypedDict):
         "message": "Authorized by grant.",
         "has_failed": False,
         "critical_errors": {
-            "evaluation": [ # not required
+            "<error_type>": [ 
                 {
-                    "is_critical": True,
+                    "is_critical": False,
                     "message": "Error message."
                 }
             ]
@@ -1344,17 +1046,19 @@ class BatchAuditResultItem(TypedDict):
             {
                 "is_applicable": True,
                 "query_result": True,
-                "errors": {}
-            },
-            {
-                "is_applicable": False,
-                "query_result": False,
-                "errors": {}
+                "errors": { # result errors
+                    "<error_type>": [ 
+                        {
+                            "is_critical": False,
+                            "message": "Error message."
+                        }
+                    ]
+                }
             }
         ],
         "has_failed": False,
-        "errors": {
-            "evaluation": [ # not required
+        "errors": { # request errors and propagated result errors
+            "<error_type>": [ 
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -1398,17 +1102,31 @@ class BatchAuditResultPage(TypedDict):
                     {
                         "is_applicable": True,
                         "query_result": True,
-                        "errors": {}
+                        "errors": { # result errors
+                            "<error_type>": [ 
+                                {
+                                    "is_critical": False,
+                                    "message": "Error message."
+                                }
+                            ]
+                        }
                     }
                 ],
                 "has_failed": False,
-                "errors": {}
+                "errors": { # request errors and propagated result errors
+                    "<error_type>": [ 
+                        {
+                            "is_critical": False,
+                            "message": "Error message."
+                        }
+                    ]
+                }
             }
         ],
         "next_page_ref": "abc123", # str | None
         "has_failed": False,
-        "errors": {
-            "evaluation": [ # not required
+        "errors": { # Batch request errors and propagated request errors
+            "<error_type>": [ 
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -1451,19 +1169,19 @@ class BatchAuthorizeResult(TypedDict):
                 },
                 "message": "Authorized by grant.",
                 "has_failed": False,
-                "critical_errors": {}
-            },
-            {
-                "is_authorized": False,
-                "grant": None,
-                "message": "No matching allow grants.",
-                "has_failed": False,
-                "critical_errors": {}
+                "critical_errors": { # request errors
+                    "<error_type>": [ 
+                        {
+                            "is_critical": False,
+                            "message": "Error message."
+                        }
+                    ]
+                }
             }
         ],
         "has_failed": False,
-        "critical_errors": {
-            "evaluation": [ # not required
+        "critical_errors": { # batch errors and propagated request errors
+            "<error_type>": [ 
                 {
                     "is_critical": False,
                     "message": "Error message."

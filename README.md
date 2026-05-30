@@ -23,6 +23,8 @@ Authzee is a highly expressive grant-based authorization engine. Check out the [
     - [Resource](#resource)
     - [Grant](#grant)
     - [Authorize](#authorize)
+- [Full Example](#full-example)
+- [Development](#development)
 
 
 ## Installation
@@ -32,15 +34,16 @@ Authzee is a highly expressive grant-based authorization engine. Check out the [
 $ pip install authzee
 ```
 
-<!-- For different compute or storage backends you may need to install extra deps. 
+Extra dependencies can be installed lie
 
-```text
-$ pip install authzee[sql]
+```console
+pip install authzee[extradep,otherextra]
 ```
 
-Extra dependencies:
+Extra dependencies available/needed:
 
-- `sql` - For `SQLStorage`.  -->
+- `jmespath` - needed if using the built in jmespath execute functions
+- `dev` - development dependencies 
 
 
 ## Tutorial
@@ -58,7 +61,7 @@ from authzee import Authzee, DictStorage, InProcessCompute, jmespath_execute
 
 
 storage_dict = {}
-authz = Authzee(
+authz = Authzee( # for asyncio use AuthzeeAsync
     execute=jmespath_execute,
     compute_type=InProcessCompute,
     compute_kwargs={},
@@ -199,14 +202,16 @@ The `Authzee` class is the entrypoint to all authzee functionality.  `AuthzeeAsy
 from authzee import Authzee, DictStorage, InProcessCompute, jmespath_execute
 # for asyncio use
 # from authzee import AuthzeeAsync
+# to include custom JMESPath functions use
+# from authzee import jmespath_custom_execute
 
 
 storage_dict = {}
-authz = Authzee(
-    execute=jmespath_execute,
-    compute_type=InProcessCompute,
+authz = Authzee( # for asyncio use AuthzeeAsync
+    execute=jmespath_execute, # for custom JMESPath functions use jmespath_custom_execute 
+    compute_type=InProcessCompute, # compute backend type
     compute_kwargs={},
-    storage_type=DictStorage,
+    storage_type=DictStorage, # storage backend type
     storage_kwargs={
         "storage_dict": storage_dict
     }
@@ -216,9 +221,33 @@ authz.start() # initialize the authzee app - must be run once for every instance
 ```
 
 The Authzee class splits requires a JSON query function, compute module, and storage module. 
+
+
+#### Execute Function
+
+The execute function is a wrapper around your choice of JSON query language
+Out of the box, the SDK has:
+    - `jmespath_execute` 
+        - Standard JMESPath python implementation
+        - Must install `authzee[jmespath]`
+    `jmespath_custom_execute`
+        - Standard JMESPath python implementation plus extra functions as outlines in the [SDK recommendations](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#standard-jmespath-extensions)
+        - Must install `authzee[jmespath]`
+
+
+If you want to create your own, see `jmespath_execute` for a simple example.
+
+#### Compute and Storage Modules
 The compute is uses do process authorization requests.  Storage is used to store grants and definitions. The Authzee SDK includes several of these out of the box. 
 
-<!-- See the docs for examples -->
+Built in Compute Modules include:
+
+- `InProcessCompute` - Compute is all done within the same process/asyncio event loop.
+
+Built in Storage Modules include:
+
+- `DictStorage` - Storage is in main memory within a python dict.
+
 
 
 ### Context
@@ -330,7 +359,7 @@ authz.enact( # Enact grants to create authorization rules
 
 ### Authorize
 
-Authorization is one of the core function of an authorization engine and brings all of the pieces together. 
+Authorization is one of the core *operations* (or ops) of an authorization engine and brings all of the pieces together. 
 
 ```python
 result = authz.authorize(
@@ -437,3 +466,25 @@ Will filter all user identities by those that are in the 'Balloon Dept'.  If the
 For authorization, by default, no requests are allowed.  If a grant with the deny effect is applicable, the request is denied, no matter any other outcomes.  If a grant with the allow effect is applicable, and there are no deny grants applicable then the request is allowed. 
 
 
+## Full Example
+
+For a full example see (`full_example.py`)[https://github.com/btemplep/authzee-py/blob/main/full_example.py]
+
+## Development
+
+Install all dependencies
+```console
+pip install -e .[dev,all]
+```
+
+Use [nox](https://nox.thea.codes/en/stable/) for the most common setups. 
+
+### Compute and Storage Module Development
+
+The compute and storage modules are meant to be that - modular!
+
+You should be able to build custom ones based off of the base classes `ComputeModule` and `StorageModule`. Note that all underlying methods must be async.  
+
+### Module Caching
+
+Caching for validating a request or batch request should be self contained within the compute model per reqeust. Besides that, it is up to the storage module to control caching for storage calls.

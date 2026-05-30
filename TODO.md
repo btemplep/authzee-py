@@ -1,12 +1,27 @@
 # TODO
 
-- [ ] short dev guide to describe compute and storage module dev
-    - caching 
-        - request and batch request validation should cache stuff within for the request
-        - all other caching should be setup on the storage engine. 
-
-
+- [ ] full example
+- [ ] errors for SDK
+    - Do I want to enumerate all of these or switch back to the SDK error type and just use that?
+        - pros 
+            - more flat errors with definite types
+                - Can just change this to a dict[str, errortype] though
+                - to document all types, just make it a literal with all types??
+            - easily document 
+        - cons
+            - so many error bodies that are not required
+    - 
+- [ ] finish up docs between spec and SDK for new release
 - [ ] unit tests
+
+- [ ] new release
+
+- [ ] better batch request verification
+    - this is a very inefficient way to do this 
+    - try and reuse as needed and only do partial verification of new fields 
+
+
+
 - [ ] full docs
 - [ ] SQL storage
 - [ ] mongo storage
@@ -15,11 +30,15 @@
 - [ ] mp compute
 - [ ] fan out compute
 
-- [ ] better batch request verification
-    - this is a very inefficient way to do this 
-    - try and reuse as needed and only do partial verification of new fields 
 
 
+
+
+
+- [x] short dev guide to describe compute and storage module dev
+    - caching 
+        - request and batch request validation should cache stuff within for the request
+        - all other caching should be setup on the storage engine. 
 - [x] update custom jmespath functions 
 - [x] where to do caching? 
     - Easier on the storage side to just set and forget

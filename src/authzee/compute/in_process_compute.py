@@ -19,7 +19,7 @@ from authzee.core import (
     validate_request_schema,
     validate_batch_request_schema
 )
-from authzee.paginator import paginator_async
+from authzee.paginators import paginator_async
 from authzee.types import *
 from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
