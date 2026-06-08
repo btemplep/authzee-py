@@ -1709,7 +1709,7 @@ class Authzee:
     def repeal(
         self, 
         grant_uuid: str, 
-        purge: bool,
+        purge: bool = False,
         config: AuthzeeConfig | None = None
     ) -> GenericResult:
         """Repeal (remove) a grant by its UUID.
@@ -1718,8 +1718,9 @@ class Authzee:
         ----------
         grant_uuid : str
             The UUID of the grant to repeal.
-        purge : bool
-            If True, permanently delete the grant. If False, soft-delete.
+        purge : bool, default=False
+            If True, all grants and partitions may be scanned to completely remove. 
+            Useful if corruption by update is suspected.
         config : AuthzeeConfig | None, optional
             Override configuration for this call. Only include keys to override.
 
@@ -1729,7 +1730,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.repeal(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-            purge=True,
+            purge=False, # optional
             config={  # optional - AuthzeeConfig | None - All keys are optional
                 "context_defs_page_size": 100,
                 "identity_defs_page_size": 100,
@@ -1748,11 +1749,11 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
+                "has_failed": True,
                 "errors": {
                     "resource_not_found": [
                         {
-                            "is_critical": False,
+                            "is_critical": True,
                             "message": "Error message."
                         }
                     ]
@@ -2113,7 +2114,7 @@ class Authzee:
         )
 
 
-    def audit_page(
+    def audit(
         self,
         request: AuthzeeRequest, 
         page_ref: str | None = None, 
@@ -2134,7 +2135,7 @@ class Authzee:
         --------
         ```python
         # Assumes authz is an Authzee instance
-        result = authz.audit_page(
+        result = authz.audit(
             request={
                 "identities": {
                     "user": [
@@ -2174,7 +2175,7 @@ class Authzee:
 
         for page in paginator(
         # Assumes authz is an Authzee instance
-            authz.audit_page,
+            authz.audit,
             request={ F
                 "identities": {
                     "user": [
@@ -2250,7 +2251,7 @@ class Authzee:
             If the page reference is invalid.
         """
         return asyncio.run(
-            self._authzee_async.audit_page(
+            self._authzee_async.audit(
                 request=request,
                 page_ref=page_ref,
                 config=config
@@ -2357,7 +2358,7 @@ class Authzee:
         )
 
 
-    def batch_audit_page(
+    def batch_audit(
         self,
         batch_request: AuthzeeBatchRequest, 
         page_ref: str | None = None, 
@@ -2378,7 +2379,7 @@ class Authzee:
         --------
         ```python
         # Assumes authz is an Authzee instance
-        result = authz.batch_audit_page(
+        result = authz.batch_audit(
             batch_request={
                 "identities": {
                     "user": [
@@ -2426,7 +2427,7 @@ class Authzee:
 
         for page in paginator(
         # Assumes authz is an Authzee instance
-            authz.batch_audit_page,
+            authz.batch_audit,
             batch_request={
                 "identities": {
                     "user": [
@@ -2517,7 +2518,7 @@ class Authzee:
             If the page reference is invalid.
         """
         return asyncio.run(
-            self._authzee_async.batch_audit_page(
+            self._authzee_async.batch_audit(
                 batch_request=batch_request,
                 page_ref=page_ref,
                 config=config

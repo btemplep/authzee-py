@@ -272,7 +272,7 @@ class InProcessCompute(ComputeModule):
         return result
 
 
-    async def audit_page(
+    async def audit(
         self,
         request: AuthzeeRequest,
         page_ref: str | None,
@@ -422,7 +422,7 @@ class InProcessCompute(ComputeModule):
         }
 
 
-    async def batch_audit_page(
+    async def batch_audit(
         self,
         batch_request: AuthzeeBatchRequest,
         page_ref: str | None,

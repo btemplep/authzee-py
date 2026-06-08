@@ -1,5 +1,54 @@
 # TODO
 
+- [ ] error examples in authzee give actual errors, and they are wrong.  double check for all and fix. 
+- [ ] finalize configs
+    - General configs and overrides at the method level? 
+        -   slimmest
+            -   ```json
+                {
+                    "defs_page_size": 100,
+                    "grants_page_size": 100,
+                    "grant_refs_page_size": 10,
+                    "parallel_paging": true,
+                    "raise_crits": true
+                }
+                ```
+        - medium 
+            -   ```json
+                {
+                    "context_defs_page_size": 100,
+                    "identity_defs_page_size": 100,
+                    "resource_defs_page_size": 100,
+                    "grants_page_size": 100,
+                    "grant_refs_page_size": 10,
+                    "authorize_parallel_paging": true,
+                    "batch_authorize_parallel_paging": true,
+                    "raise_crits": true
+                }
+            ```
+        - full
+            - Set all defaults for everything
+            - way cleaner than the compute and non-compute config shit
+            - Keep the override at the method level to simplify this 
+            -   ```json
+                {
+                    "raise_crits": true,
+                    "list_context_defs_page_size": 100,
+                    "list_identity_defs_page_size": 100,
+                    "list_resource_defs_page_size": 100,
+                    "list_grants_page_size": 100,
+                    "list_grant_refs_page_size": 10,
+                    "audit_grants_page_size": 100,
+                    "batch_audit_grants_page_size": 100,
+                    "authorize_grants_page_size": 100,
+                    "authorize_grant_refs_page_size": 10,
+                    "authorize_parallel_paging": true,
+                    "batch_authorize_grants_page_size": 100,
+                    "batch_authorize_grant_refs_page_size": 10,
+                    "batch_authorize_parallel_paging": true
+                }
+            ```
+
 - [ ] full example
 - [ ] errors for SDK
     - Do I want to enumerate all of these or switch back to the SDK error type and just use that?
@@ -34,7 +83,7 @@
 
 
 
-
+- [x] audit_page to audit? 
 - [x] short dev guide to describe compute and storage module dev
     - caching 
         - request and batch request validation should cache stuff within for the request

@@ -2,9 +2,59 @@
 
 __all__ = [
     "AnyJSON",
+    "AuthzeeBaseConfig",
+    "StartConfig",
+    "ComputeStartConfig",
+    "StorageStartConfig",
+    "ShutdownConfig",
+    "ComputeShutdownConfig",
+    "StorageShutdownConfig",
+    "ConstructConfig",
+    "ComputeConstructConfig",
+    "StorageConstructConfig",
+    "DestroyConfig",
+    "ComputeDestroyConfig",
+    "StorageDestroyConfig",
+    "ListContextDefsConfig",
+    "ListIdentityDefsConfig",
+    "ListResourceDefsConfig",
+    "ListGrantsConfig",
+    "ListGrantRefsConfig",
+    "GetConfig",
+    "ValidateRequestConfig",
+    "ValidateBatchRequestConfig",
+    "AuditConfig",
+    "BatchAuditConfig",
+    "AuthorizeConfig",
+    "BatchAuthorizeConfig",
+    "AuthzeeBaseConfigOverride",
+    "StartConfigOverride",
+    "ComputeStartConfigOverride",
+    "StorageStartConfigOverride",
+    "ShutdownConfigOverride",
+    "ComputeShutdownConfigOverride",
+    "StorageShutdownConfigOverride",
+    "ConstructConfigOverride",
+    "ComputeConstructConfigOverride",
+    "StorageConstructConfigOverride",
+    "DestroyConfigOverride",
+    "ComputeDestroyConfigOverride",
+    "StorageDestroyConfigOverride",
+    "ListContextDefsConfigOverride",
+    "ListIdentityDefsConfigOverride",
+    "ListResourceDefsConfigOverride",
+    "ListGrantsConfigOverride",
+    "GetConfigOverride",
+    "ListGrantRefsConfigOverride",
+    "ValidateRequestConfigOverride",
+    "ValidateBatchRequestConfigOverride",
+    "AuditConfigOverride",
+    "BatchAuditConfigOverride",
+    "AuthorizeConfigOverride",
+    "BatchAuthorizeConfigOverride",
+    "AuthzeeConfigOverride",
     "AuthzeeConfig",
     "GenericError",
-    "SDKError",
     "ResultErrors",
     "GenericResult",
     "ContextDef",
@@ -40,64 +90,1824 @@ from typing import Any, Dict, List, Literal, NotRequired, TypedDict
 AnyJSON = bool | str | int | float | None | list | dict
 
 
-class AuthzeeConfig(TypedDict):
+class AuthzeeBaseConfig(TypedDict):
     """```python
     Dict[str, Any]
     ```
-    Authzee configuration Type
-
-    The configuration can be set at several different levels where only the provided values override the previous levels values. 
-
-    The order of least to most precedence is:
-    - Default config values
-    - Authzee class instances config
-    - Authzee class instance compute config, for compute operations
-    - Function/Method call config
+    Authzee base instance configuration.
 
     Examples
     --------
-    **All base fields are not required.**
-    Example with all defaults:
     ```python
     {
-        "context_defs_page_size": 100,
-        "identity_defs_page_size": 100,
-        "resource_defs_page_size": 100,
-        "grants_page_size": 100,
-        "grant_refs_page_size": 10,
-        "authorize_parallel_paging": True,
-        "batch_authorize_parallel_paging": True,
         "raise_crits": True
     }
     ```
 
     Attributes
     ----------
-    context_defs_page_size : int, default: 100
-        Maximum number of context definitions to return per page. 
-    identity_defs_page_size : int, default: 100
-        Maximum number of identity definitions to return per page.
-    resource_defs_page_size : int, default: 100
-        Maximum number of resource definitions to return per page.
-    grants_page_size : int, default: 100
-        Maximum number of grants to return per page.
-    grant_refs_page_size : int, default: 10
-        Number of grants page references to return per page.
-    authorize_parallel_paging: bool, default: True
-        Use parallel pagination for the authorize operation if it is available.
-    batch_authorize_parallel_paging: bool default: False
-        Use parallel pagination for the batch_authorize operation if it is available.
-    raise_crits: bool, default: True
-        Raise critical errors as exceptions.
+    raise_crits : bool
+        Whether to raise on critical errors.
     """
-    context_defs_page_size: NotRequired[int]
-    identity_defs_page_size: NotRequired[int]
-    resource_defs_page_size: NotRequired[int]
-    grants_page_size: NotRequired[int]
-    grant_refs_page_size: NotRequired[int]
-    authorize_parallel_paging: NotRequired[bool]
-    batch_authorize_parallel_paging: NotRequired[bool]
-    raise_crits: NotRequired[bool]
+    raise_crits: bool
+
+
+class ComputeStartConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Compute start configuration.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StorageStartConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Storage start configuration.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StartConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Start configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "compute_start": {},
+        "storage_start": {}
+    }
+    ```
+
+    Attributes
+    ----------
+    compute_start : ComputeStartConfig
+        Compute start configuration.
+    storage_start : StorageStartConfig
+        Storage start configuration.
+    """
+    compute_start: ComputeStartConfig
+    storage_start: StorageStartConfig
+
+
+class ComputeShutdownConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Compute shutdown configuration.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StorageShutdownConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Storage shutdown configuration.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class ShutdownConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Shutdown configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "compute_shutdown": {},
+        "storage_shutdown": {}
+    }
+    ```
+
+    Attributes
+    ----------
+    compute_shutdown : ComputeShutdownConfig
+        Compute shutdown configuration.
+    storage_shutdown : StorageShutdownConfig
+        Storage shutdown configuration.
+    """
+    compute_shutdown: ComputeShutdownConfig
+    storage_shutdown: StorageShutdownConfig
+
+
+class ComputeConstructConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Compute construct configuration.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StorageConstructConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Storage construct configuration.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class ConstructConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Construct configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "compute_construct": {},
+        "storage_construct": {}
+    }
+    ```
+
+    Attributes
+    ----------
+    compute_construct : ComputeConstructConfig
+        Compute construct configuration.
+    storage_construct : StorageConstructConfig
+        Storage construct configuration.
+    """
+    compute_construct: ComputeConstructConfig
+    storage_construct: StorageConstructConfig
+
+
+class ComputeDestroyConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Compute destroy configuration.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StorageDestroyConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Storage destroy configuration.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class DestroyConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Destroy configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "compute_destroy": {},
+        "storage_destroy": {}
+    }
+    ```
+
+    Attributes
+    ----------
+    compute_destroy : ComputeDestroyConfig
+        Compute destroy configuration.
+    storage_destroy : StorageDestroyConfig
+        Storage destroy configuration.
+    """
+    compute_destroy: ComputeDestroyConfig
+    storage_destroy: StorageDestroyConfig
+
+
+class ListContextDefsConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    List context definitions configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 100,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class ListIdentityDefsConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    List identity definitions configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 100,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class ListResourceDefsConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    List resource definitions configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 100,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class ListGrantsConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    List grants configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 100,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class GetConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Get configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    use_cache : bool
+        Whether to use cache.
+    """
+    use_cache: bool
+
+
+class ListGrantRefsConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    List grant references configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 10,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class ValidateRequestConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Validate request configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 100,
+            "use_cache": True
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    use_list_identity_defs : bool
+        Whether to use list identity defs for validation.
+    list_identity_defs : ListIdentityDefsConfig
+        Config for listing identity definitions during validation.
+    """
+    use_list_identity_defs: bool
+    list_identity_defs: ListIdentityDefsConfig
+
+
+class ValidateBatchRequestConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Validate batch request configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "use_list_context_defs": True,
+        "list_context_defs": {
+            "page_size": 100,
+            "use_cache": True
+        },
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 100,
+            "use_cache": True
+        },
+        "use_list_resource_defs": True,
+        "list_resource_defs": {
+            "page_size": 100,
+            "use_cache": True
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    use_list_context_defs : bool
+        Whether to use list context defs for validation.
+    list_context_defs : ListContextDefsConfig
+        Config for listing context definitions during validation.
+    use_list_identity_defs : bool
+        Whether to use list identity defs for validation.
+    list_identity_defs : ListIdentityDefsConfig
+        Config for listing identity definitions during validation.
+    use_list_resource_defs : bool
+        Whether to use list resource defs for validation.
+    list_resource_defs : ListResourceDefsConfig
+        Config for listing resource definitions during validation.
+    """
+    use_list_context_defs: bool
+    list_context_defs: ListContextDefsConfig
+    use_list_identity_defs: bool
+    list_identity_defs: ListIdentityDefsConfig
+    use_list_resource_defs: bool
+    list_resource_defs: ListResourceDefsConfig
+
+
+class AuditConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Audit configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "grants_page_size": 100,
+        "use_grants_cache": True,
+        "validate_request": {
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    grants_page_size : int
+        Number of grants per page.
+    use_grants_cache : bool
+        Whether to use grants cache.
+    validate_request : ValidateRequestConfig
+        Config for validating requests during audit.
+    """
+    grants_page_size: int
+    use_grants_cache: bool
+    validate_request: ValidateRequestConfig
+
+
+class BatchAuditConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Batch audit configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "grants_page_size": 100,
+        "use_grants_cache": True,
+        "validate_batch_request": {
+            "use_list_context_defs": True,
+            "list_context_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_resource_defs": True,
+            "list_resource_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    grants_page_size : int
+        Number of grants per page.
+    use_grants_cache : bool
+        Whether to use grants cache.
+    validate_batch_request : ValidateBatchRequestConfig
+        Config for validating batch requests during audit.
+    """
+    grants_page_size: int
+    use_grants_cache: bool
+    validate_batch_request: ValidateBatchRequestConfig
+
+
+class AuthorizeConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Authorize configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "grants_page_size": 100,
+        "use_grants_cache": True,
+        "grant_refs_page_size": 10,
+        "use_grant_refs_cache": True,
+        "parallel_paging": True,
+        "validate_request": {
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    grants_page_size : int
+        Number of grants per page.
+    use_grants_cache : bool
+        Whether to use grants cache.
+    grant_refs_page_size : int
+        Number of grant references per page.
+    use_grant_refs_cache : bool
+        Whether to use grant references cache.
+    parallel_paging : bool
+        Whether to use parallel paging.
+    validate_request : ValidateRequestConfig
+        Config for validating requests during authorization.
+    """
+    grants_page_size: int
+    use_grants_cache: bool
+    grant_refs_page_size: int
+    use_grant_refs_cache: bool
+    parallel_paging: bool
+    validate_request: ValidateRequestConfig
+
+
+class BatchAuthorizeConfig(TypedDict):
+    """```python
+    Dict[str, Any]
+    ```
+    Batch authorize configuration.
+
+    Examples
+    --------
+    ```python
+    {
+        "grants_page_size": 100,
+        "use_grants_cache": True,
+        "grant_refs_page_size": 10,
+        "use_grant_refs_cache": True,
+        "parallel_paging": True,
+        "validate_batch_request": {
+            "use_list_context_defs": True,
+            "list_context_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_resource_defs": True,
+            "list_resource_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    grants_page_size : int
+        Number of grants per page.
+    use_grants_cache : bool
+        Whether to use grants cache.
+    grant_refs_page_size : int
+        Number of grant references per page.
+    use_grant_refs_cache : bool
+        Whether to use grant references cache.
+    parallel_paging : bool
+        Whether to use parallel paging.
+    validate_batch_request : ValidateBatchRequestConfig
+        Config for validating batch requests during authorization.
+    """
+    grants_page_size: int
+    use_grants_cache: bool
+    grant_refs_page_size: int
+    use_grant_refs_cache: bool
+    parallel_paging: bool
+    validate_batch_request: ValidateBatchRequestConfig
+
+
+class AuthzeeConfig(TypedDict):
+    """```python
+    Dict[str, Dict[str, Any]]
+    ```
+    Authzee configuration Type. Held in each Authzee class instance to feed configuration for everything. 
+
+    The configuration can be set at several different levels where only the provided values override the previous levels values. 
+
+    The order of least to most precedence is:
+    - Default config values - None Set
+    - Authzee class instances config
+    - Function/Method call config
+
+    Examples
+    --------
+    **All base and nested fields are required for this Dict so they are normalized when passed to storage and compute.**
+    Example with all defaults:
+    ```python
+    {
+        "authzee": {
+            "raise_crits": True
+        },
+        "start": {
+            "compute_start": {},
+            "storage_start": {},
+        },
+        "shutdown": {
+            "compute_shutdown": {},
+            "storage_shutdown": {},
+        },
+        "construct": {
+            "compute_construct": {},
+            "storage_construct": {},
+        },
+        "destroy": {
+            "compute_destroy": {},
+            "storage_destroy": {},
+        },
+        "validate_context_def": {},
+        "list_context_defs": {
+            "page_size": 100,
+            "use_cache": False
+        },
+        "get_context_def": {
+            "use_cache": False
+        },
+        "put_context_def": {},
+        "delete_context_def": {},
+        "validate_identity_def": {},
+        "list_identity_defs": {
+            "page_size": 100,
+            "use_cache": False
+        },
+        "get_identity_def": {
+            "use_cache": False  
+        },
+        "put_identity_def": {},
+        "delete_identity_def": {},
+        "validate_resource_def": {},
+        "list_resource_defs": {
+            "page_size": 100,
+            "use_cache": False
+        },
+        "get_resource_def": {
+            "use_cache": False  
+        },
+        "put_resource_def": {},
+        "delete_resource_def": {},
+        "validate_grant": {},
+        "list_grants": {
+            "page_size": 100,
+            "use_cache": False
+        },
+        "get_grant": {
+            "use_cache": False  
+        },
+        "enact": {},
+        "repeal": {},
+        "list_grant_refs": {
+            "page_size": 10,
+            "use_cache": False
+        },
+        "cleanup_latches": {},
+        "validate_request": {
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        },
+        "validate_batch_request": {
+            "use_list_context_defs": True,
+            "list_context_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_resource_defs": True,
+            "list_resource_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        },
+        "audit": {
+            "grants_page_size": 100,
+            "use_grants_cache": True,
+            "validate_request": {
+                "use_list_identity_defs": True,
+                "list_identity_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                }
+            }
+        },
+        "batch_audit": {
+            "grants_page_size": 100,
+            "use_grants_cache": True,
+            "validate_batch_request": {
+                "use_list_context_defs": True,
+                "list_context_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                },
+                "use_list_identity_defs": True,
+                "list_identity_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                },
+                "use_list_resource_defs": True,
+                "list_resource_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                }
+            }
+        },
+        "authorize": {
+            "grants_page_size": 100,
+            "use_grants_cache": True,
+            "grant_refs_page_size": 10,
+            "use_grant_refs_cache": True,
+            "parallel_paging": True,
+            "validate_request": {
+                "use_list_identity_defs": True,
+                "list_identity_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                }
+            }
+        },
+        "batch_authorize": {
+            "grants_page_size": 100,
+            "use_grants_cache": True,
+            "grant_refs_page_size": 10,
+            "use_grant_refs_cache": True,
+            "parallel_paging": True,
+            "validate_batch_request": {
+                "use_list_context_defs": True,
+                "list_context_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                },
+                "use_list_identity_defs": True,
+                "list_identity_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                },
+                "use_list_resource_defs": True,
+                "list_resource_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                }
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    authzee : AuthzeeBaseConfig
+        Authzee class instance configuration.
+    list_context_defs : ListContextDefsConfig
+        Config for listing context definitions.
+    list_identity_defs : ListIdentityDefsConfig
+        Config for listing identity definitions.
+    list_resource_defs : ListResourceDefsConfig
+        Config for listing resource definitions.
+    list_grants : ListGrantsConfig
+        Config for listing grants.
+    list_grant_refs : ListGrantRefsConfig
+        Config for listing grant page references.
+    validate_request : ValidateRequestConfig
+        Config for validating requests.
+    validate_batch_request : ValidateBatchRequestConfig
+        Config for validating batch requests.
+    audit : AuditConfig
+        Config for the audit operation.
+    batch_audit : BatchAuditConfig
+        Config for the batch audit operation.
+    authorize : AuthorizeConfig
+        Config for the authorize operation.
+    batch_authorize : BatchAuthorizeConfig
+        Config for the batch authorize operation.
+    """
+    authzee: AuthzeeBaseConfig
+    start: StartConfig
+    shutdown: ShutdownConfig
+    construct: ConstructConfig
+    destroy: DestroyConfig
+    validate_context_def: dict
+    list_context_defs: ListContextDefsConfig
+    get_context_def: GetConfig
+    put_context_def: dict
+    delete_context_def: dict
+    validate_identity_def: dict
+    list_identity_defs: ListIdentityDefsConfig
+    get_identity_def: GetConfig
+    put_identity_def: dict
+    delete_identity_def: dict
+    validate_resource_def: dict
+    list_resource_defs: ListResourceDefsConfig
+    get_resource_def: GetConfig
+    put_resource_def: dict
+    delete_resource_def: dict
+    validate_grant: dict
+    list_grants: ListGrantsConfig
+    get_grant: GetConfig
+    enact: dict
+    repeal: dict
+    list_grant_refs: ListGrantRefsConfig
+    cleanup_latches: dict
+    validate_request: ValidateRequestConfig
+    validate_batch_request: ValidateBatchRequestConfig
+    audit: AuditConfig
+    batch_audit: BatchAuditConfig
+    authorize: AuthorizeConfig
+    batch_authorize: BatchAuthorizeConfig
+
+
+class AuthzeeBaseConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Authzee base instance configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "raise_crits": True
+    }
+    ```
+
+    Attributes
+    ----------
+    raise_crits : bool
+        Whether to raise on critical errors.
+    """
+    raise_crits: bool
+
+
+class ComputeStartConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Compute start configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StorageStartConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Storage start configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StartConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Start configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "compute_start": {},
+        "storage_start": {}
+    }
+    ```
+
+    Attributes
+    ----------
+    compute_start : ComputeStartConfigOverride
+        Compute start configuration override.
+    storage_start : StorageStartConfigOverride
+        Storage start configuration override.
+    """
+    compute_start: ComputeStartConfigOverride
+    storage_start: StorageStartConfigOverride
+
+
+class ComputeShutdownConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Compute shutdown configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StorageShutdownConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Storage shutdown configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class ShutdownConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Shutdown configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "compute_shutdown": {},
+        "storage_shutdown": {}
+    }
+    ```
+
+    Attributes
+    ----------
+    compute_shutdown : ComputeShutdownConfigOverride
+        Compute shutdown configuration override.
+    storage_shutdown : StorageShutdownConfigOverride
+        Storage shutdown configuration override.
+    """
+    compute_shutdown: ComputeShutdownConfigOverride
+    storage_shutdown: StorageShutdownConfigOverride
+
+
+class ComputeConstructConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Compute construct configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StorageConstructConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Storage construct configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class ConstructConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Construct configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "compute_construct": {},
+        "storage_construct": {}
+    }
+    ```
+
+    Attributes
+    ----------
+    compute_construct : ComputeConstructConfigOverride
+        Compute construct configuration override.
+    storage_construct : StorageConstructConfigOverride
+        Storage construct configuration override.
+    """
+    compute_construct: ComputeConstructConfigOverride
+    storage_construct: StorageConstructConfigOverride
+
+
+class ComputeDestroyConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Compute destroy configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class StorageDestroyConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Storage destroy configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {}
+    ```
+    """
+    pass
+
+
+class DestroyConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Destroy configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "compute_destroy": {},
+        "storage_destroy": {}
+    }
+    ```
+
+    Attributes
+    ----------
+    compute_destroy : ComputeDestroyConfigOverride
+        Compute destroy configuration override.
+    storage_destroy : StorageDestroyConfigOverride
+        Storage destroy configuration override.
+    """
+    compute_destroy: ComputeDestroyConfigOverride
+    storage_destroy: StorageDestroyConfigOverride
+
+
+class ListContextDefsConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    List context definitions configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 100,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class ListIdentityDefsConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    List identity definitions configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 100,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class ListResourceDefsConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    List resource definitions configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 100,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class ListGrantsConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    List grants configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 100,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class GetConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Get configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    use_cache : bool
+        Whether to use cache.
+    """
+    use_cache: bool
+
+
+class ListGrantRefsConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    List grant references configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "page_size": 10,
+        "use_cache": False
+    }
+    ```
+
+    Attributes
+    ----------
+    page_size : int
+        Number of items per page.
+    use_cache : bool
+        Whether to use cache.
+    """
+    page_size: int
+    use_cache: bool
+
+
+class ValidateRequestConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Validate request configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 100,
+            "use_cache": True
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    use_list_identity_defs : bool
+        Whether to use list identity defs for validation.
+    list_identity_defs : ListIdentityDefsConfigOverride
+        Config for listing identity definitions during validation.
+    """
+    use_list_identity_defs: bool
+    list_identity_defs: ListIdentityDefsConfigOverride
+
+
+class ValidateBatchRequestConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Validate batch request configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "use_list_context_defs": True,
+        "list_context_defs": {
+            "page_size": 100,
+            "use_cache": True
+        },
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 100,
+            "use_cache": True
+        },
+        "use_list_resource_defs": True,
+        "list_resource_defs": {
+            "page_size": 100,
+            "use_cache": True
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    use_list_context_defs : bool
+        Whether to use list context defs for validation.
+    list_context_defs : ListContextDefsConfigOverride
+        Config for listing context definitions during validation.
+    use_list_identity_defs : bool
+        Whether to use list identity defs for validation.
+    list_identity_defs : ListIdentityDefsConfigOverride
+        Config for listing identity definitions during validation.
+    use_list_resource_defs : bool
+        Whether to use list resource defs for validation.
+    list_resource_defs : ListResourceDefsConfigOverride
+        Config for listing resource definitions during validation.
+    """
+    use_list_context_defs: bool
+    list_context_defs: ListContextDefsConfigOverride
+    use_list_identity_defs: bool
+    list_identity_defs: ListIdentityDefsConfigOverride
+    use_list_resource_defs: bool
+    list_resource_defs: ListResourceDefsConfigOverride
+
+
+class AuditConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Audit configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "grants_page_size": 100,
+        "use_grants_cache": True,
+        "validate_request": {
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    grants_page_size : int
+        Number of grants per page.
+    use_grants_cache : bool
+        Whether to use grants cache.
+    validate_request : ValidateRequestConfigOverride
+        Config for validating requests during audit.
+    """
+    grants_page_size: int
+    use_grants_cache: bool
+    validate_request: ValidateRequestConfigOverride
+
+
+class BatchAuditConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Batch audit configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "grants_page_size": 100,
+        "use_grants_cache": True,
+        "validate_batch_request": {
+            "use_list_context_defs": True,
+            "list_context_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_resource_defs": True,
+            "list_resource_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    grants_page_size : int
+        Number of grants per page.
+    use_grants_cache : bool
+        Whether to use grants cache.
+    validate_batch_request : ValidateBatchRequestConfigOverride
+        Config for validating batch requests during audit.
+    """
+    grants_page_size: int
+    use_grants_cache: bool
+    validate_batch_request: ValidateBatchRequestConfigOverride
+
+
+class AuthorizeConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Authorize configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "grants_page_size": 100,
+        "use_grants_cache": True,
+        "grant_refs_page_size": 10,
+        "use_grant_refs_cache": True,
+        "parallel_paging": True,
+        "validate_request": {
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    grants_page_size : int
+        Number of grants per page.
+    use_grants_cache : bool
+        Whether to use grants cache.
+    grant_refs_page_size : int
+        Number of grant references per page.
+    use_grant_refs_cache : bool
+        Whether to use grant references cache.
+    parallel_paging : bool
+        Whether to use parallel paging.
+    validate_request : ValidateRequestConfigOverride
+        Config for validating requests during authorization.
+    """
+    grants_page_size: int
+    use_grants_cache: bool
+    grant_refs_page_size: int
+    use_grant_refs_cache: bool
+    parallel_paging: bool
+    validate_request: ValidateRequestConfigOverride
+
+
+class BatchAuthorizeConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Any]
+    ```
+    Batch authorize configuration override. All keys are optional.
+
+    Examples
+    --------
+    ```python
+    {
+        "grants_page_size": 100,
+        "use_grants_cache": True,
+        "grant_refs_page_size": 10,
+        "use_grant_refs_cache": True,
+        "parallel_paging": True,
+        "validate_batch_request": {
+            "use_list_context_defs": True,
+            "list_context_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_resource_defs": True,
+            "list_resource_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    grants_page_size : int
+        Number of grants per page.
+    use_grants_cache : bool
+        Whether to use grants cache.
+    grant_refs_page_size : int
+        Number of grant references per page.
+    use_grant_refs_cache : bool
+        Whether to use grant references cache.
+    parallel_paging : bool
+        Whether to use parallel paging.
+    validate_batch_request : ValidateBatchRequestConfigOverride
+        Config for validating batch requests during authorization.
+    """
+    grants_page_size: int
+    use_grants_cache: bool
+    grant_refs_page_size: int
+    use_grant_refs_cache: bool
+    parallel_paging: bool
+    validate_batch_request: ValidateBatchRequestConfigOverride
+
+
+class AuthzeeConfigOverride(TypedDict, total=False):
+    """```python
+    Dict[str, Dict[str, Any]]
+    ```
+    Authzee configuration override Type. All keys are optional.
+
+    Used to override specific configuration values at the Authzee class instance level
+    or function/method call level without needing to specify all fields.
+
+    Examples
+    --------
+    **All base and nested fields are optional.**
+    Example with all defaults:
+    ```python
+    {
+        "authzee": {
+            "raise_crits": True
+        },
+        "start": {
+            "compute_start": {},
+            "storage_start": {},
+        },
+        "shutdown": {
+            "compute_shutdown": {},
+            "storage_shutdown": {},
+        },
+        "construct": {
+            "compute_construct": {},
+            "storage_construct": {},
+        },
+        "destroy": {
+            "compute_destroy": {},
+            "storage_destroy": {},
+        },
+        "validate_context_def": {},
+        "list_context_defs": {
+            "page_size": 100,
+            "use_cache": False
+        },
+        "get_context_def": {
+            "use_cache": False
+        },
+        "put_context_def": {},
+        "delete_context_def": {},
+        "validate_identity_def": {},
+        "list_identity_defs": {
+            "page_size": 100,
+            "use_cache": False
+        },
+        "get_identity_def": {
+            "use_cache": False  
+        },
+        "put_identity_def": {},
+        "delete_identity_def": {},
+        "validate_resource_def": {},
+        "list_resource_defs": {
+            "page_size": 100,
+            "use_cache": False
+        },
+        "get_resource_def": {
+            "use_cache": False  
+        },
+        "put_resource_def": {},
+        "delete_resource_def": {},
+        "validate_grant": {},
+        "list_grants": {
+            "page_size": 100,
+            "use_cache": False
+        },
+        "get_grant": {
+            "use_cache": False  
+        },
+        "enact": {},
+        "repeal": {},
+        "list_grant_refs": {
+            "page_size": 10,
+            "use_cache": False
+        },
+        "cleanup_latches": {},
+        "validate_request": {
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        },
+        "validate_batch_request": {
+            "use_list_context_defs": True,
+            "list_context_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 100,
+                "use_cache": True
+            },
+            "use_list_resource_defs": True,
+            "list_resource_defs": {
+                "page_size": 100,
+                "use_cache": True
+            }
+        },
+        "audit": {
+            "grants_page_size": 100,
+            "use_grants_cache": True,
+            "validate_request": {
+                "use_list_identity_defs": True,
+                "list_identity_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                }
+            }
+        },
+        "batch_audit": {
+            "grants_page_size": 100,
+            "use_grants_cache": True,
+            "validate_batch_request": {
+                "use_list_context_defs": True,
+                "list_context_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                },
+                "use_list_identity_defs": True,
+                "list_identity_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                },
+                "use_list_resource_defs": True,
+                "list_resource_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                }
+            }
+        },
+        "authorize": {
+            "grants_page_size": 100,
+            "use_grants_cache": True,
+            "grant_refs_page_size": 10,
+            "use_grant_refs_cache": True,
+            "parallel_paging": True,
+            "validate_request": {
+                "use_list_identity_defs": True,
+                "list_identity_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                }
+            }
+        },
+        "batch_authorize": {
+            "grants_page_size": 100,
+            "use_grants_cache": True,
+            "grant_refs_page_size": 10,
+            "use_grant_refs_cache": True,
+            "parallel_paging": True,
+            "validate_batch_request": {
+                "use_list_context_defs": True,
+                "list_context_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                },
+                "use_list_identity_defs": True,
+                "list_identity_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                },
+                "use_list_resource_defs": True,
+                "list_resource_defs": {
+                    "page_size": 100,
+                    "use_cache": True
+                }
+            }
+        }
+    }
+    ```
+
+    Attributes
+    ----------
+    authzee : AuthzeeBaseConfigOverride
+        Authzee class instance configuration override.
+    start : StartConfigOverride
+        Start configuration override.
+    shutdown : ShutdownConfigOverride
+        Shutdown configuration override.
+    construct : ConstructConfigOverride
+        Construct configuration override.
+    destroy : DestroyConfigOverride
+        Destroy configuration override.
+    list_context_defs : ListContextDefsConfigOverride
+        Config override for listing context definitions.
+    list_identity_defs : ListIdentityDefsConfigOverride
+        Config override for listing identity definitions.
+    list_resource_defs : ListResourceDefsConfigOverride
+        Config override for listing resource definitions.
+    list_grants : ListGrantsConfigOverride
+        Config override for listing grants.
+    list_grant_refs : ListGrantRefsConfigOverride
+        Config override for listing grant page references.
+    validate_request : ValidateRequestConfigOverride
+        Config override for validating requests.
+    validate_batch_request : ValidateBatchRequestConfigOverride
+        Config override for validating batch requests.
+    audit : AuditConfigOverride
+        Config override for the audit operation.
+    batch_audit : BatchAuditConfigOverride
+        Config override for the batch audit operation.
+    authorize : AuthorizeConfigOverride
+        Config override for the authorize operation.
+    batch_authorize : BatchAuthorizeConfigOverride
+        Config override for the batch authorize operation.
+    """
+    authzee: AuthzeeBaseConfigOverride
+    start: StartConfigOverride
+    shutdown: ShutdownConfigOverride
+    construct: ConstructConfigOverride
+    destroy: DestroyConfigOverride
+    validate_context_def: dict
+    list_context_defs: ListContextDefsConfigOverride
+    get_context_def: GetConfigOverride
+    put_context_def: dict
+    delete_context_def: dict
+    validate_identity_def: dict
+    list_identity_defs: ListIdentityDefsConfigOverride
+    get_identity_def: GetConfigOverride
+    put_identity_def: dict
+    delete_identity_def: dict
+    validate_resource_def: dict
+    list_resource_defs: ListResourceDefsConfigOverride
+    get_resource_def: GetConfigOverride
+    put_resource_def: dict
+    delete_resource_def: dict
+    validate_grant: dict
+    list_grants: ListGrantsConfigOverride
+    get_grant: GetConfigOverride
+    enact: dict
+    repeal: dict
+    list_grant_refs: ListGrantRefsConfigOverride
+    cleanup_latches: dict
+    validate_request: ValidateRequestConfigOverride
+    validate_batch_request: ValidateBatchRequestConfigOverride
+    audit: AuditConfigOverride
+    batch_audit: BatchAuditConfigOverride
+    authorize: AuthorizeConfigOverride
+    batch_authorize: BatchAuthorizeConfigOverride
 
 
 class GenericError(TypedDict):

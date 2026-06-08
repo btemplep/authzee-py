@@ -16,16 +16,6 @@ from authzee.storage.storage_module import StorageModule
 from authzee.module_locality import locality_compatibility
 
 
-_default_config = {
-    "context_defs_page_size": 100,
-    "identity_defs_page_size": 100,
-    "resource_defs_page_size": 100,
-    "grants_page_size": 100,
-    "grant_refs_page_size": 10,
-    "authorize_parallel_paging": True,
-    "batch_authorize_parallel_paging": True,
-    "raise_crits": True
-}
 _exception_map = {
     "definition": DefinitionError,
     "evaluation": EvaluationError,
@@ -37,6 +27,59 @@ _exception_map = {
     "page_reference": PageReferenceError,
     "resource_not_found": ResourceNotFoundError,
     "start": StartError
+}
+_default_config: AuthzeeConfig = {
+    "authzee": {
+        "raise_crits": True
+    },
+    "list_context_defs": {
+        "page_size": 100,
+        "cache_ttl": 120
+    },
+    "list_identity_defs": {
+        "page_size": 100
+    },
+    "list_resource_defs": {
+        "page_size": 100
+    },
+    "list_grants": {
+        "page_size": 100
+    },
+    "list_grant_refs": {
+        "page_size": 100
+    },
+    "validate_request": {
+        "list_context_defs": False,
+        "context_defs_page_size": 100,
+        "list_identity_defs": False,
+        "identity_defs_page_size": 100,
+        "list_resource_defs": False,
+        "resource_defs_page_size": 100,
+    },
+    "validate_batch_request": {
+        "list_context_defs": False,
+        "context_defs_page_size": 100,
+        "list_identity_defs": False,
+        "identity_defs_page_size": 100,
+        "list_resource_defs": False,
+        "resource_defs_page_size": 100,
+    },
+    "audit": {
+        "grants_page_size": 100,
+    },
+    "batch_audit": {
+        "grants_page_size": 100
+    },
+    "authorize": {
+        "grants_page_size": 100,
+        "grant_refs_page_size": 10,
+        "parallel_paging": True
+    },
+    "batch_authorize": {
+        "grants_page_size": 100,
+        "grant_refs_page_size": 10,
+        "parallel_paging": True
+    }
 }
 
 
@@ -2304,13 +2347,69 @@ class AuthzeeAsync:
             If a critical error occurs during cleanup.
         """
         config = self._config if config is None else self._config | config
-        result = await self._storage
+        result = await self._storage.cleanup_latches(
+            before=before,
+            config=config
+        )
         self._raise_result(result, config)
         
         return result
         
+    
+    async def validate_request(
+        self,
+        request: AuthzeeRequest,
+        config: AuthzeeConfig | None = None
+    ) -> GenericResult:
+        """Validate the Authzee Request.
+        
+         Parameters
+        ----------
+        request : AuthzeeRequest
+            The request to validate.
+        config : AuthzeeConfig | None, optional
+            Override configuration for this call. Only include keys to override.
+        
+        Examples
+        --------
+        ```python
 
-    async def audit_page(
+        ```
+        Returns
+        -------
+        GenericResult
+             ```python
+            {
+                "has_failed": True,
+                "errors": {
+                    "start": [
+                        {
+                            "is_critical": True,
+                            "message": "Error message."
+                        }
+                    ]
+                }
+            }
+            ```
+        
+        Raises
+        ------
+        RequestError
+            Error when validating the request.
+
+    
+        """
+        config = self._config if config is None else self._config | config
+        result = await self._compute.validate_request(
+            request=request,
+            config=config
+        )
+        self._raise_result(result, config)
+        
+        return result
+
+
+    async def audit(
         self,
         request: AuthzeeRequest, 
         page_ref: str | None = None, 
@@ -2331,7 +2430,7 @@ class AuthzeeAsync:
         --------
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
-        result = await authz.audit_page(
+        result = await authz.audit(
             request={
                 "identities": {
                     "user": [
@@ -2371,7 +2470,7 @@ class AuthzeeAsync:
 
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         async for page in async_paginator(
-            authz.audit_page,
+            authz.audit,
             request={
                 "identities": {
                     "user": [
@@ -2463,7 +2562,7 @@ class AuthzeeAsync:
             
             return result
 
-        result = await self._compute.audit_page(
+        result = await self._compute.audit(
             request=request,
             page_ref=page_ref,
             config=config
@@ -2604,7 +2703,58 @@ class AuthzeeAsync:
         return result
 
 
-    async def batch_audit_page(
+    async def validate_batch_request(
+        self,
+        batch_request: AuthzeeBatchRequest,
+        config: AuthzeeConfig | None = None
+    ) -> GenericResult:
+        """Validate the Authzee Request.
+        
+         Parameters
+        ----------
+        batch_request : AuAuthzeeBatAuthzeeBatchRequestchRequestthzeeRequest
+            The batch request to validate.
+        config : AuthzeeConfig | None, optional
+            Override configuration for this call. Only include keys to override.
+        
+        Examples
+        --------
+        ```python
+
+        ```
+        Returns
+        -------
+        GenericResult
+             ```python
+            {
+                "has_failed": True,
+                "errors": {
+                    "start": [
+                        {
+                            "is_critical": True,
+                            "message": "Error message."
+                        }
+                    ]
+                }
+            }
+            ```
+        
+        Raises
+        ------
+        RequestError
+            Error when validating the request.
+        """
+        config = self._config if config is None else self._config | config
+        result = await self._compute.validate_batch_request(
+            batch_request=batch_request,
+            config=config
+        )
+        self._raise_result(result, config)
+        
+        return result
+
+
+    async def batch_audit(
         self,
         batch_request: AuthzeeBatchRequest, 
         page_ref: str | None = None, 
@@ -2625,7 +2775,7 @@ class AuthzeeAsync:
         --------
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
-        result = await authz.batch_audit_page(
+        result = await authz.batch_audit(
             batch_request={
                 "identities": {
                     "user": [
@@ -2673,7 +2823,7 @@ class AuthzeeAsync:
 
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         async for page in async_paginator(
-            authz.batch_audit_page,
+            authz.batch_audit,
             batch_request={
                 "identities": {
                     "user": [
@@ -2780,7 +2930,7 @@ class AuthzeeAsync:
             
             return result
     
-        result = await self._compute.batch_audit_page(
+        result = await self._compute.batch_audit(
             batch_request=batch_request,
             page_ref=page_ref,
             config=config

@@ -93,7 +93,7 @@ class MultiprocessCompute(ComputeModule):
             self._executor = None
 
 
-    async def audit_page(
+    async def audit(
         self, 
         request: dict, 
         page_ref: str | None, 
@@ -103,7 +103,7 @@ class MultiprocessCompute(ComputeModule):
     ) -> dict:
         return await asyncio.get_running_loop().run_in_executor(
             self._executor,
-            _executor_audit_page,
+            _executor_audit,
             (
                 {
                     "request": request,
@@ -147,13 +147,13 @@ def _executor_start(
     return asyncio.run(authzee_compute.start(**start_kwargs))
 
 
-def _executor_audit_page(
-    audit_page_kwargs: Dict[str, Any]
+def _executor_audit(
+    audit_kwargs: Dict[str, Any]
 ) -> dict:
     global authzee_compute
     return asyncio.run(
-        authzee_compute.audit_page(
-            **audit_page_kwargs
+        authzee_compute.audit(
+            **audit_kwargs
         )
     )
 
