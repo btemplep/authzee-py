@@ -1,5 +1,3 @@
-
-
 __all__ = [
     "DictStorage",
 ]
@@ -9,7 +7,35 @@ from typing import List
 from uuid import uuid4
 
 from authzee.storage.storage_module import StorageModule
-from authzee.types import *
+from authzee.types.authzee import *
+from authzee.types.config import (
+    StorageStartConfig,
+    StorageShutdownConfig,
+    StorageConstructConfig,
+    StorageDestroyConfig,
+    ListContextDefsConfig,
+    GetContextDefConfig,
+    PutContextDefConfig,
+    DeleteContextDefConfig,
+    ListIdentityDefsConfig,
+    GetIdentityDefConfig,
+    PutIdentityDefConfig,
+    DeleteIdentityDefConfig,
+    ListResourceDefsConfig,
+    GetResourceDefConfig,
+    PutResourceDefConfig,
+    DeleteResourceDefConfig,
+    EnactConfig,
+    RepealConfig,
+    GetGrantConfig,
+    ListGrantsConfig,
+    ListGrantRefsConfig,
+    CreateLatchConfig,
+    GetLatchConfig,
+    SetLatchConfig,
+    DeleteLatchConfig,
+    CleanupLatchesConfig
+)
 from authzee.module_locality import ModuleLocality
 
 
@@ -20,7 +46,7 @@ class DictStorage(StorageModule):
         self._storage_dict = storage_dict
 
 
-    async def start(self, config: AuthzeeConfig) -> GenericResult:
+    async def start(self, config: StorageStartConfig) -> GenericResult:
         """Start up storage module.
 
         - run before use
@@ -37,7 +63,7 @@ class DictStorage(StorageModule):
         }
 
 
-    async def shutdown(self, config: AuthzeeConfig) -> GenericResult:
+    async def shutdown(self, config: StorageShutdownConfig) -> GenericResult:
         """Shutdown storage module.
 
         - clean up runtime resources
@@ -48,7 +74,7 @@ class DictStorage(StorageModule):
         }
 
 
-    async def construct(self, config: AuthzeeConfig) -> GenericResult:
+    async def construct(self, config: StorageConstructConfig) -> GenericResult:
         """Construct backend resources for storage.
 
         - one time setup
@@ -65,7 +91,7 @@ class DictStorage(StorageModule):
         }
 
 
-    async def destroy(self, config: AuthzeeConfig) -> GenericResult:
+    async def destroy(self, config: StorageDestroyConfig) -> GenericResult:
         """Tear down backend resources.
 
         - destructive - may lose all long lasting storage resources
@@ -85,7 +111,7 @@ class DictStorage(StorageModule):
     async def list_context_defs(
         self,
         page_ref: str | None,
-        config: AuthzeeConfig
+        config: ListContextDefsConfig
     ) -> ContextDefsPage:
         """Get a page of context definitions.
 
@@ -97,7 +123,7 @@ class DictStorage(StorageModule):
             start_index = int(page_ref)
 
         context_defs = list(self._storage_dict['context_defs_lut'].values())
-        end_index = start_index + config['context_defs_page_size']  
+        end_index = start_index + config['page_size']  
         
         return {
             "context_defs": context_defs[start_index:end_index],
@@ -110,7 +136,7 @@ class DictStorage(StorageModule):
     async def get_context_def(
         self, 
         context_type: str,
-        config: AuthzeeConfig
+        config: GetContextDefConfig
     ) -> ContextDefResult:
         """Get a context definition by type.
         """
@@ -139,7 +165,7 @@ class DictStorage(StorageModule):
     async def put_context_def(
         self, 
         context_def: ContextDef,
-        config: AuthzeeConfig
+        config: PutContextDefConfig
     ) -> GenericResult:
         """Add a new Context Definition or update an existing one.
 
@@ -156,7 +182,7 @@ class DictStorage(StorageModule):
     async def delete_context_def(
         self, 
         context_type: str,
-        config: AuthzeeConfig
+        config: DeleteContextDefConfig
     ) -> GenericResult:
         """Delete a context definition by type.
         """
@@ -171,7 +197,7 @@ class DictStorage(StorageModule):
     async def list_identity_defs(
         self,
         page_ref: str | None,
-        config: AuthzeeConfig
+        config: ListIdentityDefsConfig
     ) -> IdentityDefsPage:
         """Get a page of identity definitions.
 
@@ -183,7 +209,7 @@ class DictStorage(StorageModule):
             start_index = int(page_ref)
 
         identity_defs = list(self._storage_dict['identity_defs_lut'].values())
-        end_index = start_index + config['identity_defs_page_size']       
+        end_index = start_index + config['page_size']       
         
         return {
             "identity_defs": identity_defs[start_index:end_index],
@@ -196,7 +222,7 @@ class DictStorage(StorageModule):
     async def get_identity_def(
         self, 
         identity_type: str,
-        config: AuthzeeConfig
+        config: GetIdentityDefConfig
     ) -> IdentityDefResult:
         """Get an identity definition by type.
         """
@@ -225,7 +251,7 @@ class DictStorage(StorageModule):
     async def put_identity_def(
         self, 
         identity_def: IdentityDef,
-        config: AuthzeeConfig
+        config: PutIdentityDefConfig
     ) -> GenericResult:
         """Add a new Identity Definition or update an existing one.
         """
@@ -240,7 +266,7 @@ class DictStorage(StorageModule):
     async def delete_identity_def(
         self, 
         identity_type: str,
-        config: AuthzeeConfig
+        config: DeleteIdentityDefConfig
     ) -> GenericResult:
         """Delete an identity definition by type.
         """
@@ -255,7 +281,7 @@ class DictStorage(StorageModule):
     async def list_resource_defs(
         self,
         page_ref: str | None,
-        config: AuthzeeConfig
+        config: ListResourceDefsConfig
     ) -> ResourceDefsPage:
         """Get a page of resource definitions.
 
@@ -267,7 +293,7 @@ class DictStorage(StorageModule):
             start_index = int(page_ref)
 
         resource_defs = list(self._storage_dict['resource_defs_lut'].values())
-        end_index = start_index + config['resource_defs_page_size'] 
+        end_index = start_index + config['page_size'] 
         
         return {
             "resource_defs": resource_defs[start_index:end_index],
@@ -280,7 +306,7 @@ class DictStorage(StorageModule):
     async def get_resource_def(
         self, 
         resource_type: str,
-        config: AuthzeeConfig
+        config: GetResourceDefConfig
     ) -> ResourceDefResult:
         """Get a resource definition by type.
         """
@@ -309,7 +335,7 @@ class DictStorage(StorageModule):
     async def put_resource_def(
         self, 
         resource_def: ResourceDef,
-        config: AuthzeeConfig
+        config: PutResourceDefConfig
     ) -> GenericResult:
         """Add a new Resource Definition or update an existing one.
         """
@@ -324,7 +350,7 @@ class DictStorage(StorageModule):
     async def delete_resource_def(
         self, 
         resource_type: str,
-        config: AuthzeeConfig
+        config: DeleteResourceDefConfig
     ) -> GenericResult:
         """Delete a resource definition by type.
         """
@@ -339,7 +365,7 @@ class DictStorage(StorageModule):
     async def enact(
         self, 
         grant: Grant,
-        config: AuthzeeConfig
+        config: EnactConfig
     ) -> GenericResult:
         """Add a new grant.
         """
@@ -355,7 +381,7 @@ class DictStorage(StorageModule):
         self, 
         grant_uuid: str, 
         purge: bool,
-        config: AuthzeeConfig
+        config: RepealConfig
     ) -> GenericResult:
         """Delete a grant.
         """
@@ -370,7 +396,7 @@ class DictStorage(StorageModule):
     async def get_grant(
         self, 
         grant_uuid: str,
-        config: AuthzeeConfig
+        config: GetGrantConfig
     ) -> GrantResult:
         """Get a grant by UUID.
         """
@@ -401,7 +427,7 @@ class DictStorage(StorageModule):
         effect: str | None,
         action: str | None,
         page_ref: str | None,
-        config: AuthzeeConfig
+        config: ListGrantsConfig
     ) -> GrantsPage:
         """Retrieve a page of grants.
 
@@ -419,7 +445,7 @@ class DictStorage(StorageModule):
         if action is not None:
             grants = [g for g in grants if action in g['actions']]
 
-        end_index = start_index + config['grants_page_size']  
+        end_index = start_index + config['page_size']  
         
         return {
             "grants": grants[start_index:end_index],
@@ -434,7 +460,7 @@ class DictStorage(StorageModule):
         effect: str | None,
         action: str | None,
         page_ref: str | None,
-        config: AuthzeeConfig
+        config: ListGrantRefsConfig
     ) -> PageRefsPage:
         """Retrieve a page of grant page references for parallel pagination.
 
@@ -457,8 +483,8 @@ class DictStorage(StorageModule):
         
         num_grants = len(grants)
         refs = []
-        for _ in range(config['grant_refs_page_size']):
-            end_index = start_index + config['grants_page_size']  
+        for _ in range(config['page_size']):
+            end_index = start_index + config['page_size']  
             next_page_ref = end_index          
             refs.append(start_index)
             start_index = end_index
@@ -474,7 +500,7 @@ class DictStorage(StorageModule):
         }
 
 
-    async def create_latch(self, config: AuthzeeConfig) -> StorageLatchResult:
+    async def create_latch(self, config: CreateLatchConfig) -> StorageLatchResult:
         """Create a new [storage latch](#storage-latches).
         """
         latch_uuid = str(uuid4())
@@ -495,7 +521,7 @@ class DictStorage(StorageModule):
     async def get_latch(
         self, 
         storage_latch_uuid: str,
-        config: AuthzeeConfig
+        config: GetLatchConfig
     ) -> StorageLatchResult:
         """Get a [storage latch](#storage-latches) by UUID.
         """
@@ -524,7 +550,7 @@ class DictStorage(StorageModule):
     async def set_latch(
         self, 
         storage_latch_uuid: str,
-        config: AuthzeeConfig
+        config: SetLatchConfig
     ) -> StorageLatchResult:
         """Set a [storage latch](#storage-latches) by UUID.
         """
@@ -543,7 +569,7 @@ class DictStorage(StorageModule):
     async def delete_latch(
         self, 
         storage_latch_uuid: str,
-        config: AuthzeeConfig
+        config: DeleteLatchConfig
     ) -> GenericResult:
         """Delete a [storage latch](#storage-latches) by UUID.
         """
@@ -559,7 +585,7 @@ class DictStorage(StorageModule):
     async def cleanup_latches(
         self, 
         before: datetime.datetime,
-        config: AuthzeeConfig
+        config: CleanupLatchesConfig
     ) -> GenericResult:
         """Delete all latches before the specified datetime.
 

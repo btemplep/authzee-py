@@ -20,10 +20,26 @@ from authzee.core import (
     validate_batch_request_schema
 )
 from authzee.paginators import paginator_async
-from authzee.types import *
-from authzee.exceptions import NotImplementedError
+from authzee.types.authzee import *
+from authzee.types.config import (
+    ComputeStartConfig,
+    ComputeShutdownConfig,
+    ComputeConstructConfig,
+    ComputeDestroyConfig,
+    ValidateContextDefConfig,
+    ValidateIdentityDefConfig,
+    ValidateResourceDefConfig,
+    ValidateGrantConfig,
+    ValidateRequestConfig,
+    ValidateBatchRequestConfig,
+    AuditConfig,
+    AuthorizeConfig,
+    BatchAuditConfig,
+    BatchAuthorizeConfig
+)
 from authzee.module_locality import ModuleLocality
 from authzee.storage.storage_module import StorageModule
+
 
 class InProcessCompute(ComputeModule):
 
@@ -33,7 +49,7 @@ class InProcessCompute(ComputeModule):
         execute: Callable[[str, Any], Any],
         storage_type: Type[StorageModule],
         storage_kwargs: Dict[str, Any],
-        config: AuthzeeConfig
+        config: ComputeStartConfig
     ) -> GenericResult:
         """Start up compute module.
 
@@ -51,7 +67,7 @@ class InProcessCompute(ComputeModule):
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = False
         self._storage = storage_type(**storage_kwargs)
-        await self._storage.start(config)
+        await self._storage.start(config['storage'])
     
         return {
             "has_failed": False, 
@@ -59,12 +75,12 @@ class InProcessCompute(ComputeModule):
         }
 
 
-    async def shutdown(self, config: AuthzeeConfig) -> GenericResult:
+    async def shutdown(self, config: ComputeShutdownConfig) -> GenericResult:
         """Shutdown Compute module.
 
         - clean up runtime resources
         """
-        await self._storage.shutdown()
+        await self._storage.shutdown(config['storage'])
 
         return {
             "has_failed": False, 
@@ -72,7 +88,7 @@ class InProcessCompute(ComputeModule):
         }
 
 
-    async def construct(self, config: AuthzeeConfig) -> GenericResult:
+    async def construct(self, config: ComputeConstructConfig) -> GenericResult:
         """Construct backend resources for compute.
 
         - one time setup
@@ -83,7 +99,7 @@ class InProcessCompute(ComputeModule):
         }
 
 
-    async def destroy(self, config: AuthzeeConfig) -> GenericResult:
+    async def destroy(self, config: ComputeDestroyConfig) -> GenericResult:
         """Tear down backend resources.
 
         - destructive - may lose all long lasting compute resources
@@ -97,7 +113,7 @@ class InProcessCompute(ComputeModule):
     async def validate_context_def(
         self,
         context_def: ContextDef,
-        config: AuthzeeConfig
+        config: ValidateContextDefConfig
     ) -> GenericResult:
         return validate_context_def(context_def)
 
@@ -105,7 +121,7 @@ class InProcessCompute(ComputeModule):
     async def validate_identity_def(
         self,
         identity_def: IdentityDef,
-        config: AuthzeeConfig
+        config: ValidateIdentityDefConfig
     ) -> GenericResult:
         return validate_identity_def(identity_def)
 
@@ -113,7 +129,7 @@ class InProcessCompute(ComputeModule):
     async def validate_resource_def(
         self,
         resource_def: ResourceDef,
-        config: AuthzeeConfig
+        config: ValidateResourceDefConfig
     ) -> GenericResult:
         return validate_resource_def(resource_def)
 
@@ -121,7 +137,7 @@ class InProcessCompute(ComputeModule):
     async def validate_grant(
         self,
         grant: Grant,
-        config: AuthzeeConfig
+        config: ValidateGrantConfig
     ) -> GenericResult:
         return validate_grant(grant)
 
@@ -129,7 +145,7 @@ class InProcessCompute(ComputeModule):
     async def validate_request(
         self,
         request: AuthzeeRequest,
-        config: AuthzeeConfig
+        config: ValidateRequestConfig
     ) -> GenericResult:
         """Validate a request.
         """
@@ -137,9 +153,19 @@ class InProcessCompute(ComputeModule):
         if result['has_failed'] is True:
             return result
 
-        context_def_task = create_task(self._storage.get_context_def(request['context_type'], config))
-        resource_def_task = create_task(self._storage.get_resource_def(request['resource_type'], config))
-        identity_def_tasks = [create_task(self._storage.get_identity_def(it, config)) for it in request['identities']]
+        context_def_task = create_task(
+            self._storage.get_context_def(
+                request['context_type'], 
+                config['get_identity_def']
+            )
+        )
+        resource_def_task = create_task(
+            self._storage.get_resource_def(
+                request['resource_type'], 
+                config['get_resource_def']
+            )
+        )
+        identity_def_tasks = [create_task(self._storage.get_identity_def(it, config['get_identity_def'])) for it in request['identities']]
 
         context_def = (await context_def_task)['context_def']
         if context_def is None:
@@ -230,7 +256,7 @@ class InProcessCompute(ComputeModule):
     async def validate_batch_request(
         self,
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfig
+        config: ValidateBatchRequestConfig
     ) -> GenericResult:
         """Validate a batch request.
         """
@@ -244,7 +270,7 @@ class InProcessCompute(ComputeModule):
         base_request.pop("batch")
         base_result = await self.validate_request(
             request=base_request,
-            config=config
+            config=config # technically not the same typeddict type
         )
         combine_errors(result, base_result)
         if base_result['has_failed'] is True:
@@ -258,7 +284,7 @@ class InProcessCompute(ComputeModule):
                 create_task(
                     self.validate_request(
                         request=base_request | item,
-                        config=config
+                        config=config # technically not the same typeddict type
                     )
                 )
             )
@@ -276,7 +302,7 @@ class InProcessCompute(ComputeModule):
         self,
         request: AuthzeeRequest,
         page_ref: str | None,
-        config: AuthzeeConfig
+        config: AuditConfig
     ) -> AuditResultPage:
         """Run the Audit Operation for a page of results.
 
@@ -294,7 +320,7 @@ class InProcessCompute(ComputeModule):
                 effect=None,
                 action=request['action'],
                 page_ref=page_ref,
-                config=config
+                config=config['list_grants']
             )
         )
         if grants_page['has_failed'] is True:
@@ -331,7 +357,7 @@ class InProcessCompute(ComputeModule):
     async def authorize(
         self,
         request: AuthzeeRequest,
-        config: AuthzeeConfig
+        config: AuthorizeConfig
     ) -> AuthorizeResult:
         """Run the Authorize Operation.
         """
@@ -347,7 +373,7 @@ class InProcessCompute(ComputeModule):
             effect="deny",
             action=request['action'],
             page_ref=None,
-            config=config
+            config=config['list_grants']
         ):
             page: GrantsPage
             if page['has_failed'] is True:
@@ -383,7 +409,7 @@ class InProcessCompute(ComputeModule):
             effect="allow",
             action=request['action'],
             page_ref=None,
-            config=config
+            config=config['list_grants']
         ):
             page: GrantsPage
             if page['has_failed'] is True:
@@ -426,7 +452,7 @@ class InProcessCompute(ComputeModule):
         self,
         batch_request: AuthzeeBatchRequest,
         page_ref: str | None,
-        config: AuthzeeConfig
+        config: BatchAuditConfig
     ) -> BatchAuditResultPage:
         """Run the Batch Audit Operation for a page of results.
 
@@ -444,7 +470,7 @@ class InProcessCompute(ComputeModule):
                 effect=None,
                 action=batch_request['action'],
                 page_ref=page_ref,
-                config=config
+                config=config['list_grants']
             )
         )
         batch_result['errors'] = grants_page['errors']
@@ -494,7 +520,7 @@ class InProcessCompute(ComputeModule):
     async def batch_authorize(
         self,
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfig
+        config: BatchAuthorizeConfig
     ) -> BatchAuthorizeResult:
         """Run the Batch Authorize Operation.
         """
@@ -522,7 +548,7 @@ class InProcessCompute(ComputeModule):
             effect="deny",
             action=batch_request['action'],
             page_ref=None,
-            config=config
+            config=config['list_grants']
         ):
             page: GrantsPage
             if page['has_failed'] is True:
@@ -560,7 +586,7 @@ class InProcessCompute(ComputeModule):
             effect="allow",
             action=batch_request['action'],
             page_ref=None,
-            config=config
+            config=config['list_grants']
         ):
             page: GrantsPage
             if page['has_failed'] is True:

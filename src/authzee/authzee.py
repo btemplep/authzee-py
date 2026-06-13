@@ -7,7 +7,8 @@ import asyncio
 import datetime
 from typing import Any, Callable, Dict, Type
 
-from authzee.types import *
+from authzee.types.authzee import *
+from authzee.types.config_override import AuthzeeConfigOverride
 from authzee.compute.compute_module import ComputeModule
 from authzee.storage.storage_module import StorageModule
 from authzee.authzee_async import AuthzeeAsync
@@ -30,18 +31,8 @@ class Authzee:
         Storage module KWArgs used to create instances.
     compute_storage_kwargs : Dict[str, Any], optional
         Override storage module KWArgs that the compute module will use.  May only include KWArgs you want to override.
-    config : AuthzeeConfig, optional
+    config : AuthzeeConfigOverride, optional
         Authzee configuration. May only include config keys you want to override.
-    compute_config : AuthzeeConfig, optional
-        Override default config values for calls that are passed to the compute backend. May only include config keys you want to override.
-        - validate_context_def
-        - validate_identity_def
-        - validate_resource_def
-        - validate_grant
-        - audit
-        - authorize
-        - batch_audit
-        - batch_authorize
     
     Examples
     --------
@@ -61,6 +52,12 @@ class Authzee:
         storage_type=DictStorage,
         storage_kwargs={
             "storage_dict": storage_dict
+        },
+        config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            "authzee": {
+                "raise_crits": True
+            }
+            # "method_name": {<method config>}
         }
     )
     authz.construct() # one time setup for life of storage and compute
@@ -196,8 +193,7 @@ class Authzee:
         storage_type: Type[StorageModule],
         storage_kwargs: Dict[str, Any],
         compute_storage_kwargs: Dict[str, Any] = None,
-        config: AuthzeeConfig = None,
-        compute_config: AuthzeeConfig = None
+        config: AuthzeeConfigOverride = None
     ):
         self._authzee_async = AuthzeeAsync(
             execute=execute,
@@ -206,17 +202,16 @@ class Authzee:
             storage_type=storage_type,
             storage_kwargs=storage_kwargs,
             compute_storage_kwargs=compute_storage_kwargs,
-            config=config,
-            compute_config=compute_config
+            config=config
         )
 
 
-    def start(self, config: AuthzeeConfig | None = None) -> GenericResult:
+    def start(self, config: AuthzeeConfigOverride | None = None) -> GenericResult:
         """Initialize the authzee app. Must be run once for every instance.
 
         Parameters
         ----------
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -224,15 +219,14 @@ class Authzee:
         ```python
         # Assumes authz is an Authzee instance
         result = authz.start(
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "start": {
+                    "compute_start": {},
+                    "storage_start": {}
+                }
             }
         )
         ```
@@ -266,13 +260,15 @@ class Authzee:
 
     def shutdown(
         self, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Shutdown the authzee app.
 
+        Should be run before exit for every authzee instance.
+
         Parameters
         ----------
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -280,15 +276,14 @@ class Authzee:
         ```python
         # Assumes authz is an Authzee instance
         result = authz.shutdown(
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "shutdown": {
+                    "compute_shutdown": {},
+                    "storage_shutdown": {}
+                }
             }
         )
         ```
@@ -320,13 +315,15 @@ class Authzee:
 
     def construct(
         self, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """One time setup for the life of storage and compute. Creates DB tables, storage setup, etc.
 
+        Should only be run once. 
+
         Parameters
         ----------
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -334,15 +331,14 @@ class Authzee:
         ```python
         # Assumes authz is an Authzee instance
         result = authz.construct(
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "construct": {
+                    "compute_construct": {},
+                    "storage_construct": {}
+                }
             }
         )
         ```
@@ -374,13 +370,15 @@ class Authzee:
 
     def destroy(
         self, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Tear down everything that construct set up. Deletes DB tables, storage, etc.
 
+        Can be destructive.  Only run if needed. 
+
         Parameters
         ----------
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -388,15 +386,14 @@ class Authzee:
         ```python
         # Assumes authz is an Authzee instance
         result = authz.destroy(
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "destroy": {
+                    "compute_destroy": {},
+                    "storage_destroy": {}
+                }
             }
         )
         ```
@@ -429,7 +426,7 @@ class Authzee:
     def validate_context_def(
         self,
         context_def: ContextDef, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Validate a context definition without storing it.
 
@@ -437,7 +434,7 @@ class Authzee:
         ----------
         context_def : ContextDef
             The context definition to validate.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -452,15 +449,11 @@ class Authzee:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "validate_context_def": {}
             }
         )
         ```
@@ -498,15 +491,15 @@ class Authzee:
     def list_context_defs(
         self, 
         page_ref: str | None = None,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> ContextDefsPage:
-        """Retrieve a single page of context definitions.
+        """Retrieve a page of context definitions.
 
         Parameters
         ----------
         page_ref : str | None, optional
             Page reference for pagination. None for the first page.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -515,15 +508,14 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.list_context_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "list_context_defs": {
+                    "page_size": 100,
+                    "use_cache": False
+                }
             }
         )
         ```
@@ -581,15 +573,15 @@ class Authzee:
     def get_context_def(
         self, 
         context_type: str, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> ContextDefResult:
-        """Retrieve a single context definition by its context_type.
+        """Retrieve a context definition by its `context_type`.
 
         Parameters
         ----------
         context_type : str
             The unique context type identifier.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -598,15 +590,13 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.get_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "get_context_def": {
+                    "use_cache": False
+                }
             }
         )
         ```
@@ -651,7 +641,7 @@ class Authzee:
     def put_context_def(
         self, 
         context_def: ContextDef, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Create or update a context definition.
 
@@ -659,7 +649,7 @@ class Authzee:
         ----------
         context_def : ContextDef
             The context definition to store.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -674,15 +664,11 @@ class Authzee:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "put_context_def": {}
             }
         )
         ```
@@ -720,7 +706,7 @@ class Authzee:
     def delete_context_def(
         self, 
         context_type: str, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Deletes the context definition if found.
 
@@ -728,7 +714,7 @@ class Authzee:
         ----------
         context_type : str
             The unique context type identifier to delete.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -737,15 +723,11 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.delete_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "delete_context_def": {}
             }
         )
         ```
@@ -783,7 +765,7 @@ class Authzee:
     def validate_identity_def(
         self,
         identity_def: IdentityDef, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Validate an identity definition without storing it.
 
@@ -791,7 +773,7 @@ class Authzee:
         ----------
         identity_def : IdentityDef
             The identity definition to validate.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -813,15 +795,11 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "validate_identity_def": {}
             }
         )
         ```
@@ -859,15 +837,15 @@ class Authzee:
     def list_identity_defs(
         self, 
         page_ref: str | None = None,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> IdentityDefsPage:
-        """Retrieve a single page of identity definitions.
+        """Retrieve a page of identity definitions.
 
         Parameters
         ----------
         page_ref : str | None, optional
             Page reference for pagination. None for the first page.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -876,15 +854,14 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.list_identity_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "list_identity_defs": {
+                    "page_size": 100,
+                    "use_cache": False
+                }
             }
         )
         ```
@@ -946,15 +923,15 @@ class Authzee:
     def get_identity_def(
         self, 
         identity_type: str,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> IdentityDefResult:
-        """Retrieve a single identity definition by its identity_type.
+        """Retrieve an identity definition by its `identity_type`.
 
         Parameters
         ----------
         identity_type : str
             The unique identity type identifier.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -963,15 +940,13 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.get_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "get_identity_def": {
+                    "use_cache": False
+                }
             }
         )
         ```
@@ -1020,7 +995,7 @@ class Authzee:
     def put_identity_def(
         self, 
         identity_def: IdentityDef, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Create or update an identity definition.
 
@@ -1028,7 +1003,7 @@ class Authzee:
         ----------
         identity_def : IdentityDef
             The identity definition to store.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1050,15 +1025,11 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "put_identity_def": {}
             }
         )
         ```
@@ -1096,7 +1067,7 @@ class Authzee:
     def delete_identity_def(
         self, 
         identity_type: str,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Deletes the identity definition if found.
 
@@ -1104,7 +1075,7 @@ class Authzee:
         ----------
         identity_type : str
             The unique identity type identifier to delete.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1113,15 +1084,11 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.delete_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "delete_identity_def": {}
             }
         )
         ```
@@ -1159,7 +1126,7 @@ class Authzee:
     def validate_resource_def(
         self,
         resource_def: ResourceDef, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Validate a resource definition without storing it.
 
@@ -1167,7 +1134,7 @@ class Authzee:
         ----------
         resource_def : ResourceDef
             The resource definition to validate.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1194,15 +1161,11 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "validate_resource_def": {}
             }
         )
         ```
@@ -1240,15 +1203,15 @@ class Authzee:
     def list_resource_defs(
         self, 
         page_ref: str | None = None,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> ResourceDefsPage:
-        """Retrieve a single page of resource definitions.
+        """Retrieve a page of resource definitions.
 
         Parameters
         ----------
         page_ref : str | None, optional
             Page reference for pagination. None for the first page.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1257,15 +1220,14 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.list_resource_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "list_resource_defs": {
+                    "page_size": 100,
+                    "use_cache": False
+                }
             }
         )
         ```
@@ -1331,15 +1293,15 @@ class Authzee:
     def get_resource_def(
         self, 
         resource_type: str,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> ResourceDefResult:
-        """Retrieve a single resource definition by its resource_type.
+        """Retrieve a resource definition by its `resource_type`.
 
         Parameters
         ----------
         resource_type : str
             The unique resource type identifier.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1348,15 +1310,13 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.get_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "get_resource_def": {
+                    "use_cache": False
+                }
             }
         )
         ```
@@ -1409,7 +1369,7 @@ class Authzee:
     def put_resource_def(
         self, 
         resource_def: ResourceDef,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Create or update a resource definition.
 
@@ -1417,7 +1377,7 @@ class Authzee:
         ----------
         resource_def : ResourceDef
             The resource definition to store.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1444,15 +1404,11 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "put_resource_def": {}
             }
         )
         ```
@@ -1490,7 +1446,7 @@ class Authzee:
     def delete_resource_def(
         self, 
         resource_type: str,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Deletes the resource definition if found.
 
@@ -1498,7 +1454,7 @@ class Authzee:
         ----------
         resource_type : str
             The unique resource type identifier to delete.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1507,15 +1463,11 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.delete_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "delete_resource_def": {}
             }
         )
         ```
@@ -1553,7 +1505,7 @@ class Authzee:
     def validate_grant(
         self, 
         grant: Grant,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Validate a grant without storing it.
 
@@ -1561,7 +1513,7 @@ class Authzee:
         ----------
         grant : Grant
             The grant to validate.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1585,15 +1537,11 @@ class Authzee:
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "validate_grant": {}
             }
         )
         ```
@@ -1631,7 +1579,7 @@ class Authzee:
     def enact(
         self, 
         grant: Grant,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Enact (store) a grant to create an authorization rule.
 
@@ -1639,7 +1587,7 @@ class Authzee:
         ----------
         grant : Grant
             The grant to enact.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1663,15 +1611,11 @@ class Authzee:
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "enact": {}
             }
         )
         ```
@@ -1710,7 +1654,7 @@ class Authzee:
         self, 
         grant_uuid: str, 
         purge: bool = False,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Repeal (remove) a grant by its UUID.
 
@@ -1721,7 +1665,7 @@ class Authzee:
         purge : bool, default=False
             If True, all grants and partitions may be scanned to completely remove. 
             Useful if corruption by update is suspected.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1731,15 +1675,11 @@ class Authzee:
         result = authz.repeal(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             purge=False, # optional
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "repeal": {}
             }
         )
         ```
@@ -1778,15 +1718,15 @@ class Authzee:
     def get_grant(
         self, 
         grant_uuid: str,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GrantResult:
-        """Retrieve a single grant by its UUID.
+        """Retrieve a grant by its UUID.
 
         Parameters
         ----------
         grant_uuid : str
             The UUID of the grant to retrieve.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1795,15 +1735,13 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.get_grant(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "get_grant": {
+                    "use_cache": False
+                }
             }
         )
         ```
@@ -1859,9 +1797,9 @@ class Authzee:
         effect: str | None = None, 
         action: str | None = None, 
         page_ref: str | None = None, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GrantsPage:
-        """Retrieve a single page of grants with optional filtering.
+        """Retrieve a page of grants with optional filtering.
 
         Parameters
         ----------
@@ -1871,7 +1809,7 @@ class Authzee:
             Filter by action string.
         page_ref : str | None, optional
             Page reference for pagination. None for the first page.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1882,15 +1820,14 @@ class Authzee:
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "list_grants": {
+                    "page_size": 100,
+                    "use_cache": False
+                }
             }
         )
         ```
@@ -1961,7 +1898,7 @@ class Authzee:
         effect: str | None = None, 
         action: str | None = None, 
         page_ref: str | None = None, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> PageRefsPage:
         """Retrieve a page of grant page references for parallel pagination.
 
@@ -1973,7 +1910,7 @@ class Authzee:
             Filter by action string.
         page_ref : str | None, optional
             Page reference for pagination. None for the first page.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -1984,15 +1921,14 @@ class Authzee:
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "list_grant_refs": {
+                    "page_size": 10,
+                    "use_cache": False
+                }
             }
         )
         ```
@@ -2049,7 +1985,7 @@ class Authzee:
     def cleanup_latches(
         self, 
         before: datetime.datetime, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> GenericResult:
         """Clean up storage latches created before the given datetime.
 
@@ -2060,7 +1996,7 @@ class Authzee:
         ----------
         before : datetime.datetime
             Delete latches created before this datetime.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -2071,15 +2007,11 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.cleanup_latches(
             before=datetime.datetime(2026, 1, 1),
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "cleanup_latches": {}
             }
         )
         ```
@@ -2118,7 +2050,7 @@ class Authzee:
         self,
         request: AuthzeeRequest, 
         page_ref: str | None = None, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> AuditResultPage:
         """Retrieve a page of audit results showing how each grant evaluated against the request.
 
@@ -2128,7 +2060,7 @@ class Authzee:
             The authorization request to audit.
         page_ref : str | None, optional
             Page reference for pagination. None for the first page.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -2156,15 +2088,42 @@ class Authzee:
                 "context": {}
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "audit": {
+                    "validate_request": {
+                        "get_context_def": {
+                            "use_cache": True
+                        },
+                        "use_list_context_defs": True,
+                        "list_context_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_identity_def": {
+                            "use_cache": True
+                        },
+                        "use_list_identity_defs": True,
+                        "list_identity_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_resource_def": {
+                            "use_cache": True
+                        },
+                        "use_list_resource_defs": True,
+                        "list_resource_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        }
+                    },
+                    "list_grants": {
+                        "page_size": 100,
+                        "use_cache": True
+                    }
+                }
             }
         )
         ```
@@ -2262,7 +2221,7 @@ class Authzee:
     def authorize(
         self, 
         request: AuthzeeRequest,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> AuthorizeResult:
         """Determine if the request is authorized.
 
@@ -2270,7 +2229,7 @@ class Authzee:
         ----------
         request : AuthzeeRequest
             The authorization request to evaluate.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -2297,15 +2256,47 @@ class Authzee:
                 "context_type": "NONE",
                 "context": {}
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "authorize": {
+                    "validate_request": {
+                        "get_context_def": {
+                            "use_cache": True
+                        },
+                        "use_list_context_defs": True,
+                        "list_context_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_identity_def": {
+                            "use_cache": True
+                        },
+                        "use_list_identity_defs": True,
+                        "list_identity_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_resource_def": {
+                            "use_cache": True
+                        },
+                        "use_list_resource_defs": True,
+                        "list_resource_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        }
+                    },
+                    "list_grants": {
+                        "page_size": 100,
+                        "use_cache": True
+                    },
+                    "parallel_paging": True,
+                    "list_grant_refs": {
+                        "page_size": 10,
+                        "use_cache": True
+                    }
+                }
             }
         )
         ```
@@ -2362,7 +2353,7 @@ class Authzee:
         self,
         batch_request: AuthzeeBatchRequest, 
         page_ref: str | None = None, 
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> BatchAuditResultPage:
         """Retrieve a page of batch audit results showing how each grant evaluated against the batch request.
 
@@ -2372,7 +2363,7 @@ class Authzee:
             The batch authorization request to audit.
         page_ref : str | None, optional
             Page reference for pagination. None for the first page.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -2408,15 +2399,42 @@ class Authzee:
                 ]
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "batch_audit": {
+                    "validate_batch_request": {
+                        "get_context_def": {
+                            "use_cache": True
+                        },
+                        "use_list_context_defs": True,
+                        "list_context_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_identity_def": {
+                            "use_cache": True
+                        },
+                        "use_list_identity_defs": True,
+                        "list_identity_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_resource_def": {
+                            "use_cache": True
+                        },
+                        "use_list_resource_defs": True,
+                        "list_resource_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        }
+                    },
+                    "list_grants": {
+                        "page_size": 100,
+                        "use_cache": True
+                    }
+                }
             }
         )
         ```
@@ -2529,7 +2547,7 @@ class Authzee:
     def batch_authorize(
         self, 
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfig | None = None
+        config: AuthzeeConfigOverride | None = None
     ) -> BatchAuthorizeResult:
         """Determine if each item in the batch request is authorized.
 
@@ -2537,7 +2555,7 @@ class Authzee:
         ----------
         batch_request : AuthzeeBatchRequest
             The batch authorization request to evaluate.
-        config : AuthzeeConfig | None, optional
+        config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
 
         Examples
@@ -2572,15 +2590,73 @@ class Authzee:
                     }
                 ]
             },
-            config={  # optional - AuthzeeConfig | None - All keys are optional
-                "context_defs_page_size": 100,
-                "identity_defs_page_size": 100,
-                "resource_defs_page_size": 100,
-                "grants_page_size": 100,
-                "grant_refs_page_size": 10,
-                "authorize_parallel_paging": True,
-                "batch_authorize_parallel_paging": True,
-                "raise_crits": True
+            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+                "authzee": {
+                    "raise_crits": True
+                },
+                "batch_authorize": {
+                    "validate_batch_request": {
+                        "get_context_def": {
+                            "use_cache": True
+                        },
+                        "use_list_context_defs": True,
+                        "list_context_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_identity_def": {
+                            "use_cache": True
+                        },
+                        "use_list_identity_defs": True,
+                        "list_identity_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_resource_def": {
+                            "use_cache": True
+                        },
+                        "use_list_resource_defs": True,
+                        "list_resource_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        }
+                    },
+                    "validate_request": {
+                        "get_context_def": {
+                            "use_cache": True
+                        },
+                        "use_list_context_defs": True,
+                        "list_context_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_identity_def": {
+                            "use_cache": True
+                        },
+                        "use_list_identity_defs": True,
+                        "list_identity_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        },
+                        "get_resource_def": {
+                            "use_cache": True
+                        },
+                        "use_list_resource_defs": True,
+                        "list_resource_defs": {
+                            "page_size": 100,
+                            "use_cache": True
+                        }
+                    },
+                    "list_grants": {
+                        "page_size": 100,
+                        "use_cache": True
+                    },
+                    "parallel_paging": True,
+                    "list_grant_refs": {
+                        "page_size": 10,
+                        "use_cache": True
+                    }
+                }
             }
         )
         ```

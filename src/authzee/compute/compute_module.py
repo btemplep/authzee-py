@@ -6,7 +6,23 @@ __all__ = [
 
 from typing import Any, Callable, Dict, Type
 
-from authzee.types import *
+from authzee.types.authzee import *
+from authzee.types.config import (
+    ComputeStartConfig,
+    ComputeShutdownConfig,
+    ComputeConstructConfig,
+    ComputeDestroyConfig,
+    ValidateContextDefConfig,
+    ValidateIdentityDefConfig,
+    ValidateResourceDefConfig,
+    ValidateGrantConfig,
+    ValidateRequestConfig,
+    ValidateBatchRequestConfig,
+    AuditConfig,
+    AuthorizeConfig,
+    BatchAuditConfig,
+    BatchAuthorizeConfig
+)
 from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
 from authzee.storage.storage_module import StorageModule
@@ -19,7 +35,7 @@ class ComputeModule:
         execute: Callable[[str, Any], Any],
         storage_type: Type[StorageModule],
         storage_kwargs: Dict[str, Any],
-        config: AuthzeeConfig
+        config: ComputeStartConfig
     ) -> GenericResult:
         """Start up compute module.
 
@@ -35,7 +51,7 @@ class ComputeModule:
         self.has_parallel_paging = False
 
 
-    async def shutdown(self, config: AuthzeeConfig) -> GenericResult:
+    async def shutdown(self, config: ComputeShutdownConfig) -> GenericResult:
         """Shutdown Compute module.
 
         - clean up runtime resources
@@ -43,7 +59,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    async def construct(self, config: AuthzeeConfig) -> GenericResult:
+    async def construct(self, config: ComputeConstructConfig) -> GenericResult:
         """Construct backend resources for compute.
 
         - one time setup
@@ -51,7 +67,7 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-    async def destroy(self, config: AuthzeeConfig) -> GenericResult:
+    async def destroy(self, config: ComputeDestroyConfig) -> GenericResult:
         """Tear down backend resources.
 
         - destructive - may lose all long lasting compute resources
@@ -62,7 +78,7 @@ class ComputeModule:
     async def validate_context_def(
         self,
         context_def: ContextDef,
-        config: AuthzeeConfig
+        config: ValidateContextDefConfig
     ) -> GenericResult:
         raise NotImplementedError()
 
@@ -71,7 +87,7 @@ class ComputeModule:
     async def validate_identity_def(
         self,
         identity_def: IdentityDef,
-        config: AuthzeeConfig
+        config: ValidateIdentityDefConfig
     ) -> GenericResult:
         raise NotImplementedError()
 
@@ -79,7 +95,7 @@ class ComputeModule:
     async def validate_resource_def(
         self,
         resource_def: ResourceDef,
-        config: AuthzeeConfig
+        config: ValidateResourceDefConfig
     ) -> GenericResult:
         raise NotImplementedError()
 
@@ -87,7 +103,7 @@ class ComputeModule:
     async def validate_grant(
         self,
         grant: Grant,
-        config: AuthzeeConfig
+        config: ValidateGrantConfig
     ) -> GenericResult:
         raise NotImplementedError()
     
@@ -95,7 +111,7 @@ class ComputeModule:
     async def validate_request(
         self,
         request: AuthzeeRequest,
-        config: AuthzeeConfig
+        config: ValidateRequestConfig
     ) -> GenericResult:
         """Validate a request.
         """
@@ -105,7 +121,7 @@ class ComputeModule:
     async def validate_batch_request(
         self,
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfig
+        config: ValidateBatchRequestConfig
     ) -> GenericResult:
         """Validate a batch request.
         """
@@ -116,7 +132,7 @@ class ComputeModule:
         self,
         request: AuthzeeRequest,
         page_ref: str | None,
-        config: AuthzeeConfig
+        config: AuditConfig
     ) -> AuditResultPage:
         """Run the Audit Operation for a page of results.
 
@@ -128,7 +144,7 @@ class ComputeModule:
     async def authorize(
         self,
         request: AuthzeeRequest,
-        config: AuthzeeConfig
+        config: AuthorizeConfig
     ) -> AuthorizeResult:
         """Run the Authorize Operation.
         """
@@ -139,7 +155,7 @@ class ComputeModule:
         self,
         batch_request: AuthzeeBatchRequest,
         page_ref: str | None,
-        config: AuthzeeConfig
+        config: BatchAuditConfig
     ) -> BatchAuditResultPage:
         """Run the Batch Audit Operation for a page of results.
 
@@ -151,7 +167,7 @@ class ComputeModule:
     async def batch_authorize(
         self,
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfig
+        config: BatchAuthorizeConfig
     ) -> BatchAuthorizeResult:
         """Run the Batch Authorize Operation.
         """

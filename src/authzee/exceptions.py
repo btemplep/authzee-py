@@ -113,3 +113,17 @@ class StartError(AuthzeeSDKError):
     """
     pass
 
+
+_exception_map = {
+    "definition": DefinitionError,
+    "evaluation": EvaluationError,
+    "grant": GrantError,
+    "request": RequestError, 
+    "locality_incompatibility": LocalityIncompatibilityError,
+    "not_implemented": NotImplementedError,
+    "parallel_pagination_not_supported": ParallelPaginationNotSupported,
+    "page_reference": PageReferenceError,
+    "resource_not_found": ResourceNotFoundError,
+    "start": StartError
+}
+"""Mapping of error type strings to Exception classes."""

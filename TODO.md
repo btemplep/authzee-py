@@ -1,66 +1,30 @@
 # TODO
 
-- [ ] error examples in authzee give actual errors, and they are wrong.  double check for all and fix. 
-- [ ] finalize configs
-    - General configs and overrides at the method level? 
-        -   slimmest
-            -   ```json
-                {
-                    "defs_page_size": 100,
-                    "grants_page_size": 100,
-                    "grant_refs_page_size": 10,
-                    "parallel_paging": true,
-                    "raise_crits": true
-                }
-                ```
-        - medium 
-            -   ```json
-                {
-                    "context_defs_page_size": 100,
-                    "identity_defs_page_size": 100,
-                    "resource_defs_page_size": 100,
-                    "grants_page_size": 100,
-                    "grant_refs_page_size": 10,
-                    "authorize_parallel_paging": true,
-                    "batch_authorize_parallel_paging": true,
-                    "raise_crits": true
-                }
-            ```
-        - full
-            - Set all defaults for everything
-            - way cleaner than the compute and non-compute config shit
-            - Keep the override at the method level to simplify this 
-            -   ```json
-                {
-                    "raise_crits": true,
-                    "list_context_defs_page_size": 100,
-                    "list_identity_defs_page_size": 100,
-                    "list_resource_defs_page_size": 100,
-                    "list_grants_page_size": 100,
-                    "list_grant_refs_page_size": 10,
-                    "audit_grants_page_size": 100,
-                    "batch_audit_grants_page_size": 100,
-                    "authorize_grants_page_size": 100,
-                    "authorize_grant_refs_page_size": 10,
-                    "authorize_parallel_paging": true,
-                    "batch_authorize_grants_page_size": 100,
-                    "batch_authorize_grant_refs_page_size": 10,
-                    "batch_authorize_parallel_paging": true
-                }
-            ```
+
+- [ ] update examples for configs
+    - Update in config classes
+    - update in authzee to show full
+    - update in methods to only show the "authzee" and the full config for that method or None
+    
+
+- [ ] configs should not be "created" from scratch, unless combined with defaults.
+    - functions to help with this.  Once source of truth in config.py
+    
+
+- [ ] Double check docstrings in Authzee
+    - error examples in authzee give actual errors, and they are wrong.  
+    - some descriptions are off as well
+    - make sure that optional and default are consistent
+
+
+
+
 
 - [ ] full example
-- [ ] errors for SDK
-    - Do I want to enumerate all of these or switch back to the SDK error type and just use that?
-        - pros 
-            - more flat errors with definite types
-                - Can just change this to a dict[str, errortype] though
-                - to document all types, just make it a literal with all types??
-            - easily document 
-        - cons
-            - so many error bodies that are not required
-    - 
 - [ ] finish up docs between spec and SDK for new release
+    - how configs work between authzee and compute/storage
+        - don't need to support all configs
+        - need to add vars for if storage supports caching
 - [ ] unit tests
 
 - [ ] new release
@@ -75,14 +39,55 @@
 - [ ] SQL storage
 - [ ] mongo storage
 - [ ] redis storage
+- [ ] storage cache
+    - should be a var on storage modules
+    - just to let you know if they support caching
+    - if they do must support TTL and LRU max 
+        - cache_ttl - time to live before evicted from cache
+        - cache_lru_max - max number of items before the least recently used is evicted from the cache. 
+    - **Solution** this is done at the instance level, not the method
+
 
 - [ ] mp compute
 - [ ] fan out compute
 
 
 
-
-
+- [x] finalize configs
+    - For nested configs, how do you pass these to the compute or the storage configs? 
+        - Should the back end only take the config that is needed???
+        - Or should it just take the values? 
+        - configs are interesting but 
+        - too complicated need to figure out the best way to do this
+    - what do I want from configs
+        - Way to set defaults for whole class
+        - Way to extend methods via builder configs without having to change brake api for rust, c, java etc.
+            - Must do it for Authzee classes
+            - preferably for compute and storage modules as well
+        - way to override all values at the function level
+    - How can I satisfy all fo these???
+    - **Solution**
+        - 2 sets of configs.  Once for override that is used as input, and one where are all required. 
+        - nest underlying calls as needed
+        - authzee method configs, takes the whole override. 
+        - Do we want to create for all methods from the start? 
+    - convert compute types
+    - convert storage modules and other submodules
+    - If we have all methods in the configs do we really need overrides? 
+        - If you really want separate can't you just create another client
+- [x] List or get items for request and batch request validation?
+    - Make this a config?
+    - config value
+- [x] errors for SDK
+    - Do I want to enumerate all of these or switch back to the SDK error type and just use that?
+        - pros 
+            - more flat errors with definite types
+                - Can just change this to a dict[str, errortype] though
+                - to document all types, just make it a literal with all types??
+            - easily document 
+        - cons
+            - so many error bodies that are not required
+        - **Solution** - flat errors - enumerate as a literal for the string type in typed dict
 - [x] audit_page to audit? 
 - [x] short dev guide to describe compute and storage module dev
     - caching 
