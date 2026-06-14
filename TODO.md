@@ -1,32 +1,5 @@
 # TODO
 
-
-- [ ] update examples for configs
-    - Update in config classes
-    - update in authzee to show full
-    - update in methods to only show the "authzee" and the full config for that method or None
-    
-
-- [ ] configs should not be "created" from scratch, unless combined with defaults.
-    - functions to help with this.  Once source of truth in config.py
-    
-
-- [ ] Double check docstrings in Authzee
-    - error examples in authzee give actual errors, and they are wrong.  
-    - some descriptions are off as well
-    - make sure that optional and default are consistent
-
-
-
-
-
-- [ ] full example
-- [ ] finish up docs between spec and SDK for new release
-    - how configs work between authzee and compute/storage
-        - don't need to support all configs
-        - need to add vars for if storage supports caching
-- [ ] unit tests
-
 - [ ] new release
 
 - [ ] better batch request verification
@@ -53,6 +26,24 @@
 
 
 
+- [x] finish up docs between spec and SDK for new release
+    - how configs work between authzee and compute/storage
+        - don't need to support all configs
+        - need to add vars for if storage supports caching
+- [x] unit tests
+- [x] full example.py
+    - should go in full docs as well 
+- [x] Double check docstrings in Authzee
+    - error examples in authzee give actual errors, and they are wrong.  
+    - some descriptions are off as well
+    - make sure that optional and default are consistent
+- [x] configs should not be "created" from scratch, unless combined with defaults.
+    - functions to help with this.  Once source of truth in config.py
+- [x] update examples for configs
+    - Update docstring examples in config classes in src/types/config.py
+    - update classes and docstrings to match config.py in src/types/config_override.py
+    - update in authzee docstring to show full config object
+    - update in methods to only show the "authzee" and the full config for that method or None
 - [x] finalize configs
     - For nested configs, how do you pass these to the compute or the storage configs? 
         - Should the back end only take the config that is needed???

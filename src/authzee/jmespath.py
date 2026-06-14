@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Union
 
 try:
     from jmespath import exceptions, functions, Options, search
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
     pass
 
 

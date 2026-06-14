@@ -34,16 +34,18 @@ Authzee is a highly expressive grant-based authorization engine. Check out the [
 $ pip install authzee
 ```
 
-Extra dependencies can be installed lie
+Extra dependencies can be installed like
 
 ```console
-pip install authzee[extradep,otherextra]
+pip install authzee[jmespath,sql-storage]
 ```
 
 Extra dependencies available/needed:
 
 - `jmespath` - needed if using the built in jmespath execute functions
+- `sql-storage` - needed for `SQLStorage` class
 - `dev` - development dependencies 
+- `all` - for all extra dependencies except for `dev`
 
 
 ## Tutorial
@@ -68,6 +70,12 @@ authz = Authzee( # for asyncio use AuthzeeAsync
     storage_type=DictStorage,
     storage_kwargs={
         "storage_dict": storage_dict
+    },
+    config={  # optional - AuthzeeConfigOverride | None - All root and nested keys are optional
+        "authzee": {
+            "raise_crits": True
+        }
+        # "method_name": {<method config>}
     }
 )
 authz.construct() # one time setup for life of storage and compute
@@ -194,17 +202,29 @@ Authorization response:
 }
 ```
 
+For a more comprehensive example that demonstrates all Authzee methods, see [`full_example.py`](./full_example.py)
+
 ### Authzee App
 
-The `Authzee` class is the entrypoint to all authzee functionality.  `AuthzeeAsync` is available for asyncio.
+The `Authzee` class is the entrypoint to all authzee functionality.  `AuthzeeAsync` is available for asyncio — it has the same interface as `Authzee` except all methods are async.
+
+You can check which version of the authzee specification the SDK implements via `authzee.authzee_specification_version` (currently `"0.3.0"`).
 
 ```python
-from authzee import Authzee, DictStorage, InProcessCompute, jmespath_execute
-# for asyncio use
-# from authzee import AuthzeeAsync
+from authzee import (
+    Authzee, 
+    DictStorage,
+    InProcessCompute,
+    jmespath_execute, 
+    paginator,
+    authzee_specification_version
+)
+# for asyncio use AuthzeeAsync - same interface, all methods are async (use await)
+# from authzee import AuthzeeAsync, paginator_async
 # to include custom JMESPath functions use
 # from authzee import jmespath_custom_execute
 
+print(f"Authzee Specification Version: {authzee_specification_version}")
 
 storage_dict = {}
 authz = Authzee( # for asyncio use AuthzeeAsync
@@ -214,31 +234,38 @@ authz = Authzee( # for asyncio use AuthzeeAsync
     storage_type=DictStorage, # storage backend type
     storage_kwargs={
         "storage_dict": storage_dict
+    },
+    config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+        "authzee": {
+            "raise_crits": True
+        }
+        # "method_name": {<method config>}
     }
 )
 authz.construct() # one time setup for life of storage and compute
 authz.start() # initialize the authzee app - must be run once for every instance
 ```
 
-The Authzee class splits requires a JSON query function, compute module, and storage module. 
+The Authzee class requires a JSON query function, compute module, and storage module. 
 
 
 #### Execute Function
 
-The execute function is a wrapper around your choice of JSON query language
+The execute function is a wrapper around your choice of JSON query language.
 Out of the box, the SDK has:
-    - `jmespath_execute` 
-        - Standard JMESPath python implementation
-        - Must install `authzee[jmespath]`
-    `jmespath_custom_execute`
-        - Standard JMESPath python implementation plus extra functions as outlines in the [SDK recommendations](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#standard-jmespath-extensions)
-        - Must install `authzee[jmespath]`
+
+- `jmespath_execute` 
+    - Standard JMESPath python implementation
+    - Must install `authzee[jmespath]`
+- `jmespath_custom_execute`
+    - Standard JMESPath python implementation plus extra functions as outlined in the [SDK recommendations](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#standard-jmespath-extensions)
+    - Must install `authzee[jmespath]`
 
 
 If you want to create your own, see `jmespath_execute` for a simple example.
 
 #### Compute and Storage Modules
-The compute is uses do process authorization requests.  Storage is used to store grants and definitions. The Authzee SDK includes several of these out of the box. 
+The compute is used to process authorization requests.  Storage is used to store grants and definitions. The Authzee SDK includes several of these out of the box. 
 
 Built in Compute Modules include:
 
@@ -466,10 +493,6 @@ Will filter all user identities by those that are in the 'Balloon Dept'.  If the
 For authorization, by default, no requests are allowed.  If a grant with the deny effect is applicable, the request is denied, no matter any other outcomes.  If a grant with the allow effect is applicable, and there are no deny grants applicable then the request is allowed. 
 
 
-## Full Example
-
-For a full example see (`full_example.py`)[https://github.com/btemplep/authzee-py/blob/main/full_example.py]
-
 ## Development
 
 Install all dependencies
@@ -487,4 +510,4 @@ You should be able to build custom ones based off of the base classes `ComputeMo
 
 ### Module Caching
 
-Caching for validating a request or batch request should be self contained within the compute model per reqeust. Besides that, it is up to the storage module to control caching for storage calls.
+Caching for validating a request or batch request should be self contained within the compute model per request. Besides that, it is up to the storage module to control caching for storage calls.

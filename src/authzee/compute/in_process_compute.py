@@ -524,7 +524,7 @@ class InProcessCompute(ComputeModule):
     ) -> BatchAuthorizeResult:
         """Run the Batch Authorize Operation.
         """
-        batch_result = {
+        batch_result: BatchAuthorizeResult = {
             "batch_results": [],
             "has_failed": False,
             "critical_errors": []
@@ -552,9 +552,9 @@ class InProcessCompute(ComputeModule):
         ):
             page: GrantsPage
             if page['has_failed'] is True:
-                result['critical_errors'] = page['errors']
+                batch_result['critical_errors'] = page['errors']
 
-                return result
+                return batch_result
 
             for grant in page['grants']:
                 for request, result in zip(batch_request['batch'], batch_result['batch_results']):
@@ -590,9 +590,9 @@ class InProcessCompute(ComputeModule):
         ):
             page: GrantsPage
             if page['has_failed'] is True:
-                result['critical_errors'] = page['errors']
+                batch_result['critical_errors'] = page['errors']
 
-                return result
+                return batch_result
         
             for grant in page['grants']:
                 for request, result in zip(batch_request['batch'], batch_result['batch_results']):

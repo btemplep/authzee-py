@@ -35,7 +35,7 @@ try:
     from authzee.jmespath import *
     from authzee.jmespath import __all__ as jmespath_all
     __all__ += jmespath_all
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
     pass
 
 from authzee.paginators import paginator, paginator_async
