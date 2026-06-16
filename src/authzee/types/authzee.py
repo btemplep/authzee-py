@@ -143,7 +143,7 @@ class ContextDef(TypedDict):
     ```
     """
     context_type: str
-    schema: Dict[str: AnyJSON]
+    schema: Dict[str, AnyJSON]
 
 
 class ContextDefResult(TypedDict):
