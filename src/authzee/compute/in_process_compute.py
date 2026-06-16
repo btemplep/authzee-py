@@ -1,3 +1,7 @@
+"""In-process compute module for Authzee.
+
+See {py:class}`authzee.compute.in_process_compute.InProcessCompute`
+"""
 
 __all__ = [
     "InProcessCompute",

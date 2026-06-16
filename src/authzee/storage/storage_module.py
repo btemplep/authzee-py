@@ -1,4 +1,8 @@
 
+"""Base storage module for Authzee.
+
+See {py:class}`authzee.storage.storage_module.StorageModule`
+"""
 
 __all__ = [
     "StorageModule",

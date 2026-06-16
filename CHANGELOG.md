@@ -22,7 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
-## [0.2.0] - 2025-08-
+## [0.1.0a4] - 2026-06-15
+
+New revamp to support Authzee spec 0.3.0. 
 
 ### [0.1.0a3] - 2024-02-19
 

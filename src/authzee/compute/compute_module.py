@@ -1,4 +1,8 @@
 
+"""Base compute module for Authzee.
+
+See {py:class}`authzee.compute.compute_module.ComputeModule`
+"""
 
 __all__ = [
     "ComputeModule",

@@ -1,8 +1,8 @@
-# `authzee`
-
 
 <!-- ![authzee-logo](./docs/logo.svg) Documentation(Link TBD) -->
-<img src="https://raw.githubusercontent.com/btemplep/authzee/main/docs/logo.svg" alt="Authzee Logo" width="100">
+<img src="https://raw.githubusercontent.com/btemplep/authzee/main/docs/authzee_logo.svg" alt="Authzee Logo" width="500">
+
+<!-- # `authzee` -->
 
 This is the official python SDK for Authzee! It is a general usage SDK that is async, extensible, and scalable. 
 
@@ -18,6 +18,8 @@ Authzee is a highly expressive grant-based authorization engine. Check out the [
 - [Tutorial](#tutorial)
     - [Simple Example](#simple-example)
     - [Authzee App](#authzee-app)
+        - [Execute Function](#execute-function)
+        - [Compute and Storage Modules](#compute-and-storage-modules)
     - [Context](#context)
     - [Identity](#identity)
     - [Resource](#resource)
@@ -25,10 +27,11 @@ Authzee is a highly expressive grant-based authorization engine. Check out the [
     - [Authorize](#authorize)
 - [Full Example](#full-example)
 - [Development](#development)
+    - [Compute and Storage Module Development](#compute-and-storage-module-development)
+    - [Module Caching](#module-caching)
 
 
 ## Installation
-
 
 ```text
 $ pip install authzee
@@ -201,8 +204,6 @@ Authorization response:
     "critical_errors": {}
 }
 ```
-
-For a more comprehensive example that demonstrates all Authzee methods, see [`full_example.py`](./full_example.py)
 
 ### Authzee App
 
@@ -441,7 +442,7 @@ For authorization, Authzee evaluates the given request against each grant.
 
 How this works is the grant query, in this case JMESpath, is run on the combined data structure. 
 
-In the case of the above grant and request is would run on this data:
+In the case of the above grant and request it would run on this data:
 
 ```json
 {
@@ -488,9 +489,14 @@ The query:
 length(request.identities.user[?department == 'Balloon Dept']) > `0`
 ```
 
-Will filter all user identities by those that are in the 'Balloon Dept'.  If there are more that 0 users like that, then, the result of the query will be `true`.  The expected value for the grant to be considered application, the `equality` is `true`.  Since the result and equality are equal the grant is considered applicable to the request and the grant effect will be applied. 
+Will filter all user identities by those that are in the 'Balloon Dept'.  If there are more than 0 users like that, then the result of the query will be `true`.  The expected value for the grant to be considered applicable, the `equality` is `true`.  Since the result and equality are equal the grant is considered applicable to the request and the grant effect will be applied. 
 
 For authorization, by default, no requests are allowed.  If a grant with the deny effect is applicable, the request is denied, no matter any other outcomes.  If a grant with the allow effect is applicable, and there are no deny grants applicable then the request is allowed. 
+
+
+## Full Example
+
+For a more comprehensive example that demonstrates all Authzee methods, see [`full_example.py`](./full_example.py).
 
 
 ## Development

@@ -1,4 +1,9 @@
-"""_summary_
+"""This is the official python SDK for Authzee! It is a general usage SDK that is async, extensible, and scalable. 
+
+Authzee is a highly expressive grant-based authorization engine. Check out the [Authzee Repo](https://github.com/btemplep/authzee) for the core engine and specification.
+
+See {py:class}`authzee.authzee.Authzee`
+or {py:class}`authzee.authzee_async.AuthzeeAsync` for asyncio support!
 """
 
 __version__ = "0.1.0a4"

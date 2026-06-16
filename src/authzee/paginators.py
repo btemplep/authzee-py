@@ -65,7 +65,7 @@ async def paginator_async(afunc: Callable, **kwargs) -> AsyncGenerator[Any, None
     from authzee import paginator_async
 
     # Assume authz is an AuthzeeAsync instance, and this is within an event loop
-    async for page in paginator(authz.list_grants):
+    async for page in paginator_async(authz.list_grants):
         for grant in page['grants']:
             print(grant['grant_uuid'])
     ```

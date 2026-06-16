@@ -59,10 +59,10 @@ class CustomJMESPathFunctions(functions.Functions):
         - See [SDK Docs regex Groups All](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#regex-groups-all)
     - `string lower(string $subject)` 
         - Convert string to lowercase.
-        - See (SDK Docs String Upper)[https://github.com/btemplep/authzee/blob/main/docs/sdks.md#string-lower]
+        - See [SDK Docs String Lower](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#string-lower)
     - `string upper(string $subject)` 
         - Convert string to uppercase.
-        - See [SDK Docs String Lower](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#string-upper)
+        - See [SDK Docs String Upper](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#string-upper)
     """
 
     def __init__(self):
@@ -368,10 +368,10 @@ def jmespath_custom_execute(expression: str, data: Any) -> dict:
         - See [SDK Docs regex Groups All](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#regex-groups-all)
     - `string lower(string $subject)` 
         - Convert string to lowercase.
-        - See (SDK Docs String Upper)[https://github.com/btemplep/authzee/blob/main/docs/sdks.md#string-lower]
+        - See [SDK Docs String Lower](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#string-lower)
     - `string upper(string $subject)` 
         - Convert string to uppercase.
-        - See [SDK Docs String Lower](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#string-upper)
+        - See [SDK Docs String Upper](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#string-upper)
     """
     query_result = None
     try:

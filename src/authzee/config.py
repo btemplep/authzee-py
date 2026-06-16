@@ -310,7 +310,7 @@ def override_config(override: dict | None, default: dict) -> dict:
                 full[key] = override[key]
         else:
             full[key] = default[key] 
-    
+
     return full
 
    
