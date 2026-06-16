@@ -52,7 +52,10 @@ def unit_tests(session: nox.Session):
     """Run tests with current python version and generate html coverage report.
     """
     session.run("coverage", "erase")
-    session.run("pytest", "-vvv", "--cov=src/authzee", "--cov-report", "html", "tests/unit")
+    session.run("pytest", "-vvv", 
+        "--cov=src/authzee", "--cov-report", "html", "--cov-report", "term",
+        "tests/unit"
+    )
 
 
 @nox.session(

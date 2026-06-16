@@ -1,42 +1,28 @@
 
+
 import asyncio
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 import multiprocessing as mp
 from multiprocessing.connection import Connection
 from multiprocessing.managers import SharedMemoryManager
-import os
-from typing import Any, Dict, List, Optional, Set, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
-import jmespath
-from loguru import logger
-from pydantic import BaseModel
-
-from authzee.backend_locality import BackendLocality
-from authzee.compute import general as gc
-from authzee.compute.compute_backend import ComputeBackend
-from authzee.compute.shared_mem_event import SharedMemEvent
-from authzee.grant import Grant
-from authzee.grant_effect import GrantEffect
-from authzee.grants_page import GrantsPage
-from authzee.loop import get_event_loop, get_running_loop
-from authzee.resource_action import ResourceAction
-from authzee.resource_authz import ResourceAuthz
-from authzee.storage.storage_backend import StorageBackend 
+from authzee.compute.compute_module import ComputeModule
+from authzee.compute.shared_mem_latch import SharedMemLatch
+from authzee.module_locality import ModuleLocality
+from authzee.storage.storage_module import StorageModule
 
 
-class MultiprocessCompute(ComputeBackend):
-    """Local multiprocessing compute backend.
+class FanOutMPCompute(ComputeModule):
+    """Pool of processes is used to spread work among as many processes as feasible.
 
-    Uses a pool of processes for compute.
-    Made with the "spawn" context. 
-
+    Generally aims to serve one request as fast as possible.
 
     Parameters
     ----------
-    max_workers : Optional[int], optional
-        The max number of worker processes.
-        By default it will be the number of processor cores on the system.
+    max_workers : int | None
+        Maximum number of worker processes. If None, defaults to number of machine processors.
 
     Examples
     --------
@@ -49,71 +35,108 @@ class MultiprocessCompute(ComputeBackend):
 
     def __init__(
         self,
-        max_workers: Optional[int] = None
+        max_workers: int | None
     ):
-        super().__init__(
-            backend_locality=BackendLocality.SYSTEM,
-            supports_parallel_paging=False,
-            use_parallel_paging=False
-        )
-        self._max_workers = max_workers
-        if self._max_workers is None:
-            self._max_workers = len(os.sched_getaffinity(0))
+        self.max_workers = max_workers
+        if self.max_workers is None:
+            self.max_workers = mp.cpu_count()
+            
+        self._process_pool = None
+        self._shared_mem_manager = None
 
 
-    async def initialize(
-        self, 
-        identity_types: List[Type[BaseModel]],
-        jmespath_options: Union[jmespath.Options, None],
-        resource_authzs: List[ResourceAuthz],
-        storage_backend: StorageBackend,
+    async def start(
+        self,
+        identity_defs: List[Dict[str, Any]],
+        resource_defs: List[Dict[str, Any]],
+        search: Callable[[str, Any], Any], 
+        storage_type: Type[StorageModule], 
+        storage_kwargs: Dict[str, Any]
     ) -> None:
-        """Initialize multiprocess backend.
-
-        Should only be called by the ``Authzee`` app.
-
-        Parameters
-        ----------
-        identity_types : List[Type[BaseModel]]
-            Identity types registered with the ``Authzee`` app.
-        jmespath_options : Union[jmespath.Options, None]
-            Custom ``jmespath.Options`` registered with the ``Authzee`` app.
-        resource_authzs : List[ResourceAuthz]
-            ``ResourceAuthz`` s registered with the ``Authzee`` app.
-        storage_backend : StorageBackend
-            Storage backend registered with the ``Authzee`` app.
-        """
-        await super().initialize(
-            identity_types=identity_types,
-            jmespath_options=jmespath_options,
-            resource_authzs=resource_authzs,
-            storage_backend=storage_backend
+        """Create runtime resources for the compute module."""
+        await super().start(
+            identity_defs=identity_defs,
+            resource_defs=resource_defs,
+            search=search,
+            storage_type=storage_type,
+            storage_kwargs=storage_kwargs
         )
-        self._process_pool = ProcessPoolExecutor(
-            max_workers=self._max_workers, 
-            mp_context=mp.get_context("spawn"), # must use spawn, it's also the most compatible
-            initializer=partial(
-                _executor_init,
-                storage_type=type(self._storage_backend),
-                storage_kwargs=self._storage_backend.kwargs,
-                initialize_kwargs=self._storage_backend.initialize_kwargs,
-                jmespath_options=jmespath_options
-            )
-        )
-        # Thread pool for converting pipe actions to async
-        self._thread_pool = ThreadPoolExecutor(max_workers=1)
+        self.locality = ModuleLocality.SYSTEM
         self._shared_mem_manager = SharedMemoryManager()
         self._shared_mem_manager.start()
+        self._process_pool = ProcessPoolExecutor(
+            max_workers=self.max_workers,
+            mp_context=mp.get_context("spawn"),
+            initializer=_executor_start,
+            initargs=(
+                {
+                    "identity_defs": identity_defs,
+                    "resource_defs": resource_defs,
+                    "search": search,
+                    "storage_type": storage_type,
+                    "storage_kwargs": storage_kwargs
+                },
+            )
+        )
 
 
     async def shutdown(self) -> None:
         """Early clean up of compute backend resources.
 
-        Will shutdown the process pool without waiting for current tasks to finish.
+        Will shutdown the process pool without waiting for current tasks to finish and free shared memory.
         """
         self._process_pool.shutdown(wait=False)
-        self._thread_pool.shutdown(wait=False)
+        self._process_pool = None
         self._shared_mem_manager.shutdown()
+        self._shared_mem_manager = None
+
+
+    async def audit(
+        self, 
+        request: dict, 
+        page_ref: str | None, 
+        grants_page_size: int, 
+        parallel_paging: bool, 
+        refs_page_size: int 
+    ) -> dict:
+        raise exceptions.NotImplementedError()
+
+
+    async def authorize(
+        self, 
+        request: dict, 
+        grants_page_size: int, 
+        parallel_paging: bool, 
+        refs_page_size: int 
+    ) -> dict:
+        """Authorize a request.
+
+        Parameters
+        ----------
+        request : dict
+            Authzee request data.
+        grants_page_size : int
+            Number of grants per page to process. Not exact.
+        parallel_paging : bool
+            Enable parallel pagination. Used to control how compute and storage process pages.
+        refs_page_size : int
+            Number of page reference to process. Not exact.
+
+        Returns
+        -------
+        dict
+            Authorization decision with effect and supporting information.
+
+        Raises
+        ------
+        authzee.exceptions.ContextError
+            Critical error when validating context.
+        authzee.exceptions.JMESPathError
+            Critical error when executing JMESPath query.
+        authzee.exceptions.NotImplementedError
+            This method is not implemented.
+        """
+        raise exceptions.NotImplementedError()
 
 
     async def authorize(
@@ -148,17 +171,17 @@ class MultiprocessCompute(ComputeBackend):
         bool
             ``True`` if allowed, ``False`` if denied.
         """ 
-        loop = get_running_loop()
+        loop = asyncio.get_running_loop()
         deny_futures: List[asyncio.Future] = []
         next_page_ref = None
         did_once = False
-        cancel_event = SharedMemEvent(smm=self._shared_mem_manager)
+        cancel_latch = SharedMemLatch(smm=self._shared_mem_manager)
         while (
             (
                 did_once is not True
                 or next_page_ref is not None
             )
-            and cancel_event.is_set() is False
+            and cancel_latch.is_set() is False
         ):
             did_once = True
             recv_conn, send_conn = mp.Pipe(duplex=False)
@@ -174,7 +197,7 @@ class MultiprocessCompute(ComputeBackend):
                         page_ref=next_page_ref,
                         jmespath_data=jmespath_data,
                         pipe_conn=send_conn,
-                        cancel_event=cancel_event
+                        cancel_latch=cancel_latch
                     )
                 )
             )
@@ -187,13 +210,13 @@ class MultiprocessCompute(ComputeBackend):
         allow_futures: List[asyncio.Future] = []
         next_page_ref = None
         did_once = False
-        allow_match_event = SharedMemEvent(smm=self._shared_mem_manager)
+        allow_match_event = SharedMemLatch(smm=self._shared_mem_manager)
         while (
             (
                 did_once is not True
                 or next_page_ref is not None
             )
-            and cancel_event.is_set() is False
+            and cancel_latch.is_set() is False
             and allow_match_event.is_set() is False
         ):
             did_once = True
@@ -210,7 +233,7 @@ class MultiprocessCompute(ComputeBackend):
                         page_ref=next_page_ref,
                         jmespath_data=jmespath_data,
                         pipe_conn=send_conn,
-                        cancel_event=cancel_event,
+                        cancel_latch=cancel_latch,
                         allow_match_event=allow_match_event
                     )
                 )
@@ -222,18 +245,18 @@ class MultiprocessCompute(ComputeBackend):
             )
         
         # If we found a deny then cleanup tasks and return False
-        if cancel_event.is_set() is True:
+        if cancel_latch.is_set() is True:
             await self._cleanup_futures(futures=deny_futures + allow_futures)
-            cancel_event.unlink()
+            cancel_latch.unlink()
             allow_match_event.unlink()
 
             return False
         # Then check if we ran any deny tasks and recheck cancel status
         elif len(deny_futures) > 0:
             await asyncio.gather(*deny_futures)
-            if cancel_event.is_set() is True:
+            if cancel_latch.is_set() is True:
                 await self._cleanup_futures(futures=allow_futures)
-                cancel_event.unlink()
+                cancel_latch.unlink()
                 allow_match_event.unlink()
 
                 return False
@@ -241,7 +264,7 @@ class MultiprocessCompute(ComputeBackend):
         # Check for allow match
         if allow_match_event.is_set() is True:
             await self._cleanup_futures(allow_futures)
-            cancel_event.unlink()
+            cancel_latch.unlink()
             allow_match_event.unlink()
 
             return True
@@ -249,12 +272,12 @@ class MultiprocessCompute(ComputeBackend):
         elif len(allow_futures) > 0:
             await asyncio.gather(*allow_futures)
             if allow_match_event.is_set() is True:
-                cancel_event.unlink()
+                cancel_latch.unlink()
                 allow_match_event.unlink()
                 
                 return True
         
-        cancel_event.unlink()
+        cancel_latch.unlink()
         allow_match_event.unlink()
 
         return False
@@ -464,18 +487,19 @@ class MultiprocessCompute(ComputeBackend):
         await asyncio.gather(*gather_futures)
 
  
-def _executor_init(
-    storage_type: Type[StorageBackend],
-    storage_kwargs: Dict[str, Any],
-    initialize_kwargs: Dict[str, Any],
-    jmespath_options: Union[jmespath.Options, None]
+def _executor_start(
+    start_kwargs: Dict[str, Any]
 ) -> None:
-    global authzee_jmespath_options
-    authzee_jmespath_options = jmespath_options
+    global authzee_search
+    authzee_search: Callable[[str, Any], Any] = start_kwargs['search']
     global authzee_storage
-    authzee_storage = storage_type(**storage_kwargs)
-    loop = get_event_loop()
-    loop.run_until_complete(authzee_storage.initialize(**initialize_kwargs))
+    authzee_storage: StorageModule = start_kwargs['storage_type'](**start_kwargs['storage_kwargs'])
+    asyncio.run(
+        authzee_storage.start(
+            identity_defs=start_kwargs['identity_defs'],
+            resource_defs=start_kwargs['resource_defs']
+        )
+    )
 
 
 def _executor_grant_page_matches_deny(
@@ -486,7 +510,7 @@ def _executor_grant_page_matches_deny(
     page_ref: Union[str, None],
     jmespath_data: Dict[str, Any],
     pipe_conn: Connection,
-    cancel_event: SharedMemEvent
+    cancel_latch: SharedMemEvent
 ) -> bool:
     global authzee_jmespath_options
     global authzee_storage
@@ -503,7 +527,7 @@ def _executor_grant_page_matches_deny(
     
     # Send back next page ref to parent
     pipe_conn.send(raw_grants.next_page_ref)
-    if cancel_event.is_set() is True:
+    if cancel_latch.is_set() is True:
         return False
 
     grants_page = loop.run_until_complete(
@@ -511,7 +535,7 @@ def _executor_grant_page_matches_deny(
             raw_grants_page=raw_grants
         )
     )
-    if cancel_event.is_set() is True:
+    if cancel_latch.is_set() is True:
         return False
     
     for grant in grants_page.grants:
@@ -520,10 +544,10 @@ def _executor_grant_page_matches_deny(
             jmespath_data=jmespath_data,
             jmespath_options=authzee_jmespath_options
         ) is True:
-            cancel_event.set()
+            cancel_latch.set()
             return True
 
-        if cancel_event.is_set() is True:
+        if cancel_latch.is_set() is True:
             return False
 
     return False
@@ -537,7 +561,7 @@ def _executor_grant_page_matches_allow(
     page_ref: Union[str, None],
     jmespath_data: Dict[str, Any],
     pipe_conn: Connection,
-    cancel_event: SharedMemEvent,
+    cancel_latch: SharedMemEvent,
     allow_match_event: SharedMemEvent
 ) -> bool:
     global authzee_jmespath_options
@@ -554,7 +578,7 @@ def _executor_grant_page_matches_allow(
     )
     pipe_conn.send(raw_grants.next_page_ref)
     if (
-        cancel_event.is_set() is True
+        cancel_latch.is_set() is True
         or allow_match_event.is_set() is True
     ):
         return False
@@ -574,7 +598,7 @@ def _executor_grant_page_matches_allow(
             return True
 
         if (
-            cancel_event.is_set() is True
+            cancel_latch.is_set() is True
             or allow_match_event.is_set() is True
         ):
             return False
@@ -646,4 +670,3 @@ def _executor_matching_grants(
         jmespath_data=jmespath_data,
         jmespath_options=authzee_jmespath_options
     )
-

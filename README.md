@@ -1,658 +1,519 @@
-# `authzee`
 
 <!-- ![authzee-logo](./docs/logo.svg) Documentation(Link TBD) -->
-<img src="https://raw.githubusercontent.com/btemplep/authzee/main/docs/logo.svg" alt="Authzee Logo" width="300">
+<img src="https://raw.githubusercontent.com/btemplep/authzee/main/docs/authzee_logo.svg" alt="Authzee Logo" width="500">
 
-Authzee is a highly expressive grant-based authorization framework that is async, extensible, and scalable. 
+<!-- # `authzee` -->
 
-Authzee was originally developed with a focus on authorization for existing infrastructure 
-like AD users, AD roles, AWS roles etc. Users, roles, groups and other identities are not stored in authzee. 
+This is the official python SDK for Authzee! It is a general usage SDK that is async, extensible, and scalable. 
 
-Authzee supports **ABAC** (Attribute Based Access Control) and **ACL** (Access Control List) style authorization.
-It does not support self-contained **RBAC** (Role Based Access Control) since roles are not stored in authzee.
-The relationships between users, roles, and groups is deferred to external systems.
-Authzee is not **ReBAC** based, but supports many of the ideas.  Tying users to specific actions on specific resources,
-and expressions to authorize. Note that this can be done on a user by user basis but authzee is more compute intense than 
-other options.
+Authzee is a highly expressive grant-based authorization engine. Check out the [Authzee Repo](https://github.com/btemplep/authzee) for the core engine and specification.
 
-For prod ready, large scale **ReBAC** check out [authzed](https://authzed.com/).
+<!-- [Authzee Docs](https://docs.authzee.org) -->
+
+
+<!-- See the [full documentation](https://authzee-py.docs.authzee.org) for more info! -->
+
 
 - [Installation](#installation)
 - [Tutorial](#tutorial)
+    - [Simple Example](#simple-example)
+    - [Authzee App](#authzee-app)
+        - [Execute Function](#execute-function)
+        - [Compute and Storage Modules](#compute-and-storage-modules)
+    - [Context](#context)
     - [Identity](#identity)
     - [Resource](#resource)
-    - [Resource Actions](#resource-actions)
-    - [Resource Authz](#resource-authz)
     - [Grant](#grant)
-    - [`authzee` App](#authzee-app)
-    - [`authzee` Sync App](#authzee-sync-app)
-    - [`authzee` App Grant Management](#authzee-app-grant-management)
-    - [`authzee` App Authorization Methods](#authzee-app-authorization-methods)
-    - [`authzee` App Helper Methods](#authzee-app-helper-methods)
-- [Full Tutorial Example](#full-tutorial-example)
-- [Definitions](#definitions)
+    - [Authorize](#authorize)
+- [Full Example](#full-example)
+- [Development](#development)
+    - [Compute and Storage Module Development](#compute-and-storage-module-development)
+    - [Module Caching](#module-caching)
 
 
 ## Installation
-
-Install from pip
 
 ```text
 $ pip install authzee
 ```
 
-For different compute or storage backends you may need to install extra deps. 
+Extra dependencies can be installed like
 
-```text
-$ pip install authzee[sql]
+```console
+pip install authzee[jmespath,sql-storage]
 ```
 
-Extra dependencies:
+Extra dependencies available/needed:
 
-- `sql` - For `SQLStorage`. 
+- `jmespath` - needed if using the built in jmespath execute functions
+- `sql-storage` - needed for `SQLStorage` class
+- `dev` - development dependencies 
+- `all` - for all extra dependencies except for `dev`
 
 
 ## Tutorial
 
-Let's start with a simple example.  An authorization request where an entity needs to perform an action on a resource, 
-and authzee should tell us if it is allowed to or not.
+This is the simple tutorial covering all of the main pieces to start using Authzee locally. 
 
-> **NOTE** - The tutorial here covers a basic setup, but for more details please see the Documentation(Link TBD).
+### Simple Example
+```python
+import json
+from uuid import uuid4
 
-You can go straight to the [full code example](#full-tutorial-example), or follow along with the tutorial to get all of the definitions and smaller examples.
+from authzee import Authzee, DictStorage, InProcessCompute, jmespath_execute
+# for asyncio use
+# from authzee import AuthzeeAsync
+
+
+storage_dict = {}
+authz = Authzee( # for asyncio use AuthzeeAsync
+    execute=jmespath_execute,
+    compute_type=InProcessCompute,
+    compute_kwargs={},
+    storage_type=DictStorage,
+    storage_kwargs={
+        "storage_dict": storage_dict
+    },
+    config={  # optional - AuthzeeConfigOverride | None - All root and nested keys are optional
+        "authzee": {
+            "raise_crits": True
+        }
+        # "method_name": {<method config>}
+    }
+)
+authz.construct() # one time setup for life of storage and compute
+authz.start() # initialize the authzee app - must be run once for every instance
+authz.put_context_def( # Context is used to pass structured data to authorization requests. Register them first as context definitions.
+    {
+        "context_type": "NONE", # unique
+        "schema": { # JSON Schema
+            "type": "object",
+            "additionalProperties": False
+        }
+    }
+)
+authz.put_identity_def( # identities describe who is being authorized. Register them first as identity definitions.
+    identity_def={
+        "identity_type": "user", # unique
+        "schema": { # JSON Schema
+            "type":"object",
+            "required": [
+                "username",
+                "department"
+            ],
+            "additionalProperties": False,
+            "properties": {
+                "username": {
+                    "type": "string"
+                },
+                "department": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+)
+authz.put_resource_def( # resources define resource types and actions that can be taken on those resources.  Register them first as resource definitions.
+    resource_def={
+        "resource_type": "balloon", # unique
+        "actions": [ # can be shared between resource types
+            "balloon:read",
+            "balloon:inflate",
+            "balloon:pop"
+        ],
+        "schema": { # JSON Schema
+            "type": "object",
+            "required": [
+                "color",
+                "is_inflated"
+            ],
+            "additionalProperties": False,
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "is_inflated": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+)
+authz.enact( # Enact grants to create authorization rules
+    grant={
+        "grant_uuid": str(uuid4()),
+        "name": "Allow inflate for balloon department", # not unique
+        "description": "Balloon department people are allowed to read and inflate all balloons.",
+        "tags": {}, # tags for categorizing grants
+        "effect": "allow", # allow or deny
+        "actions": [ # list of actions to match
+            "balloon:read",
+            "balloon:inflate"
+        ],
+        "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`", # JSON Query for the request. JMESPath is preferred
+        # query runs on {"request": <request>, "grant": <grant>}
+        "evaluation_handler": "evaluate", 
+        "equality": True, # expected result of the query
+        "data": {} # data available to this grant
+    }
+)
+result = authz.authorize(
+    { # request for authorization runs on:
+        "identities": { # identities
+            "user": [ # identity_type with array of instances
+                {
+                    "username": "balloon_person",
+                    "department": "Balloon Dept"
+                }
+            ]
+        },
+        "action": "balloon:inflate",
+        "resource_type": "balloon",
+        "resource": {
+            "color": "inflated",
+            "is_inflated": False
+        },
+        "evaluation_handler": "grant",
+        "context_type": "NONE",
+        "context": {}
+    }
+)
+print(json.dumps(result, indent=4))
+```
+Authorization response: 
+```json
+{
+    "is_authorized": true,
+    "grant": {
+        "grant_uuid": "49d5398a-cd5e-4944-bdb9-6543d061a53e",
+        "name": "Allow inflate for balloon department",
+        "description": "Balloon department people are allowed to read and inflate all balloons.",
+        "tags": {},
+        "effect": "allow",
+        "actions": [
+            "balloon:read",
+            "balloon:inflate"
+        ],
+        "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
+        "evaluation_handler": "evaluate",
+        "equality": true,
+        "data": {}
+    },
+    "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
+    "has_failed": false,
+    "critical_errors": {}
+}
+```
+
+### Authzee App
+
+The `Authzee` class is the entrypoint to all authzee functionality.  `AuthzeeAsync` is available for asyncio — it has the same interface as `Authzee` except all methods are async.
+
+You can check which version of the authzee specification the SDK implements via `authzee.authzee_specification_version` (currently `"0.3.0"`).
+
+```python
+from authzee import (
+    Authzee, 
+    DictStorage,
+    InProcessCompute,
+    jmespath_execute, 
+    paginator,
+    authzee_specification_version
+)
+# for asyncio use AuthzeeAsync - same interface, all methods are async (use await)
+# from authzee import AuthzeeAsync, paginator_async
+# to include custom JMESPath functions use
+# from authzee import jmespath_custom_execute
+
+print(f"Authzee Specification Version: {authzee_specification_version}")
+
+storage_dict = {}
+authz = Authzee( # for asyncio use AuthzeeAsync
+    execute=jmespath_execute, # for custom JMESPath functions use jmespath_custom_execute 
+    compute_type=InProcessCompute, # compute backend type
+    compute_kwargs={},
+    storage_type=DictStorage, # storage backend type
+    storage_kwargs={
+        "storage_dict": storage_dict
+    },
+    config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+        "authzee": {
+            "raise_crits": True
+        }
+        # "method_name": {<method config>}
+    }
+)
+authz.construct() # one time setup for life of storage and compute
+authz.start() # initialize the authzee app - must be run once for every instance
+```
+
+The Authzee class requires a JSON query function, compute module, and storage module. 
+
+
+#### Execute Function
+
+The execute function is a wrapper around your choice of JSON query language.
+Out of the box, the SDK has:
+
+- `jmespath_execute` 
+    - Standard JMESPath python implementation
+    - Must install `authzee[jmespath]`
+- `jmespath_custom_execute`
+    - Standard JMESPath python implementation plus extra functions as outlined in the [SDK recommendations](https://github.com/btemplep/authzee/blob/main/docs/sdks.md#standard-jmespath-extensions)
+    - Must install `authzee[jmespath]`
+
+
+If you want to create your own, see `jmespath_execute` for a simple example.
+
+#### Compute and Storage Modules
+The compute is used to process authorization requests.  Storage is used to store grants and definitions. The Authzee SDK includes several of these out of the box. 
+
+Built in Compute Modules include:
+
+- `InProcessCompute` - Compute is all done within the same process/asyncio event loop.
+
+Built in Storage Modules include:
+
+- `DictStorage` - Storage is in main memory within a python dict.
+
+
+
+### Context
+
+Context is structured data that is passed in with authorization requests. Context types are registered in authzee with context definitions. 
+
+```python
+authz.put_context_def( # Context is used to pass structured data to authorization requests. Register them first as context definitions.
+    {
+        "context_type": "NONE", # unique
+        "schema": { # JSON Schema
+            "type": "object",
+            "additionalProperties": False
+        }
+    }
+)
+```
 
 
 ### Identity
 
-Authzee expects the calling entity to be described by its identities. 
-An entity could be a person, a service user, a role etc. 
-An identity could be anything used to describe who or what an entity is.  The calling entity can have many identities. 
-Common identity types could be AD user, AD groups, AWS User, AWS Role.  A single entity could have all of these and multiples of each. 
-
-
-In Authzee actions can be limited based on identities.
-Identity models are made with pydantic.
+Identities define who is being authorized. They are registered with authzee via identity definitions. 
 
 ```python
-from pydantic import BaseModel
-
-class ADUser(BaseModel):
-    cn: str
-
+authz.put_identity_def( # identities describe who is being authorized. Register them first as identity definitions.
+    identity_def={
+        "identity_type": "user", # unique
+        "schema": { # JSON Schema
+            "type":"object",
+            "required": [
+                "username",
+                "department"
+            ],
+            "additionalProperties": False,
+            "properties": {
+                "username": {
+                    "type": "string"
+                },
+                "department": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+)
 ```
-
 
 ### Resource
 
-Resources in Authzee represent resources that authorization is needed for. 
-The resource type and fields can be used in authorization.
-Resource Models are made with pydantic.
+Resources are structured data to represents your resources and actions that can be taken on them.  They are registered with Authzee as resource definitions.
 
 ```python
-from pydantic import BaseModel
-
-class Balloon(BaseModel):
-    color: str
-    size: str
-```
-
-
-### Resource Actions
-
-Resource actions are used to enumerate operations that can be performed on a resource type.
-You define resource actions as enums that are based on `authzee.ResourceAction`.
-Each resource type must have it's own set of resource actions.
-
-```python
-from enum import auto
-
-from authzee import ResourceAction
-
-class BalloonAction(ResourceAction):
-    CreateBalloon: str = auto()
-    DeleteBalloon: str = auto()
-    ListBalloons: str = auto()
-
-```
-
-### Resource Authz
-
-"Resource Authz"s are used to associate resources, resource actions, and their relationships. 
-
-Create them as a child class of `authzee.ResourceAuthz`, and fill in the default values to declare the resource type, resource action type, as well as parent and child relationships.  
-
-Authzee does not keep a a hierarchy of relationships, and defining these is purely up to you, and how you would like to authorize resources.  
-If you create a resource authz then you can set up the parent and child relationships however you want.  What Authzee will do with the defined relationships is:
-
-- check parent and child resource types against the authz
-- normalize the parent and child resources so you can query them in authorization requests
-
-```python
-from enum import auto
-from typing import Set, Type
-
-from pydantic import BaseModel, Field
-
-from authzee import ResourceAction, ResourceAuthz
-
-
-class Balloon(BaseModel):
-    color: str
-    size: float
-
-
-class BalloonAction(ResourceAction):
-    CreateBalloon: str = auto()
-    DeleteBalloon: str = auto()
-    ListBalloons: str = auto()
-
-  
-class BalloonString(BaseModel):
-    color: str
-    length: float
-
-
-class BalloonStringActions(ResourceAction):
-    CreateBalloonString: str = auto()
-    DeleteBalloonString: str = auto()
-    ListBalloonsString: str = auto()
-
-
-BalloonAuthz = ResourceAuthz(
-    resource_type=Balloon,
-    action_type=BalloonAction,
-    parent_types=set(),
-    child_types={BalloonString}
-)
-BalloonStringAuthz = ResourceAuthz(
-    resource_type=BalloonString,
-    action_type=BalloonStringAction,
-    parent_types={Balloon},
-    child_types=set()
+authz.put_resource_def( # resources define resource types and actions that can be taken on those resources.  Register them first as resource definitions.
+    resource_def={
+        "resource_type": "balloon", # unique
+        "actions": [ # can be shared between resource types
+            "balloon:read",
+            "balloon:inflate",
+            "balloon:pop"
+        ],
+        "schema": { # JSON Schema
+            "type": "object",
+            "required": [
+                "color",
+                "is_inflated"
+            ],
+            "additionalProperties": False,
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "is_inflated": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
 )
 ```
 
 
 ### Grant 
 
-By default everything in Authzee is unauthorized/not allowed.  
-In order to allow anything, grants must be created. 
+Grants are how authorization rules are represented in Authzee. 
 
-There are two types of grants denoted by their effect. 
-
-- Allow - Grants that authorize/allow matching requests.
-- Deny - Grants that deny matching requests.  Requests with a matching deny grant is always unauthorized. Even if there are matching allow grants.
-
-Grants are created with the `authzee.Grant` model, then added to the authzee app. 
-
+Grants are enacted in Authzee ie a new authorization rule is added.  Grants apply to any request that has a matching resource action.
 
 ```python
-from pydantic import BaseModel
-
-from authzee import Grant, GrantEffect
-
-
-class Balloon(BaseModel):
-    color: str
-    size: float
-
-
-class BalloonAction(ResourceAction):
-    CreateBalloon: str = auto()
-    DeleteBalloon: str = auto()
-    ListBalloons: str = auto()
-
-
-new_grant = Grant(
-    name="Human friendly name",
-    description="human friendly description",
-    resource_type=Balloon, # The class resource type
-    actions={ # the set of resource actions
-        BalloonAction.CreateBalloon,
-        BalloonAction.DeleteBalloon
-    },
-    # JMESpath is the JSON query language for verifying identities and 
-    # resources, as well as their relationships
-    expression=""" 
-    contains(identities.ADUser[].cn, 'authzee_user_1')
-    && resource.color == 'blue'
-    && contains(context.allowed_sizes, resource.size)
-    """,
-    # context makes additional data available when the expression is evaluated
-    context={
-        "allowed_sizes": [
-            20.0,
-            27.0,
-            30.0
-        ]
-    },
-    equality=True # If the result of the jmespath search query matches this, then the grant is considered a match!
+authz.enact( # Enact grants to create authorization rules
+    grant={
+        "grant_uuid": str(uuid4()),
+        "name": "Allow inflate for balloon department", # not unique
+        "description": "Balloon department people are allowed to read and inflate all balloons.",
+        "tags": {}, # tags for categorizing grants
+        "effect": "allow", # allow or deny
+        "actions": [ # list of actions to match
+            "balloon:read",
+            "balloon:inflate"
+        ],
+        "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`", # JSON Query for the request. JMESPath is preferred
+        # query runs on {"request": <request>, "grant": <grant>}
+        "evaluation_handler": "evaluate", 
+        "equality": True, # expected result of the query
+        "data": {} # data available to this grant
+    }
 )
 ```
 
-The grant above will match with:
 
-- resources of the `Balloon` type
-- resource actions of `CreateBalloon` or `DeleteBalloon`
+### Authorize
 
-But what are `expression`, `context`, and `equality` for?
+Authorization is one of the core *operations* (or ops) of an authorization engine and brings all of the pieces together. 
 
-- `expression`is a JMESpath query
-- `context` is available as additional data to the request. 
-- If the JMESPath query matches `equality`, (as well as resource and actions) then the grant is a match
+```python
+result = authz.authorize(
+    { # request for authorization runs on:
+        "identities": { # identities
+            "user": [ # identity_type with array of instances
+                {
+                    "username": "balloon_person",
+                    "department": "Balloon Dept"
+                }
+            ]
+        },
+        "action": "balloon:inflate",
+        "resource_type": "balloon",
+        "resource": {
+            "color": "inflated",
+            "is_inflated": False
+        },
+        "evaluation_handler": "grant",
+        "context_type": "NONE",
+        "context": {}
+    }
+)
+print(json.dumps(result, indent=4))
+```
+Authorization response: 
+```json
+{
+    "is_authorized": true,
+    "grant": {
+        "grant_uuid": "49d5398a-cd5e-4944-bdb9-6543d061a53e",
+        "name": "Allow inflate for balloon department",
+        "description": "Balloon department people are allowed to read and inflate all balloons.",
+        "tags": {},
+        "effect": "allow",
+        "actions": [
+            "balloon:read",
+            "balloon:inflate"
+        ],
+        "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
+        "evaluation_handler": "evaluate",
+        "equality": true,
+        "data": {}
+    },
+    "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
+    "has_failed": false,
+    "critical_errors": {}
+}
+```
 
-[JMESPath](https://jmespath.org/) is a JSON query language with a complete specification. Authzee uses it as the query tool for authorizations. 
+For authorization, Authzee evaluates the given request against each grant.  
 
-The request data is normalized into a JSON object. The JMESPath query from `expression`
-is evaluated and then checked if it is an exact match of `equality`.  If so, then the grant
-is considered a match.
+How this works is the grant query, in this case JMESpath, is run on the combined data structure. 
 
-Example of normalized request data:
+In the case of the above grant and request it would run on this data:
 
 ```json
 {
-    "identities": {
-        "ADUser": [
-            {
-                "cn": "authzee_user_1"
-            }
+    "request": { 
+        "identities": { 
+            "user": [ 
+                {
+                    "username": "balloon_person",
+                    "department": "Balloon Dept"
+                }
+            ]
+        },
+        "action": "balloon:inflate",
+        "resource_type": "balloon",
+        "resource": {
+            "color": "inflated",
+            "is_inflated": false
+        },
+        "evaluation_handler": "grant",
+        "context_type": "NONE",
+        "context": {}
+    },
+    "grant": {
+        "grant_uuid": "49d5398a-cd5e-4944-bdb9-6543d061a53e",
+        "name": "Allow inflate for balloon department",
+        "description": "Balloon department people are allowed to read and inflate all balloons.",
+        "tags": {},
+        "effect": "allow",
+        "actions": [
+            "balloon:read",
+            "balloon:inflate"
         ],
-        "ADGroup": []
-    },
-    "resource_type": "Balloon",
-    "resource": {
-        "color": "green",
-        "size": 12.27
-    },
-    "action": "BalloonAction.CreateBalloon",
-    "parents": {},
-    "children": {
-        "BalloonString": [
-            {
-                "color": "purple",
-                "length": 27
-            }
-        ]
-    }, 
-    "context": {
-        "allowed_sizes": [
-            20.0,
-            27.0,
-            30.0
-        ]
+        "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
+        "evaluation_handler": "evaluate",
+        "equality": true,
+        "data": {}
     }
 }
 ```
 
-The data for this is normalized as follows:
-
-- `identities` is a JSON object whose keys include all identity types, and the value of each is an array.
-- Any identities passed will be serialized and added to the array of their respective identity types. 
-- `resource_type` is the class name of the resource type model for the request.
-- `resource` is the serialized resource model for the request
-- `action` is the full name of the action for the request. `<class name>.<enum member>`
-- `parents` and `children` are JSON objects that include all of the parent and child resource types class names as keys, and the value of each is an array.
-- Any child or parent resources will be serialized and added to the array of their respective parent or child resource types. 
-- `context` - additional data provided by the grant.  
-
-The above json is used as the data in `jmespath.search()`, along with the jmespath expression from the grant used as the expression.
-
-
-### `authzee` App
-
-The central interface of authzee is with the creation of an authzee app. 
-An Authzee app requires a storage backend and a compute backend. 
-
-Available Storage Backends:
-
-- ` MemoryStorage` - In memory storage. 
-- `SQLStorage` - Store data in a SQL database - async enabled
-- `S3Storage` - AWS S3 storage.
-
-Available Compute Backends:
-
-- `MainProcessCompute` - process authorization requests synchronously in the main thread - not async
-- `MultiprocessCompute` - process authorization requests asynchronously.  Distributes work to a process pool
-- `ThreadedCompute` - Process authorization requests asynchronously.  Distributes work to a thread pool.  Note that because of the GIL, using multiple threads may actually be slightly slower than `MainProcessCompute`.  While it's not truly parallel processing, it will not block the main thread. 
-- `TaskiqCompute` - Send compute tasks to Taskiq workers (Like Celery but asyncio).
-
-```python
-from authzee import (
-    Authzee,
-    MultiprocessCompute,
-    SQLStorage
-)
-
-compute = MultiprocessCompute()
-storage = SQLStorage(
-    sqlalchemy_async_engine_kwargs={
-        "url": "sqlite+aiosqlite:///test.sqlite",
-        "echo": True
-    }
-)
-authzee_app = Authzee(
-    compute_backend=compute,
-    storage_backend=storage
-)
+The query:
 
 ```
-
-### `authzee` Sync App
-
-There is also a synchronous wrapper for the Authzee app. 
-It has all of the same methods but they are synchronous. 
-
-```python
-from authzee import (
-    Authzee,
-    AuthzeeSync,
-    MultiprocessCompute,
-    SQLStorage
-)
-
-compute = MultiprocessCompute()
-storage = SQLStorage(
-    sqlalchemy_async_engine_kwargs={
-        "url": "sqlite+aiosqlite:///test.sqlite",
-        "echo": True
-    }
-)
-authzee_app = Authzee(
-    compute_backend=compute,
-    storage_backend=storage
-)
-authzee_sync_app = AuthzeeSync(
-    authzee_app=authzee_app
-)
+length(request.identities.user[?department == 'Balloon Dept']) > `0`
 ```
 
-### `authzee` App Grant Management
+Will filter all user identities by those that are in the 'Balloon Dept'.  If there are more than 0 users like that, then the result of the query will be `true`.  The expected value for the grant to be considered applicable, the `equality` is `true`.  Since the result and equality are equal the grant is considered applicable to the request and the grant effect will be applied. 
 
-After initialization of the Authzee app you can manage grants with these async methods:
-
-- `list_grants` - List grants with an iterator.
-- `add_grant` - Add a new grant.
-- `delete_grant` - Delete a grant.
-- `get_grants_page` - Retrieve a single page of grants.
-- `get_page_refs_page` - Retrieve a page of page references for parallel pagination (not supported by all storage backends).
+For authorization, by default, no requests are allowed.  If a grant with the deny effect is applicable, the request is denied, no matter any other outcomes.  If a grant with the allow effect is applicable, and there are no deny grants applicable then the request is allowed. 
 
 
-### `authzee` App Authorization Methods
+## Full Example
 
-Of course you can also use the async authorization methods!
-
-- `authorize` - Determine if the request is authorized.
-- `authorize_many` - Determine if several of the same resource type are authorized for the request. 
-- `list_matching_grants` - List matching grants with an iterator. 
-- `get_matching_grants_page` - Retrieve a single page of matching grants. 
+For a more comprehensive example that demonstrates all Authzee methods, see [`full_example.py`](./full_example.py).
 
 
-### `authzee` App Helper Methods
+## Development
 
-- `grant_matches` - Check if the request matches the given grant.
-
-
-## Full Tutorial Example
-
-```python
-import asyncio
-from enum import auto
-from typing import Set, Type
-
-from pydantic import BaseModel, Field
-
-from authzee import (
-    Authzee,
-    AuthzeeSync,
-    Grant, 
-    GrantEffect,
-    MultiprocessCompute,
-    ResourceAction, 
-    ResourceAuthz,
-    SQLStorage
-)
-
-# Identity Models
-# Create identity models that represent the calling entities identities 
-class ADUser(BaseModel):
-    cn: str
-
-
-class ADGroup(BaseModel):
-    cn: str
-
-
-# Resource Models
-# Used to authorize actions on resources
-# Can use authorization specific resource models
-class Balloon(BaseModel):
-    color: str
-    size: float
-
-  
-class BalloonString(BaseModel):
-    color: str
-    length: float
-
-
-# Resource Actions
-# One resource action per resource type to represent the actions that can be taken on the resource
-class BalloonAction(ResourceAction):
-    CreateBalloon: str = auto()
-    DeleteBalloon: str = auto()
-    ListBalloons: str = auto()
-
-
-class BalloonStringAction(ResourceAction):
-    CreateBalloonString: str = auto()
-    DeleteBalloonString: str = auto()
-    ListBalloonsString: str = auto()
-
-
-# Resource Authzs
-# Tie resource types, resource actions, as well as child and parent relationships together
-
-BalloonAuthz = ResourceAuthz(
-    resource_type=Balloon,
-    action_type=BalloonAction,
-    parent_types=set(),
-    child_types={BalloonString}
-)
-BalloonStringAuthz = ResourceAuthz(
-    resource_type=BalloonString,
-    action_type=BalloonStringAction,
-    parent_types={Balloon},
-    child_types=set()
-)
-
-# Create a compute and storage backend
-compute = MultiprocessCompute()
-storage = SQLStorage(
-    sqlalchemy_async_engine_kwargs={
-        "url": "sqlite+aiosqlite:///test.sqlite",
-        "echo": False
-    }
-)
-# Pass those to the Authzee app
-authzee_app = Authzee(
-    compute_backend=compute,
-    storage_backend=storage
-)
-# Most methods to authzee are async, but you can use the synchronous wrapper if you aren't using async
-authzee_sync = AuthzeeSync(authzee_app=authzee_app)
-# Register Identity types
-authzee_app.register_identity_type(ADUser)
-authzee_app.register_identity_type(ADGroup)
-# Then register ResourceAuthzs
-authzee_app.register_resource_authz(BalloonAuthz)
-authzee_app.register_resource_authz(BalloonStringAuthz)
-
-if __name__ == "__main__":
-    # By default no requests are authorized in authzee
-    # Grants are the base unit for describing how to match an authorization request
-    # Grants are added to the authzee app as either ALLOW or DENY. 
-    # Authorization requests that match a DENY grant are not authorized.
-    # Requests that match an ALLOW grant but not any DENY grants are authorized.
-    # Create new grant objects
-    my_balloon = Balloon(
-        color="blue",
-        size=27.0
-    )
-    identities = [
-        ADUser(
-            cn="authzee_user_1"
-        ),
-        ADGroup(
-            cn="some_group"
-        ),
-        ADGroup(
-            cn="another_group"
-        )
-    ]
-    
-    # as long as the compute and storage backends support is there is also 
-    # async versions for all of these besides grant_matches. 
-    # Simply append "_async" to the method. 
-    async def tutorial() -> None:
-
-        # It's recommended to initialize the authzee app with a __main__ block
-        # or a frameworks startup function.
-        # Some compute backends me actually mandate it to be done like this.
-        await authzee_app.initialize()
-
-        # Run the one time setup.  This should only be done once per configuration.
-        # Creates DB tables, other storage setup, and other compute setup
-        #await authzee_app.setup()
-
-        # To tear down, delete everything that did run
-        #await authzee_app.teardown()
-
-        new_grant = Grant(
-            name="Human friendly name",
-            description="human friendly description",
-            resource_type=Balloon, # The class resource type
-            actions={ # the set of resource actions
-                BalloonAction.CreateBalloon,
-                BalloonAction.DeleteBalloon
-            },
-            # JMESpath is the JSON query language for verifying identities and 
-            # resources, as well as their relationships
-            expression=""" 
-            contains(identities.ADUser[].cn, 'authzee_user_1')
-            && resource.color == 'blue'
-            && contains(context.allowed_sizes, resource.size)
-            """,
-            # context makes additional data available when the expression is evaluated
-            context={
-                "allowed_sizes": [
-                    20.0,
-                    27.0,
-                    30.0
-                ]
-            },
-            equality=True # If the result of the jmespath search query matches this, then the grant is considered a match!
-        )
-        match_everything_grant = Grant(
-            name="everything",
-            description="",
-            resource_type=Balloon,
-            actions={BalloonAction.CreateBalloon},
-            expression="`true`",
-            context={},
-            equality=True
-        )
-        # Add the new grant to authzee as an ALLOW Grant
-        new_grant = await authzee_app.add_grant( 
-            effect=GrantEffect.ALLOW,
-            grant=new_grant
-        )
-        match_everything_grant = await authzee_app.add_grant( 
-            effect=GrantEffect.ALLOW,
-            grant=match_everything_grant
-        )
-        # Get an iterator for the grants
-        async for grant in authzee_app.list_grants(effect=GrantEffect.ALLOW):
-            print(grant)
-        
-        # Delete a grant
-        await authzee_app.delete_grant(
-            effect=GrantEffect.ALLOW, 
-            uuid=match_everything_grant.uuid
-        )
-
-        # Get a single page of grants
-        grants_page = await authzee_app.get_grants_page(
-            effect=GrantEffect.ALLOW
-        )
-        for grant in grants_page.grants:
-            print(grant)
-        
-        # Authorize a request
-        authorized = await authzee_app.authorize(
-            resource=my_balloon,
-            action=BalloonAction.CreateBalloon,
-            parents=[],
-            children=[],
-            identities=identities
-        )
-        print(authorized) # True
-
-        # Authorize many resources in a request
-        authorized_many = await authzee_app.authorize_many(
-            resources=[
-                my_balloon,
-                Balloon(
-                    color="red",
-                    size=100.8
-                )
-            ],
-            action=BalloonAction.CreateBalloon,
-            parents=[],
-            children=[],
-            identities=identities
-        )
-        print(authorized_many) # [True, False]
-        
-        # iterator for matching grants
-        matching_grants_iter = authzee_app.list_matching_grants(
-            effect=GrantEffect.ALLOW,
-            resource=my_balloon,
-            action=BalloonAction.CreateBalloon,
-            parents=[],
-            children=[],
-            identities=identities
-        )
-        async for grant in matching_grants_iter:
-            print(grant)
-        
-        # Get a single page of matching grants
-        matching_grants_page = await authzee_app.get_matching_grants_page(
-            effect=GrantEffect.ALLOW,
-            resource=my_balloon,
-            action=BalloonAction.CreateBalloon,
-            parents=[],
-            children=[],
-            identities=identities
-        )
-        for grant in matching_grants_page.grants:
-            print(grant)
-    
-    asyncio.run(tutorial())
+Install all dependencies
+```console
+pip install -e .[dev,all]
 ```
 
-### Definitions
+Use [nox](https://nox.thea.codes/en/stable/) for the most common setups. 
 
-- Authorization Request (AKA Resource) - A request to see if a the calling entity is authorized to perform a specific resource action on a resource. 
+### Compute and Storage Module Development
 
-- Calling Entity (AKA Entity) - In an authorization request, the calling entity is essentially "who" is being authorized. The entity could be a person, service account, role etc.   
+The compute and storage modules are meant to be that - modular!
 
-- Identity - A way to identify an entity. An identity could be AD users, AD groups, AWS roles, AWS users etc.
+You should be able to build custom ones based off of the base classes `ComputeModule` and `StorageModule`. Note that all underlying methods must be async.  
 
-- Resource - Resources in Authzee represent resources that authorization is needed for.  Example: My application deals with balloons, balloons are resources we authorize against.
+### Module Caching
 
-- Resource Type - The type of a "Resource".  Example: My app needs to authorize around balloons. So, "Balloon" is the resource type.
-
-- Resource Actions - Actions that can be done to resources.  Example: Balloon resource type could have actions of "InflateBalloon", "PopBalloon", "ListBalloons", "CreateBalloon".
-
-- Grant - The unit that defines how to query and match against authorization requests.  Grants are added to authzee to allow or explicitly deny authorization requests.  Requests that match any DENY grants are never authorized.  Requests that match any ALLOW grants and does not match any DENY grants are allowed. 
-
+Caching for validating a request or batch request should be self contained within the compute model per request. Besides that, it is up to the storage module to control caching for storage calls.
