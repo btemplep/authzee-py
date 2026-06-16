@@ -8,7 +8,7 @@ __all__ = [
 from typing import Any, AsyncGenerator, Callable, Generator
 
 
-def paginator(func: Callable, **kwargs) -> Generator[Any, None]:
+def paginator(func: Callable, **kwargs) -> Generator[Any, None, None]:
     """Paginator for {py:class}`authzee.authzee.Authzee`.
 
     Parameters
@@ -20,7 +20,7 @@ def paginator(func: Callable, **kwargs) -> Generator[Any, None]:
 
     Yields
     ------
-    Generator[Any, None]
+    Generator[Any, None, None]
         The page of results
     
     Examples
