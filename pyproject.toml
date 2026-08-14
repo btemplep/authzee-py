@@ -1,3 +1,66 @@
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "authzee"
+version = "0.1.0a4"
+description = "Official Authzee Python SDK."
+readme = {file = "README.md", content-type = "text/markdown"}
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    {name = "Brandon Temple Paul", email = "btemplepgit@gmail.com"}
+]
+keywords = [
+    "auth",
+    "authz",
+    "authzee",
+    "authorization",
+    "engine",
+    "framework"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet"
+]
+requires-python = ">= 3.11"
+dependencies = [
+    "jsonschema-rs",
+    "loguru"
+]
+
+[project.optional-dependencies]
+jmespath = ["jmespath"]
+all = ["authzee[jmespath]"]
+dev = [
+    "build",
+    "coverage",
+    "moto[s3,server]",
+    "nox",
+    "piccolo-theme",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "sphinx",
+    "twine"
+]
+
+[project.urls]
+Homepage = "https://github.com/btemplep/authzee"
+Repository = "https://github.com/btemplep/authzee-py"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests"]
