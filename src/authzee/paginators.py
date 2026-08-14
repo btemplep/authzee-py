@@ -1,8 +1,9 @@
-"""Paginators for {py:class}`authzee.authzee.Authzee` and {py:class}`authzee.authzee_async.AuthzeeAsync`. 
+"""Paginators for {py:class}`authzee.authzee.Authzee` and {py:class}`authzee.authzee_async.AuthzeeAsync`.
 """
+
 __all__ = [
     "paginator",
-    "paginator_async",
+    "paginator_async"
 ]
 
 from typing import Any, AsyncGenerator, Callable, Generator
@@ -16,13 +17,13 @@ def paginator(func: Callable, **kwargs) -> Generator[Any, None, None]:
     func : Callable
         Method to paginate.
     **kwargs
-        The KWArgs to pass to the method for pagination. 
+        The KWArgs to pass to the method for pagination.
 
     Yields
     ------
     Generator[Any, None, None]
         The page of results
-    
+
     Examples
     --------
     ```python
@@ -40,11 +41,17 @@ def paginator(func: Callable, **kwargs) -> Generator[Any, None, None]:
         yield result
 
         kwargs['page_ref'] = result['next_page_ref']
-        if result['next_page_ref'] is None or result['has_failed'] is True:
+        if (
+            result['next_page_ref'] is None
+            or result['has_failed'] is True
+        ):
             break
 
 
-async def paginator_async(afunc: Callable, **kwargs) -> AsyncGenerator[Any, None]:
+async def paginator_async(
+    afunc: Callable,
+    **kwargs
+) -> AsyncGenerator[Any, None]:
     """Paginator for {py:class}`authzee.authzee_async.AuthzeeAsync`.
 
     Parameters
@@ -52,13 +59,13 @@ async def paginator_async(afunc: Callable, **kwargs) -> AsyncGenerator[Any, None
     afunc : Callable
         Async method to paginate.
     **kwargs
-        The KWArgs to pass to the method for pagination. 
+        The KWArgs to pass to the method for pagination.
 
     Yields
     ------
     AsyncGenerator[Any, None]
         The page of results
-    
+
     Examples
     --------
     ```python
@@ -72,9 +79,12 @@ async def paginator_async(afunc: Callable, **kwargs) -> AsyncGenerator[Any, None
     """
     while True:
         result = await afunc(**kwargs)
-        
+
         yield result
 
         kwargs['page_ref'] = result['next_page_ref']
-        if result['next_page_ref'] is None or result['has_failed'] is True:
+        if (
+            result['next_page_ref'] is None
+            or result['has_failed'] is True
+        ):
             break

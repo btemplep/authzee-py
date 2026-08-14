@@ -1,17 +1,18 @@
 """See {py:class}`authzee.authzee.Authzee`"""
+
 __all__ = [
-    "Authzee",
+    "Authzee"
 ]
 
 import asyncio
 import datetime
 from typing import Any, Callable, Dict, Type
 
-from authzee.types.authzee import *
-from authzee.types.config_override import AuthzeeConfigOverride
+from authzee.authzee_async import AuthzeeAsync
 from authzee.compute.compute_module import ComputeModule
 from authzee.storage.storage_module import StorageModule
-from authzee.authzee_async import AuthzeeAsync
+from authzee.types.authzee import *
+from authzee.types.config_override import AuthzeeConfigOverride
 
 
 class Authzee:
@@ -26,14 +27,14 @@ class Authzee:
     compute_kwargs : Dict[str, Any]
         Compute module KWArgs used to create instances.
     storage_type : Type[StorageModule]
-        Storage Module Type. 
+        Storage Module Type.
     storage_kwargs : Dict[str, Any]
         Storage module KWArgs used to create instances.
     compute_storage_kwargs : Dict[str, Any], optional
         Override storage module KWArgs that the compute module will use.  May only include KWArgs you want to override.
     config : AuthzeeConfigOverride, optional
         Authzee configuration. May only include config keys you want to override.
-    
+
     Examples
     --------
     Simple full example:
@@ -53,7 +54,7 @@ class Authzee:
         storage_kwargs={
             "storage_dict": storage_dict
         },
-        config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+        config={ # optional - AuthzeeConfigOverride | None - All keys are optional
             "authzee": {
                 "raise_crits": True
             }
@@ -131,7 +132,7 @@ class Authzee:
             ],
             "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`", # JSON Query for the request. JMESPath is preferred
             # query runs on {"request": <request>, "grant": <grant>}
-            "evaluation_handler": "evaluate", 
+            "evaluation_handler": "evaluate",
             "equality": True, # expected result of the query
             "data": {} # data available to this grant
         }
@@ -185,15 +186,16 @@ class Authzee:
     ```
     """
 
+
     def __init__(
-        self, 
+        self,
         execute: Callable[[str, Any], Any],
         compute_type: Type[ComputeModule],
         compute_kwargs: Dict[str, Any],
         storage_type: Type[StorageModule],
         storage_kwargs: Dict[str, Any],
-        compute_storage_kwargs: Dict[str, Any] = None,
-        config: AuthzeeConfigOverride = None
+        compute_storage_kwargs: Dict[str, Any]=None,
+        config: AuthzeeConfigOverride=None
     ):
         self._authzee_async = AuthzeeAsync(
             execute=execute,
@@ -206,7 +208,7 @@ class Authzee:
         )
 
 
-    def start(self, config: AuthzeeConfigOverride | None = None) -> GenericResult:
+    def start(self, config: AuthzeeConfigOverride | None=None) -> GenericResult:
         """Initialize the authzee app. Must be run once for every instance.
 
         Parameters
@@ -219,7 +221,7 @@ class Authzee:
         ```python
         # Assumes authz is an Authzee instance
         result = authz.start(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -258,10 +260,7 @@ class Authzee:
         return asyncio.run(self._authzee_async.start(config))
 
 
-    def shutdown(
-        self, 
-        config: AuthzeeConfigOverride | None = None
-    ) -> GenericResult:
+    def shutdown(self, config: AuthzeeConfigOverride | None=None) -> GenericResult:
         """Shutdown the authzee app.
 
         Should be run before exit for every authzee instance.
@@ -276,7 +275,7 @@ class Authzee:
         ```python
         # Assumes authz is an Authzee instance
         result = authz.shutdown(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -313,13 +312,10 @@ class Authzee:
         return asyncio.run(self._authzee_async.shutdown(config))
 
 
-    def construct(
-        self, 
-        config: AuthzeeConfigOverride | None = None
-    ) -> GenericResult:
+    def construct(self, config: AuthzeeConfigOverride | None=None) -> GenericResult:
         """One time setup for the life of storage and compute. Creates DB tables, storage setup, etc.
 
-        Should only be run once. 
+        Should only be run once.
 
         Parameters
         ----------
@@ -331,7 +327,7 @@ class Authzee:
         ```python
         # Assumes authz is an Authzee instance
         result = authz.construct(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -368,13 +364,10 @@ class Authzee:
         return asyncio.run(self._authzee_async.construct(config))
 
 
-    def destroy(
-        self, 
-        config: AuthzeeConfigOverride | None = None
-    ) -> GenericResult:
+    def destroy(self, config: AuthzeeConfigOverride | None=None) -> GenericResult:
         """Tear down everything that construct set up. Deletes DB tables, storage, etc.
 
-        Can be destructive.  Only run if needed. 
+        Can be destructive.  Only run if needed.
 
         Parameters
         ----------
@@ -386,7 +379,7 @@ class Authzee:
         ```python
         # Assumes authz is an Authzee instance
         result = authz.destroy(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -425,8 +418,8 @@ class Authzee:
 
     def validate_context_def(
         self,
-        context_def: ContextDef, 
-        config: AuthzeeConfigOverride | None = None
+        context_def: ContextDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a context definition without storing it.
 
@@ -449,7 +442,7 @@ class Authzee:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -489,9 +482,9 @@ class Authzee:
 
 
     def list_context_defs(
-        self, 
-        page_ref: str | None = None,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> ContextDefsPage:
         """Retrieve a page of context definitions.
 
@@ -508,7 +501,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.list_context_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -571,9 +564,9 @@ class Authzee:
 
 
     def get_context_def(
-        self, 
-        context_type: str, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        context_type: str,
+        config: AuthzeeConfigOverride | None=None
     ) -> ContextDefResult:
         """Retrieve a context definition by its `context_type`.
 
@@ -590,7 +583,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.get_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -606,7 +599,7 @@ class Authzee:
         ContextDefResult
             ```python
             {
-                "context_def": {  # dict | None
+                "context_def": { # dict | None
                     "context_type": "NONE",
                     "schema": {
                         "type": "object",
@@ -639,9 +632,9 @@ class Authzee:
 
 
     def put_context_def(
-        self, 
-        context_def: ContextDef, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        context_def: ContextDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Create or update a context definition.
 
@@ -664,7 +657,7 @@ class Authzee:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -704,9 +697,9 @@ class Authzee:
 
 
     def delete_context_def(
-        self, 
-        context_type: str, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        context_type: str,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Deletes the context definition if found.
 
@@ -723,7 +716,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.delete_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -764,8 +757,8 @@ class Authzee:
 
     def validate_identity_def(
         self,
-        identity_def: IdentityDef, 
-        config: AuthzeeConfigOverride | None = None
+        identity_def: IdentityDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate an identity definition without storing it.
 
@@ -795,7 +788,7 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -835,9 +828,9 @@ class Authzee:
 
 
     def list_identity_defs(
-        self, 
-        page_ref: str | None = None,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> IdentityDefsPage:
         """Retrieve a page of identity definitions.
 
@@ -854,7 +847,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.list_identity_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -921,9 +914,9 @@ class Authzee:
 
 
     def get_identity_def(
-        self, 
+        self,
         identity_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> IdentityDefResult:
         """Retrieve an identity definition by its `identity_type`.
 
@@ -940,7 +933,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.get_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -956,7 +949,7 @@ class Authzee:
         IdentityDefResult
             ```python
             {
-                "identity_def": {  # dict | None
+                "identity_def": { # dict | None
                     "identity_type": "user",
                     "schema": {
                         "type": "object",
@@ -993,9 +986,9 @@ class Authzee:
 
 
     def put_identity_def(
-        self, 
-        identity_def: IdentityDef, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        identity_def: IdentityDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Create or update an identity definition.
 
@@ -1025,7 +1018,7 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1065,9 +1058,9 @@ class Authzee:
 
 
     def delete_identity_def(
-        self, 
+        self,
         identity_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Deletes the identity definition if found.
 
@@ -1084,7 +1077,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.delete_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1125,8 +1118,8 @@ class Authzee:
 
     def validate_resource_def(
         self,
-        resource_def: ResourceDef, 
-        config: AuthzeeConfigOverride | None = None
+        resource_def: ResourceDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a resource definition without storing it.
 
@@ -1161,7 +1154,7 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1201,9 +1194,9 @@ class Authzee:
 
 
     def list_resource_defs(
-        self, 
-        page_ref: str | None = None,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> ResourceDefsPage:
         """Retrieve a page of resource definitions.
 
@@ -1220,7 +1213,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.list_resource_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1291,9 +1284,9 @@ class Authzee:
 
 
     def get_resource_def(
-        self, 
+        self,
         resource_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> ResourceDefResult:
         """Retrieve a resource definition by its `resource_type`.
 
@@ -1310,7 +1303,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.get_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1326,7 +1319,7 @@ class Authzee:
         ResourceDefResult
             ```python
             {
-                "resource_def": {  # dict | None
+                "resource_def": { # dict | None
                     "resource_type": "balloon",
                     "actions": [
                         "balloon:read",
@@ -1367,9 +1360,9 @@ class Authzee:
 
 
     def put_resource_def(
-        self, 
+        self,
         resource_def: ResourceDef,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Create or update a resource definition.
 
@@ -1404,7 +1397,7 @@ class Authzee:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1444,9 +1437,9 @@ class Authzee:
 
 
     def delete_resource_def(
-        self, 
+        self,
         resource_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Deletes the resource definition if found.
 
@@ -1463,7 +1456,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.delete_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1503,9 +1496,9 @@ class Authzee:
 
 
     def validate_grant(
-        self, 
+        self,
         grant: Grant,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a grant without storing it.
 
@@ -1537,7 +1530,7 @@ class Authzee:
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1577,9 +1570,9 @@ class Authzee:
 
 
     def enact(
-        self, 
+        self,
         grant: Grant,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Enact (store) a grant to create an authorization rule.
 
@@ -1611,7 +1604,7 @@ class Authzee:
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1643,18 +1636,15 @@ class Authzee:
             If the grant is invalid and raise_crits is True.
         """
         return asyncio.run(
-            self._authzee_async.enact(
-                grant=grant,
-                config=config
-            )
+            self._authzee_async.enact(grant=grant, config=config)
         )
 
 
     def repeal(
-        self, 
-        grant_uuid: str, 
-        purge: bool = False,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        grant_uuid: str,
+        purge: bool=False,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Repeal (remove) a grant by its UUID.
 
@@ -1663,7 +1653,7 @@ class Authzee:
         grant_uuid : str
             The UUID of the grant to repeal.
         purge : bool, default=False
-            If True, all grants and partitions may be scanned to completely remove. 
+            If True, all grants and partitions may be scanned to completely remove.
             Useful if corruption by update is suspected.
         config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
@@ -1675,7 +1665,7 @@ class Authzee:
         result = authz.repeal(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             purge=False, # optional
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1716,9 +1706,9 @@ class Authzee:
 
 
     def get_grant(
-        self, 
+        self,
         grant_uuid: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GrantResult:
         """Retrieve a grant by its UUID.
 
@@ -1735,7 +1725,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.get_grant(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1751,7 +1741,7 @@ class Authzee:
         GrantResult
             ```python
             {
-                "grant": {  # dict | None
+                "grant": { # dict | None
                     "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
                     "name": "Allow inflate",
                     "description": "Allow balloon inflate for users.",
@@ -1794,10 +1784,10 @@ class Authzee:
 
     def list_grants(
         self,
-        effect: str | None = None, 
-        action: str | None = None, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        effect: str | None=None,
+        action: str | None=None,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> GrantsPage:
         """Retrieve a page of grants with optional filtering.
 
@@ -1820,7 +1810,7 @@ class Authzee:
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1895,10 +1885,10 @@ class Authzee:
 
     def list_grant_refs(
         self,
-        effect: str | None = None, 
-        action: str | None = None, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        effect: str | None=None,
+        action: str | None=None,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> PageRefsPage:
         """Retrieve a page of grant page references for parallel pagination.
 
@@ -1921,7 +1911,7 @@ class Authzee:
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1983,9 +1973,9 @@ class Authzee:
 
 
     def cleanup_latches(
-        self, 
-        before: datetime.datetime, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        before: datetime.datetime,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Clean up storage latches created before the given datetime.
 
@@ -2007,7 +1997,7 @@ class Authzee:
         # Assumes authz is an Authzee instance
         result = authz.cleanup_latches(
             before=datetime.datetime(2026, 1, 1),
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2048,9 +2038,9 @@ class Authzee:
 
     def audit(
         self,
-        request: AuthzeeRequest, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        request: AuthzeeRequest,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> AuditResultPage:
         """Retrieve a page of audit results showing how each grant evaluated against the request.
 
@@ -2088,7 +2078,7 @@ class Authzee:
                 "context": {}
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2135,7 +2125,7 @@ class Authzee:
         for page in paginator(
         # Assumes authz is an Authzee instance
             authz.audit,
-            request={ F
+            request={F
                 "identities": {
                     "user": [
                         {
@@ -2219,9 +2209,9 @@ class Authzee:
 
 
     def authorize(
-        self, 
+        self,
         request: AuthzeeRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> AuthorizeResult:
         """Determine if the request is authorized.
 
@@ -2256,7 +2246,7 @@ class Authzee:
                 "context_type": "NONE",
                 "context": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2307,7 +2297,7 @@ class Authzee:
             ```python
             {
                 "is_authorized": True,
-                "grant": {  # dict | None
+                "grant": { # dict | None
                     "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
                     "name": "Allow inflate",
                     "description": "Allow balloon inflate for users.",
@@ -2351,9 +2341,9 @@ class Authzee:
 
     def batch_audit(
         self,
-        batch_request: AuthzeeBatchRequest, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        batch_request: AuthzeeBatchRequest,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> BatchAuditResultPage:
         """Retrieve a page of batch audit results showing how each grant evaluated against the batch request.
 
@@ -2391,7 +2381,7 @@ class Authzee:
                 "context": {},
                 "batch": [
                     {
-                        "resource": {  # optional - dict | None
+                        "resource": { # optional - dict | None
                             "color": "red",
                             "is_inflated": True
                         }
@@ -2399,7 +2389,7 @@ class Authzee:
                 ]
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2545,9 +2535,9 @@ class Authzee:
 
 
     def batch_authorize(
-        self, 
+        self,
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> BatchAuthorizeResult:
         """Determine if each item in the batch request is authorized.
 
@@ -2583,14 +2573,14 @@ class Authzee:
                 "context": {},
                 "batch": [
                     {
-                        "resource": {  # optional - dict | None
+                        "resource": { # optional - dict | None
                             "color": "red",
                             "is_inflated": True
                         }
                     }
                 ]
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },

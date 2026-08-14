@@ -3,18 +3,18 @@
 
 __all__ = [
     "AuthzeeError",
+    "AuthzeeSDKError",
     "AuthzeeSpecError",
     "DefinitionError",
-    "GrantError",
     "EvaluationError",
-    "RequestError",
-    "AuthzeeSDKError",
+    "GrantError",
     "LocalityIncompatibilityError",
-    "ResourceNotFoundError",
-    "StartError",
     "NotImplementedError",
+    "PageReferenceError",
     "ParallelPaginationNotSupported",
-    "PageReferenceError"
+    "RequestError",
+    "ResourceNotFoundError",
+    "StartError"
 ]
 
 from authzee.types import GenericResult
@@ -29,12 +29,9 @@ class AuthzeeError(Exception):
 class AuthzeeSpecError(AuthzeeError):
     """Base exception for errors defined in the Authzee Specification.
     """
-    
-    def __init__(
-        self, 
-        message: str, 
-        result: GenericResult
-    ):
+
+
+    def __init__(self, message: str, result: GenericResult):
         super().__init__(message)
         self.message = message
         self.result = result
@@ -63,12 +60,9 @@ class RequestError(AuthzeeSpecError):
 class AuthzeeSDKError(AuthzeeError):
     """Base exception for errors from the Authzee SDK that are **not** defined by the specification.
     """
-    
-    def __init__(
-        self, 
-        message: str, 
-        result: GenericResult
-    ):
+
+
+    def __init__(self, message: str, result: GenericResult):
         super().__init__(message)
         self.message = message
         self.result = result
@@ -86,7 +80,13 @@ class NotImplementedError(AuthzeeSDKError):
     """The given method is not implemented for this class.
     """
 
-    def __init__(self, msg: str = "This method is not implemented.", *args, **kwargs):
+
+    def __init__(
+        self,
+        msg: str="This method is not implemented.",
+        *args,
+        **kwargs
+    ):
         super().__init__(msg, *args, **kwargs)
 
 
@@ -118,7 +118,7 @@ _exception_map = {
     "definition": DefinitionError,
     "evaluation": EvaluationError,
     "grant": GrantError,
-    "request": RequestError, 
+    "request": RequestError,
     "locality_incompatibility": LocalityIncompatibilityError,
     "not_implemented": NotImplementedError,
     "parallel_pagination_not_supported": ParallelPaginationNotSupported,

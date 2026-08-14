@@ -1,4 +1,4 @@
-"""Core functionality for the Authzee SDK. 
+"""Core functionality for the Authzee SDK.
 
 The functionality of this module is optimized for SDK use.  It conforms to the Authzee Specification but is not a one to one copy of the reference implementation.
 
@@ -6,47 +6,56 @@ For reference implementation see {py:mod}`authzee.reference`
 """
 
 __all__ = [
-    "context_def_schema",
-    "identity_def_schema",
-    "resource_def_schema",
-    "grant_schema",
-    "context_def_validator",
-    "identity_def_validator",
-    "resource_def_validator",
-    "grant_validator",
-    "request_validator",
     "batch_request_validator",
-    "validate_context_def",
-    "validate_identity_def",
-    "validate_resource_def",
-    "validate_grant",
-    "validate_request_schema",
-    "validate_batch_request_schema",
+    "combine_errors",
+    "context_def_schema",
+    "context_def_validator",
     "evaluate",
-    "combine_errors"
+    "grant_schema",
+    "grant_validator",
+    "identity_def_schema",
+    "identity_def_validator",
+    "request_validator",
+    "resource_def_schema",
+    "resource_def_validator",
+    "validate_batch_request_schema",
+    "validate_context_def",
+    "validate_grant",
+    "validate_identity_def",
+    "validate_request_schema",
+    "validate_resource_def"
 ]
 
 import copy
 from typing import Callable
 
-import jsonschema_rs 
+import jsonschema_rs
 
-from authzee.types import *
 from authzee import reference
+from authzee.types import *
 
 
-context_def_schema = copy.deepcopy(reference.context_definition_schema) | {
-    "title": "SDK Context Definition",
-    "additionalProperties": False
-}
-identity_def_schema = copy.deepcopy(reference.identity_definition_schema) | {
-    "title": "SDK Identity Definition",
-    "additionalProperties": False
-}
-resource_def_schema = copy.deepcopy(reference.resource_definition_schema) | {
-    "title": "SDK Resource Definition",
-    "additionalProperties": False
-}
+context_def_schema = (
+    copy.deepcopy(reference.context_definition_schema)
+    | {
+        "title": "SDK Context Definition",
+        "additionalProperties": False
+    }
+)
+identity_def_schema = (
+    copy.deepcopy(reference.identity_definition_schema)
+    | {
+        "title": "SDK Identity Definition",
+        "additionalProperties": False
+    }
+)
+resource_def_schema = (
+    copy.deepcopy(reference.resource_definition_schema)
+    | {
+        "title": "SDK Resource Definition",
+        "additionalProperties": False
+    }
+)
 grant_schema = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "SDK Grant",
@@ -144,7 +153,7 @@ def validate_context_def(context_def: ContextDef) -> GenericResult:
                 ]
             }
         }
-    
+
     if not(
         "type" in context_def['schema']
         and context_def['schema']['type'] == "object"
@@ -161,9 +170,12 @@ def validate_context_def(context_def: ContextDef) -> GenericResult:
             }
         }
 
-    return {"has_failed": False, "errors": {}}
+    return {
+        "has_failed": False,
+        "errors": {}
+    }
 
-        
+
 def validate_identity_def(identity_def: IdentityDef) -> GenericResult:
     is_valid = identity_def_validator.is_valid(identity_def)
     if not is_valid:
@@ -178,7 +190,7 @@ def validate_identity_def(identity_def: IdentityDef) -> GenericResult:
                 ]
             }
         }
-    
+
     if not(
         "type" in identity_def['schema']
         and identity_def['schema']['type'] == "object"
@@ -195,7 +207,10 @@ def validate_identity_def(identity_def: IdentityDef) -> GenericResult:
             }
         }
 
-    return {"has_failed": False, "errors": {}}
+    return {
+        "has_failed": False,
+        "errors": {}
+    }
 
 
 def validate_resource_def(resource_def: ResourceDef) -> GenericResult:
@@ -212,7 +227,7 @@ def validate_resource_def(resource_def: ResourceDef) -> GenericResult:
                 ]
             }
         }
-    
+
     if not(
         "type" in resource_def['schema']
         and resource_def['schema']['type'] == "object"
@@ -229,7 +244,10 @@ def validate_resource_def(resource_def: ResourceDef) -> GenericResult:
             }
         }
 
-    return {"has_failed": False, "errors": {}}
+    return {
+        "has_failed": False,
+        "errors": {}
+    }
 
 
 def validate_grant(grant: Grant) -> GenericResult:
@@ -241,14 +259,14 @@ def validate_grant(grant: Grant) -> GenericResult:
                 "grant": [
                     {
                         "is_critical": True,
-                        "message": "The grant is not valid against the Grant Schema." 
+                        "message": "The grant is not valid against the Grant Schema."
                     }
                 ]
             }
         }
 
     return {
-        "has_failed": False, 
+        "has_failed": False,
         "errors": {}
     }
 
@@ -269,12 +287,14 @@ def validate_request_schema(request: AuthzeeRequest) -> GenericResult:
         }
 
     return {
-        "has_failed": False, 
+        "has_failed": False,
         "errors": {}
     }
 
 
-def validate_batch_request_schema(batch_request: AuthzeeBatchRequest) -> GenericResult:
+def validate_batch_request_schema(
+    batch_request: AuthzeeBatchRequest
+) -> GenericResult:
     is_valid = batch_request_validator.is_valid(batch_request)
     if not is_valid:
         return {
@@ -290,14 +310,14 @@ def validate_batch_request_schema(batch_request: AuthzeeBatchRequest) -> Generic
         }
 
     return {
-        "has_failed": False, 
+        "has_failed": False,
         "errors": {}
     }
 
 
 def evaluate(
-    request: AuthzeeRequest, 
-    grant: Grant, 
+    request: AuthzeeRequest,
+    grant: Grant,
     execute: Callable[[str, AnyJSON], ExecuteResult],
     only_crits: bool
 ) -> EvaluateResult:
@@ -308,7 +328,7 @@ def evaluate(
         "errors": {}
     }
     query_result = execute(
-        grant['query'], 
+        grant['query'],
         {
             "request": request,
             "grant": grant
@@ -318,6 +338,7 @@ def evaluate(
         result['query_result'] = query_result['result']
         if query_result['result'] == grant['equality']:
             result['is_applicable'] = True
+
     else:
         q_val = grant['evaluation_handler'] if request['evaluation_handler'] == "grant" else request['evaluation_handler']
         is_q_val_crit = q_val == "critical"
@@ -340,7 +361,7 @@ def evaluate(
     return result
 
 
-def combine_errors(result: GenericResult, *args: dict) ->  None:
+def combine_errors(result: GenericResult, *args: dict) -> None:
     errors = result['errors']
     for new_result in args:
         if new_result['has_failed'] is True:
@@ -350,7 +371,7 @@ def combine_errors(result: GenericResult, *args: dict) ->  None:
         for k in errors:
             if k in new_errors:
                 errors[k] += new_errors[k]
-            
+
         for k in new_errors:
             if k not in errors:
                 errors[k] = new_errors[k]

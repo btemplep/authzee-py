@@ -17,21 +17,21 @@ default_config: AuthzeeConfig = {
         "compute_start": {
             "storage": {}
         },
-        "storage_start": {},
+        "storage_start": {}
     },
     "shutdown": {
         "compute_shutdown": {
             "storage": {}
         },
-        "storage_shutdown": {},
+        "storage_shutdown": {}
     },
     "construct": {
         "compute_construct": {},
-        "storage_construct": {},
+        "storage_construct": {}
     },
     "destroy": {
         "compute_destroy": {},
-        "storage_destroy": {},
+        "storage_destroy": {}
     },
     "validate_context_def": {},
     "list_context_defs": {
@@ -49,7 +49,7 @@ default_config: AuthzeeConfig = {
         "use_cache": False
     },
     "get_identity_def": {
-        "use_cache": False  
+        "use_cache": False
     },
     "put_identity_def": {},
     "delete_identity_def": {},
@@ -59,7 +59,7 @@ default_config: AuthzeeConfig = {
         "use_cache": False
     },
     "get_resource_def": {
-        "use_cache": False  
+        "use_cache": False
     },
     "put_resource_def": {},
     "delete_resource_def": {},
@@ -69,7 +69,7 @@ default_config: AuthzeeConfig = {
         "use_cache": False
     },
     "get_grant": {
-        "use_cache": False  
+        "use_cache": False
     },
     "enact": {},
     "repeal": {},
@@ -300,7 +300,7 @@ default_config: AuthzeeConfig = {
 def override_config(override: dict | None, default: dict) -> dict:
     if override is None:
         return default
-    
+
     full = {}
     for key in default:
         if key in override:
@@ -308,9 +308,8 @@ def override_config(override: dict | None, default: dict) -> dict:
                 full[key] = override_config(override[key], default[key])
             else:
                 full[key] = override[key]
+
         else:
-            full[key] = default[key] 
+            full[key] = default[key]
 
     return full
-
-   

@@ -4,10 +4,10 @@ See {py:class}`authzee.compute.in_process_compute.InProcessCompute`
 """
 
 __all__ = [
-    "InProcessCompute",
+    "InProcessCompute"
 ]
 
-from asyncio import as_completed, create_task, Task
+from asyncio import Task, as_completed, create_task
 from typing import Any, Callable, Dict, List, Type
 
 import jsonschema_rs
@@ -15,34 +15,34 @@ import jsonschema_rs
 from authzee.compute.compute_module import ComputeModule
 from authzee.core import (
     combine_errors,
-    evaluate, 
+    evaluate,
+    validate_batch_request_schema,
     validate_context_def,
-    validate_identity_def,
-    validate_resource_def,
     validate_grant,
+    validate_identity_def,
     validate_request_schema,
-    validate_batch_request_schema
+    validate_resource_def
 )
+from authzee.module_locality import ModuleLocality
 from authzee.paginators import paginator_async
+from authzee.storage.storage_module import StorageModule
 from authzee.types.authzee import *
 from authzee.types.config import (
-    ComputeStartConfig,
-    ComputeShutdownConfig,
-    ComputeConstructConfig,
-    ComputeDestroyConfig,
-    ValidateContextDefConfig,
-    ValidateIdentityDefConfig,
-    ValidateResourceDefConfig,
-    ValidateGrantConfig,
-    ValidateRequestConfig,
-    ValidateBatchRequestConfig,
     AuditConfig,
     AuthorizeConfig,
     BatchAuditConfig,
-    BatchAuthorizeConfig
+    BatchAuthorizeConfig,
+    ComputeConstructConfig,
+    ComputeDestroyConfig,
+    ComputeShutdownConfig,
+    ComputeStartConfig,
+    ValidateBatchRequestConfig,
+    ValidateContextDefConfig,
+    ValidateGrantConfig,
+    ValidateIdentityDefConfig,
+    ValidateRequestConfig,
+    ValidateResourceDefConfig
 )
-from authzee.module_locality import ModuleLocality
-from authzee.storage.storage_module import StorageModule
 
 
 class InProcessCompute(ComputeModule):
@@ -64,7 +64,7 @@ class InProcessCompute(ComputeModule):
         """
         await super().start(
             execute=execute,
-            storage_type=storage_type, 
+            storage_type=storage_type,
             storage_kwargs=storage_kwargs,
             config=config
         )
@@ -72,9 +72,9 @@ class InProcessCompute(ComputeModule):
         self.has_parallel_paging = False
         self._storage = storage_type(**storage_kwargs)
         await self._storage.start(config['storage'])
-    
+
         return {
-            "has_failed": False, 
+            "has_failed": False,
             "errors": {}
         }
 
@@ -87,7 +87,7 @@ class InProcessCompute(ComputeModule):
         await self._storage.shutdown(config['storage'])
 
         return {
-            "has_failed": False, 
+            "has_failed": False,
             "errors": {}
         }
 
@@ -98,7 +98,7 @@ class InProcessCompute(ComputeModule):
         - one time setup
         """
         return {
-            "has_failed": False, 
+            "has_failed": False,
             "errors": {}
         }
 
@@ -109,7 +109,7 @@ class InProcessCompute(ComputeModule):
         - destructive - may lose all long lasting compute resources
         """
         return {
-            "has_failed": False, 
+            "has_failed": False,
             "errors": {}
         }
 
@@ -159,13 +159,13 @@ class InProcessCompute(ComputeModule):
 
         context_def_task = create_task(
             self._storage.get_context_def(
-                request['context_type'], 
+                request['context_type'],
                 config['get_identity_def']
             )
         )
         resource_def_task = create_task(
             self._storage.get_resource_def(
-                request['resource_type'], 
+                request['resource_type'],
                 config['get_resource_def']
             )
         )
@@ -180,10 +180,13 @@ class InProcessCompute(ComputeModule):
                     "message": f"context_type '{request['context_type']}' is not a registered context type."
                 }
             ]
-            
+
             return result
-        
-        if jsonschema_rs.validator_for(context_def['schema']).is_valid(request['context']) is False:
+
+        if (
+            jsonschema_rs.validator_for(context_def['schema']).is_valid(request['context'])
+            is False
+        ):
             result['has_failed'] = True
             result['errors']['request'] = [
                 {
@@ -205,8 +208,15 @@ class InProcessCompute(ComputeModule):
             ]
 
             return result
-        
-        if jsonschema_rs.validator_for(resource_def['schema']).is_valid(request['resource']) is False:
+
+        if (
+            jsonschema_rs.validator_for(
+                resource_def['schema']
+            ).is_valid(
+                request['resource']
+            )
+            is False
+        ):
             result['has_failed'] = True
             result['errors']['request'] = [
                 {
@@ -216,7 +226,7 @@ class InProcessCompute(ComputeModule):
             ]
 
             return result
-        
+
         if request['action'] not in resource_def['actions']:
             result['has_failed'] = True
             result['errors']['request'] = [
@@ -227,7 +237,7 @@ class InProcessCompute(ComputeModule):
             ]
 
             return result
-        
+
         for id_task, i_type in zip(identity_def_tasks, request['identities']):
             identity_def = (await id_task)['identity_def']
             if identity_def is None:
@@ -240,9 +250,12 @@ class InProcessCompute(ComputeModule):
                 ]
 
                 return result
-            
+
             id_validator = jsonschema_rs.validator_for(identity_def['schema'])
-            for id, i in zip(request['identities'][i_type], range(len(request['identities']))):
+            for id, i in zip(
+                request['identities'][i_type],
+                range(len(request['identities']))
+            ):
                 if id_validator.is_valid(id) is False:
                     result['has_failed'] = True
                     result['errors']['request'] = [
@@ -253,7 +266,7 @@ class InProcessCompute(ComputeModule):
                     ]
 
                     return result
-        
+
         return result
 
 
@@ -264,8 +277,8 @@ class InProcessCompute(ComputeModule):
     ) -> GenericResult:
         """Validate a batch request.
         """
-        # this is a very inefficient way to do this 
-        # TODO try and reuse as needed and only do partial verification of new fields 
+        # this is a very inefficient way to do this
+        # TODO try and reuse as needed and only do partial verification of new fields
         result = validate_batch_request_schema(batch_request)
         if result['has_failed'] is True:
             return result
@@ -279,7 +292,7 @@ class InProcessCompute(ComputeModule):
         combine_errors(result, base_result)
         if base_result['has_failed'] is True:
             result['has_failed'] = True
-            
+
             return result
 
         batch_tasks: List[Task] = []
@@ -292,13 +305,13 @@ class InProcessCompute(ComputeModule):
                     )
                 )
             )
-        
+
         for bt in as_completed(batch_tasks):
             bt: GenericResult = await bt
             combine_errors(result, bt)
             if bt['has_failed'] is True:
                 result['has_failed'] = True
-        
+
         return result
 
 
@@ -332,7 +345,7 @@ class InProcessCompute(ComputeModule):
             result['errors'] = grants_page['errors']
 
             return result
-        
+
         result['grants'] = grants_page['grants']
         result['next_page_ref'] = grants_page['next_page_ref']
         for grant in result['grants']:
@@ -354,7 +367,7 @@ class InProcessCompute(ComputeModule):
                 ]
 
                 return result
-        
+
         return result
 
 
@@ -384,7 +397,7 @@ class InProcessCompute(ComputeModule):
                 result['critical_errors'] = page['errors']
 
                 return result
-        
+
             for grant in page['grants']:
                 eval_result = evaluate(
                     request=request,
@@ -420,7 +433,7 @@ class InProcessCompute(ComputeModule):
                 result['critical_errors'] = page['errors']
 
                 return result
-        
+
             for grant in page['grants']:
                 eval_result = evaluate(
                     request=request,
@@ -482,7 +495,7 @@ class InProcessCompute(ComputeModule):
             batch_result['has_failed'] = True
 
             return batch_result
-        
+
         batch_result['grants'] = grants_page['grants']
         batch_result['next_page_ref'] = grants_page['next_page_ref']
         for _ in range(len(batch_request['batch'])):
@@ -493,7 +506,7 @@ class InProcessCompute(ComputeModule):
                     "errors": {}
                 }
             )
-        
+
         base_request = batch_request.copy()
         base_request.pop("batch")
         for grant in grants_page['grants']:
@@ -564,7 +577,7 @@ class InProcessCompute(ComputeModule):
                 for request, result in zip(batch_request['batch'], batch_result['batch_results']):
                     if result['__complete'] is True:
                         continue
-            
+
                     eval_result = evaluate(
                         request=base_request | request,
                         grant=grant,
@@ -597,7 +610,7 @@ class InProcessCompute(ComputeModule):
                 batch_result['critical_errors'] = page['errors']
 
                 return batch_result
-        
+
             for grant in page['grants']:
                 for request, result in zip(batch_request['batch'], batch_result['batch_results']):
                     if result['__complete'] is True:

@@ -1,23 +1,23 @@
 """See {py:class}`authzee.authzee_async.AuthzeeAsync`"""
+
 __all__ = [
-    "AuthzeeAsync",
+    "AuthzeeAsync"
 ]
 
 from asyncio import gather
 import datetime
 from typing import Any, Callable, Dict, Type
 
+from authzee import core
+from authzee.compute.compute_module import ComputeModule
 from authzee.config import default_config, override_config
+from authzee.exceptions import *
+from authzee.exceptions import _exception_map
+from authzee.module_locality import locality_compatibility
+from authzee.storage.storage_module import StorageModule
 from authzee.types.authzee import *
 from authzee.types.config import AuthzeeConfig
 from authzee.types.config_override import AuthzeeConfigOverride
-from authzee.exceptions import *
-from authzee.exceptions import _exception_map
-from authzee import core
-from authzee.compute.compute_module import ComputeModule
-from authzee.storage.storage_module import StorageModule
-
-from authzee.module_locality import locality_compatibility
 
 
 class AuthzeeAsync:
@@ -32,14 +32,14 @@ class AuthzeeAsync:
     compute_kwargs : Dict[str, Any]
         Compute module KWArgs used to create instances.
     storage_type : Type[StorageModule]
-        Storage Module Type. 
+        Storage Module Type.
     storage_kwargs : Dict[str, Any]
         Storage module KWArgs used to create instances.
     compute_storage_kwargs : Dict[str, Any], optional
         Override storage module KWArgs that the compute module will use.  May only include KWArgs you want to override.
     config : AuthzeeConfigOverride, optional
         Authzee configuration. May only include config keys you want to override.
-    
+
     Examples
     --------
     Simple full example:
@@ -132,7 +132,7 @@ class AuthzeeAsync:
                     "balloon:inflate"
                 ],
                 "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                "evaluation_handler": "evaluate", 
+                "evaluation_handler": "evaluate",
                 "equality": True,
                 "data": {}
             }
@@ -188,15 +188,16 @@ class AuthzeeAsync:
     ```
     """
 
+
     def __init__(
-        self, 
+        self,
         execute: Callable[[str, Any], Any],
         compute_type: Type[ComputeModule],
         compute_kwargs: Dict[str, Any],
         storage_type: Type[StorageModule],
         storage_kwargs: Dict[str, Any],
-        compute_storage_kwargs: Dict[str, Any] = None,
-        config: AuthzeeConfigOverride = None
+        compute_storage_kwargs: Dict[str, Any]=None,
+        config: AuthzeeConfigOverride=None
     ):
         self._execute = execute
         self._compute_type = compute_type
@@ -204,13 +205,20 @@ class AuthzeeAsync:
         self._storage_type = storage_type
         self._storage_kwargs = storage_kwargs
         self._compute_storage_kwargs = storage_kwargs if compute_storage_kwargs is None else storage_kwargs | compute_storage_kwargs
-        self._config : AuthzeeConfig = override_config(config, default_config)
+        self._config: AuthzeeConfig = override_config(config, default_config)
         self._compute: ComputeModule = None
         self._storage: StorageModule = None
-    
 
-    def _raise_result(self, result: GenericResult, config: AuthzeeConfigOverride) -> None:
-        if config['authzee']['raise_crits'] is True and result['has_failed'] is True:
+
+    def _raise_result(
+        self,
+        result: GenericResult,
+        config: AuthzeeConfigOverride
+    ) -> None:
+        if (
+            config['authzee']['raise_crits'] is True
+            and result['has_failed'] is True
+        ):
             if "critical_errors" in result:
                 errors = result['critical_errors']
             else:
@@ -225,7 +233,7 @@ class AuthzeeAsync:
                         )
 
 
-    def _combine_errors(self, result: GenericResult, *args: dict) ->  None:
+    def _combine_errors(self, result: GenericResult, *args: dict) -> None:
         errors = result['errors']
         for new_result in args:
             if new_result['has_failed'] is True:
@@ -235,13 +243,16 @@ class AuthzeeAsync:
             for k in errors:
                 if k in new_errors:
                     errors[k] += new_errors[k]
-                
+
             for k in new_errors:
                 if k not in errors:
                     errors[k] = new_errors[k]
 
-    
-    async def start(self, config: AuthzeeConfigOverride | None = None) -> GenericResult:
+
+    async def start(
+        self,
+        config: AuthzeeConfigOverride | None=None
+    ) -> GenericResult:
         """Initialize the authzee app. Must be run once for every instance.
 
         Parameters
@@ -254,7 +265,7 @@ class AuthzeeAsync:
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.start(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -309,7 +320,10 @@ class AuthzeeAsync:
         core.combine_errors(result, compute_results, storage_result)
         self._raise_result(result, config)
 
-        if self._storage.locality not in locality_compatibility[self._compute.locality]:
+        if (
+            self._storage.locality
+            not in locality_compatibility[self._compute.locality]
+        ):
             result['errors']['locality_incompatibility'] = [
                 {
                     "is_critical": False,
@@ -321,8 +335,8 @@ class AuthzeeAsync:
 
 
     async def shutdown(
-        self, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Shutdown the authzee app.
 
@@ -338,7 +352,7 @@ class AuthzeeAsync:
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.shutdown(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -378,18 +392,22 @@ class AuthzeeAsync:
             "errors": {}
         }
         compute_result, storage_result = await gather(
-            self._compute.shutdown(config['shutdown']['compute_shutdown']),
-            self._storage.shutdown(config['shutdown']['storage_shutdown'])
+            self._compute.shutdown(
+                config['shutdown']['compute_shutdown']
+            ),
+            self._storage.shutdown(
+                config['shutdown']['storage_shutdown']
+            )
         )
         core.combine_errors(result, compute_result, storage_result)
         self._raise_result(result, config)
 
         return result
-        
+
 
     async def construct(
-        self, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """One time setup for the life of storage and compute. Creates DB tables, storage setup, etc.
 
@@ -405,7 +423,7 @@ class AuthzeeAsync:
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.construct(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -457,8 +475,8 @@ class AuthzeeAsync:
 
 
     async def destroy(
-        self, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Tear down everything that construct set up. Deletes DB tables, storage, etc.
 
@@ -474,7 +492,7 @@ class AuthzeeAsync:
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.destroy(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -525,8 +543,8 @@ class AuthzeeAsync:
 
     async def validate_context_def(
         self,
-        context_def: ContextDef, 
-        config: AuthzeeConfigOverride | None = None
+        context_def: ContextDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a context definition without storing it.
 
@@ -549,7 +567,7 @@ class AuthzeeAsync:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -586,14 +604,14 @@ class AuthzeeAsync:
             config=config['validate_context_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_context_defs(
-        self, 
-        page_ref: str | None = None,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> ContextDefsPage:
         """Retrieve a page of context definitions.
 
@@ -610,7 +628,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.list_context_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -665,20 +683,19 @@ class AuthzeeAsync:
             If the page reference is invalid.
         """
         config = override_config(config, self._config)
-        result =  await self._storage.list_context_defs(
+        result = await self._storage.list_context_defs(
             page_ref=page_ref,
             config=config['list_context_defs']
         )
         self._raise_result(result, config)
-        
+
         return result
-    
 
 
     async def get_context_def(
-        self, 
-        context_type: str, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        context_type: str,
+        config: AuthzeeConfigOverride | None=None
     ) -> ContextDefResult:
         """Retrieve a context definition by its `context_type`.
 
@@ -695,7 +712,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.get_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -711,7 +728,7 @@ class AuthzeeAsync:
         ContextDefResult
             ```python
             {
-                "context_def": {  # dict | None
+                "context_def": { # dict | None
                     "context_type": "NONE",
                     "schema": {
                         "type": "object",
@@ -741,14 +758,14 @@ class AuthzeeAsync:
             config=config['get_context_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def put_context_def(
-        self, 
-        context_def: ContextDef, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        context_def: ContextDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Create or update a context definition.
 
@@ -771,7 +788,7 @@ class AuthzeeAsync:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -815,14 +832,14 @@ class AuthzeeAsync:
             config=config['put_context_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def delete_context_def(
-        self, 
-        context_type: str, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        context_type: str,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Deletes the context definition if found.
 
@@ -839,7 +856,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.delete_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -876,14 +893,14 @@ class AuthzeeAsync:
             config=config['delete_context_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def validate_identity_def(
         self,
-        identity_def: IdentityDef, 
-        config: AuthzeeConfigOverride | None = None
+        identity_def: IdentityDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate an identity definition without storing it.
 
@@ -913,7 +930,7 @@ class AuthzeeAsync:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -950,14 +967,14 @@ class AuthzeeAsync:
             config=config['validate_identity_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_identity_defs(
-        self, 
-        page_ref: str | None = None,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> IdentityDefsPage:
         """Retrieve a page of identity definitions.
 
@@ -974,7 +991,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.list_identity_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1038,14 +1055,14 @@ class AuthzeeAsync:
             config=config['list_identity_defs']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def get_identity_def(
-        self, 
+        self,
         identity_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> IdentityDefResult:
         """Retrieve an identity definition by its `identity_type`.
 
@@ -1062,7 +1079,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.get_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1078,7 +1095,7 @@ class AuthzeeAsync:
         IdentityDefResult
             ```python
             {
-                "identity_def": {  # dict | None
+                "identity_def": { # dict | None
                     "identity_type": "user",
                     "schema": {
                         "type": "object",
@@ -1112,14 +1129,14 @@ class AuthzeeAsync:
             config=config['get_identity_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def put_identity_def(
-        self, 
-        identity_def: IdentityDef, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        identity_def: IdentityDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Create or update an identity definition.
 
@@ -1149,7 +1166,7 @@ class AuthzeeAsync:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1193,14 +1210,14 @@ class AuthzeeAsync:
             config=config['put_identity_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def delete_identity_def(
-        self, 
+        self,
         identity_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Deletes the identity definition if found.
 
@@ -1217,7 +1234,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.delete_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1254,14 +1271,14 @@ class AuthzeeAsync:
             config=config['delete_identity_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def validate_resource_def(
         self,
-        resource_def: ResourceDef, 
-        config: AuthzeeConfigOverride | None = None
+        resource_def: ResourceDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a resource definition without storing it.
 
@@ -1296,7 +1313,7 @@ class AuthzeeAsync:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1333,14 +1350,14 @@ class AuthzeeAsync:
             config=config['validate_resource_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_resource_defs(
-        self, 
-        page_ref: str | None = None,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> ResourceDefsPage:
         """Retrieve a page of resource definitions.
 
@@ -1357,7 +1374,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.list_resource_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1425,14 +1442,14 @@ class AuthzeeAsync:
             config=config['list_resource_defs']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def get_resource_def(
-        self, 
+        self,
         resource_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> ResourceDefResult:
         """Retrieve a resource definition by its `resource_type`.
 
@@ -1449,7 +1466,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.get_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1465,7 +1482,7 @@ class AuthzeeAsync:
         ResourceDefResult
             ```python
             {
-                "resource_def": {  # dict | None
+                "resource_def": { # dict | None
                     "resource_type": "balloon",
                     "actions": [
                         "balloon:read",
@@ -1503,14 +1520,14 @@ class AuthzeeAsync:
             config=config['get_resource_def']
         )
         self._raise_result(result, config)
-        
+
         return result
-    
-    
+
+
     async def put_resource_def(
-        self, 
+        self,
         resource_def: ResourceDef,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Create or update a resource definition.
 
@@ -1545,7 +1562,7 @@ class AuthzeeAsync:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1589,14 +1606,14 @@ class AuthzeeAsync:
             config=config['put_resource_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def delete_resource_def(
-        self, 
+        self,
         resource_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Deletes the resource definition if found.
 
@@ -1613,7 +1630,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.delete_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1650,14 +1667,14 @@ class AuthzeeAsync:
             config=config['delete_resource_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def validate_grant(
-        self, 
+        self,
         grant: Grant,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a grant without storing it.
 
@@ -1689,7 +1706,7 @@ class AuthzeeAsync:
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1726,14 +1743,14 @@ class AuthzeeAsync:
             config=config['validate_grant']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def enact(
-        self, 
+        self,
         grant: Grant,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Enact (store) a grant to create an authorization rule.
 
@@ -1765,7 +1782,7 @@ class AuthzeeAsync:
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1796,28 +1813,22 @@ class AuthzeeAsync:
         GrantError
             If the grant is invalid and raise_crits is True.
         """
-        valid_result = await self.validate_grant(
-            grant=grant,
-            config=config
-        )
+        valid_result = await self.validate_grant(grant=grant, config=config)
         if valid_result['has_failed'] is True:
             return valid_result
 
         config = override_config(config, self._config)
-        result = await self._storage.enact(
-            grant=grant,
-            config=config['enact']
-        )
+        result = await self._storage.enact(grant=grant, config=config['enact'])
         self._raise_result(result, config)
-        
+
         return result
 
-        
+
     async def repeal(
-        self, 
-        grant_uuid: str, 
+        self,
+        grant_uuid: str,
         purge: bool,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Repeal (remove) a grant by its UUID.
 
@@ -1826,7 +1837,7 @@ class AuthzeeAsync:
         grant_uuid : str
             The UUID of the grant to repeal.
         purge : bool
-            If True, all grants and partitions may be scanned to completely remove. 
+            If True, all grants and partitions may be scanned to completely remove.
             Useful if corruption by update is suspected.
         config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
@@ -1838,7 +1849,7 @@ class AuthzeeAsync:
         result = await authz.repeal(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             purge=False,
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1876,14 +1887,14 @@ class AuthzeeAsync:
             config=config['repeal']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def get_grant(
-        self, 
+        self,
         grant_uuid: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GrantResult:
         """Retrieve a grant by its UUID.
 
@@ -1900,7 +1911,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.get_grant(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -1916,7 +1927,7 @@ class AuthzeeAsync:
         GrantResult
             ```python
             {
-                "grant": {  # dict | None
+                "grant": { # dict | None
                     "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
                     "name": "Allow inflate",
                     "description": "Allow balloon inflate for users.",
@@ -1955,16 +1966,16 @@ class AuthzeeAsync:
             config=config['get_grant']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_grants(
         self,
-        effect: str | None = None, 
-        action: str | None = None, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        effect: str | None=None,
+        action: str | None=None,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> GrantsPage:
         """Retrieve a page of grants with optional filtering.
 
@@ -1987,7 +1998,7 @@ class AuthzeeAsync:
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2058,16 +2069,16 @@ class AuthzeeAsync:
             config=config['list_grants']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_grant_refs(
         self,
-        effect: str | None = None, 
-        action: str | None = None, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        effect: str | None=None,
+        action: str | None=None,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> PageRefsPage:
         """Retrieve a page of grant page references for parallel pagination.
 
@@ -2090,7 +2101,7 @@ class AuthzeeAsync:
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2149,14 +2160,14 @@ class AuthzeeAsync:
             config=config['list_grant_refs']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def cleanup_latches(
-        self, 
-        before: datetime.datetime, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        before: datetime.datetime,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Clean up storage latches created before the given datetime.
 
@@ -2178,7 +2189,7 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.cleanup_latches(
             before=datetime.datetime(2026, 1, 1),
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2215,14 +2226,14 @@ class AuthzeeAsync:
             config=config['cleanup_latches']
         )
         self._raise_result(result, config)
-        
+
         return result
-        
-    
+
+
     async def validate_request(
         self,
         request: AuthzeeRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate an authorization request without evaluating it.
 
@@ -2257,7 +2268,7 @@ class AuthzeeAsync:
                 "context_type": "NONE",
                 "context": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2319,15 +2330,15 @@ class AuthzeeAsync:
             config=config['validate_request']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def audit(
         self,
-        request: AuthzeeRequest, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        request: AuthzeeRequest,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> AuditResultPage:
         """Retrieve a page of audit results showing how each grant evaluated against the request.
 
@@ -2365,7 +2376,7 @@ class AuthzeeAsync:
                 "context": {}
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2500,7 +2511,7 @@ class AuthzeeAsync:
                 "errors": valid_result['errors']
             }
             self._raise_result(result, config)
-            
+
             return result
 
         result = await self._compute.audit(
@@ -2509,7 +2520,7 @@ class AuthzeeAsync:
             config=config['audit']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
@@ -2520,16 +2531,16 @@ class AuthzeeAsync:
                 if error['is_critical']:
                     if et not in critical_errors:
                         critical_errors[et] = []
-                    
+
                     critical_errors[et].append(error)
-        
+
         return critical_errors
 
 
     async def authorize(
-        self, 
+        self,
         request: AuthzeeRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> AuthorizeResult:
         """Determine if the request is authorized.
 
@@ -2564,7 +2575,7 @@ class AuthzeeAsync:
                 "context_type": "NONE",
                 "context": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2615,7 +2626,7 @@ class AuthzeeAsync:
             ```python
             {
                 "is_authorized": True,
-                "grant": {  # dict | None
+                "grant": { # dict | None
                     "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
                     "name": "Allow inflate",
                     "description": "Allow balloon inflate for users.",
@@ -2654,7 +2665,7 @@ class AuthzeeAsync:
             request=request,
             config=config['authorize']['validate_request']
         )
-        
+
         if valid_result['has_failed'] is True:
             result = {
                 "is_authorized": False,
@@ -2664,7 +2675,7 @@ class AuthzeeAsync:
                 "critical_errors": self._get_critical_errors(valid_result['errors'])
             }
             self._raise_result(valid_result, config)
-            
+
             return result
 
         result = await self._compute.authorize(
@@ -2672,14 +2683,14 @@ class AuthzeeAsync:
             config=config['authorize']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def validate_batch_request(
         self,
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a batch authorization request without evaluating it.
 
@@ -2722,7 +2733,7 @@ class AuthzeeAsync:
                     }
                 ]
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2784,15 +2795,15 @@ class AuthzeeAsync:
             config=config['validate_batch_request']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def batch_audit(
         self,
-        batch_request: AuthzeeBatchRequest, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        batch_request: AuthzeeBatchRequest,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> BatchAuditResultPage:
         """Retrieve a page of batch audit results showing how each grant evaluated against the batch request.
 
@@ -2830,7 +2841,7 @@ class AuthzeeAsync:
                 "context": {},
                 "batch": [
                     {
-                        "resource": {  # optional - dict | None
+                        "resource": { # optional - dict | None
                             "color": "red",
                             "is_inflated": True
                         }
@@ -2838,7 +2849,7 @@ class AuthzeeAsync:
                 ]
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -2988,23 +2999,23 @@ class AuthzeeAsync:
                 "errors": valid_result['errors']
             }
             self._raise_result(result, config)
-            
+
             return result
-    
+
         result = await self._compute.batch_audit(
             batch_request=batch_request,
             page_ref=page_ref,
             config=config['batch_audit']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def batch_authorize(
-        self, 
+        self,
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> BatchAuthorizeResult:
         """Determine if each item in the batch request is authorized.
 
@@ -3040,14 +3051,14 @@ class AuthzeeAsync:
                 "context": {},
                 "batch": [
                     {
-                        "resource": {  # optional - dict | None
+                        "resource": { # optional - dict | None
                             "color": "red",
                             "is_inflated": True
                         }
                     }
                 ]
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
                     "raise_crits": True
                 },
@@ -3183,7 +3194,7 @@ class AuthzeeAsync:
                 "critical": self._get_critical_errors(valid_result['errors'])
             }
             self._raise_result(result, config)
-            
+
             return result
 
         result = await self._compute.batch_authorize(
@@ -3191,6 +3202,5 @@ class AuthzeeAsync:
             config=config['batch_authorize']
         )
         self._raise_result(result, config)
-        
+
         return result
-        

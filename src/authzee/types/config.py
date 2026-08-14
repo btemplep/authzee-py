@@ -1,56 +1,55 @@
 """Authzee config types."""
 
-from typing import TypedDict
-
-
 __all__ = [
+    "AuditConfig",
+    "AuthorizeConfig",
     "AuthzeeBaseConfig",
-    "ComputeStartConfig",
-    "StorageStartConfig",
-    "StartConfig",
-    "ComputeShutdownConfig",
-    "StorageShutdownConfig",
-    "ShutdownConfig",
+    "AuthzeeConfig",
+    "BatchAuditConfig",
+    "BatchAuthorizeConfig",
+    "CleanupLatchesConfig",
     "ComputeConstructConfig",
-    "StorageConstructConfig",
-    "ConstructConfig",
     "ComputeDestroyConfig",
-    "StorageDestroyConfig",
+    "ComputeShutdownConfig",
+    "ComputeStartConfig",
+    "ConstructConfig",
+    "CreateLatchConfig",
+    "DeleteContextDefConfig",
+    "DeleteIdentityDefConfig",
+    "DeleteLatchConfig",
+    "DeleteResourceDefConfig",
     "DestroyConfig",
+    "EnactConfig",
+    "GetContextDefConfig",
+    "GetGrantConfig",
+    "GetIdentityDefConfig",
+    "GetLatchConfig",
+    "GetResourceDefConfig",
     "ListContextDefsConfig",
+    "ListGrantRefsConfig",
+    "ListGrantsConfig",
     "ListIdentityDefsConfig",
     "ListResourceDefsConfig",
-    "ListGrantsConfig",
-    "ValidateContextDefConfig",
-    "GetContextDefConfig",
     "PutContextDefConfig",
-    "DeleteContextDefConfig",
-    "ValidateIdentityDefConfig",
-    "GetIdentityDefConfig",
     "PutIdentityDefConfig",
-    "DeleteIdentityDefConfig",
-    "ValidateResourceDefConfig",
-    "GetResourceDefConfig",
     "PutResourceDefConfig",
-    "DeleteResourceDefConfig",
-    "ValidateGrantConfig",
-    "GetGrantConfig",
-    "EnactConfig",
     "RepealConfig",
-    "CreateLatchConfig",
-    "GetLatchConfig",
     "SetLatchConfig",
-    "DeleteLatchConfig",
-    "CleanupLatchesConfig",
-    "ListGrantRefsConfig",
-    "ValidateRequestConfig",
+    "ShutdownConfig",
+    "StartConfig",
+    "StorageConstructConfig",
+    "StorageDestroyConfig",
+    "StorageShutdownConfig",
+    "StorageStartConfig",
     "ValidateBatchRequestConfig",
-    "AuditConfig",
-    "BatchAuditConfig",
-    "AuthorizeConfig",
-    "BatchAuthorizeConfig",
-    "AuthzeeConfig",
+    "ValidateContextDefConfig",
+    "ValidateGrantConfig",
+    "ValidateIdentityDefConfig",
+    "ValidateRequestConfig",
+    "ValidateResourceDefConfig"
 ]
+
+from typing import TypedDict
 
 
 class AuthzeeBaseConfig(TypedDict):
@@ -980,7 +979,6 @@ class AuditConfig(TypedDict):
     """
     validate_request: ValidateRequestConfig
     list_grants: ListGrantsConfig
-    
 
 
 class BatchAuditConfig(TypedDict):
@@ -1099,7 +1097,7 @@ class AuthorizeConfig(TypedDict):
     validate_request: ValidateRequestConfig
     list_grants: ListGrantsConfig
     parallel_paging: bool
-    list_grant_refs: ListGrantRefsConfig    
+    list_grant_refs: ListGrantRefsConfig
 
 
 class BatchAuthorizeConfig(TypedDict):
@@ -1193,16 +1191,16 @@ class BatchAuthorizeConfig(TypedDict):
     validate_request: ValidateRequestConfig
     list_grants: ListGrantsConfig
     parallel_paging: bool
-    list_grant_refs: ListGrantRefsConfig  
+    list_grant_refs: ListGrantRefsConfig
 
 
 class AuthzeeConfig(TypedDict):
     """```python
     Dict[str, Dict[str, Any]]
     ```
-    Authzee configuration Type. Held in each Authzee class instance to feed configuration for everything. 
+    Authzee configuration Type. Held in each Authzee class instance to feed configuration for everything.
 
-    The configuration can be set at several different levels where only the provided values override the previous levels values. 
+    The configuration can be set at several different levels where only the provided values override the previous levels values.
 
     The order of least to most precedence is:
     - Default config values - None Set
@@ -1210,8 +1208,8 @@ class AuthzeeConfig(TypedDict):
     - Function/Method call config
 
 
-    The root fields all represent the config that will be passed to the method in Authzee by name.  
-    The `authzee` root key is just for general Authzee instance level configuration. 
+    The root fields all represent the config that will be passed to the method in Authzee by name.
+    The `authzee` root key is just for general Authzee instance level configuration.
 
     Examples
     --------
@@ -1608,4 +1606,3 @@ class AuthzeeConfig(TypedDict):
     batch_audit: BatchAuditConfig
     authorize: AuthorizeConfig
     batch_authorize: BatchAuthorizeConfig
-

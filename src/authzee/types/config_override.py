@@ -1,52 +1,51 @@
 """Authzee config override types."""
 
-from typing import TypedDict
-
-
 __all__ = [
+    "AuditConfigOverride",
+    "AuthorizeConfigOverride",
     "AuthzeeBaseConfigOverride",
-    "ComputeStartConfigOverride",
-    "StorageStartConfigOverride",
-    "StartConfigOverride",
-    "ComputeShutdownConfigOverride",
-    "StorageShutdownConfigOverride",
-    "ShutdownConfigOverride",
+    "AuthzeeConfigOverride",
+    "BatchAuditConfigOverride",
+    "BatchAuthorizeConfigOverride",
+    "CleanupLatchesConfigOverride",
     "ComputeConstructConfigOverride",
-    "StorageConstructConfigOverride",
-    "ConstructConfigOverride",
     "ComputeDestroyConfigOverride",
-    "StorageDestroyConfigOverride",
+    "ComputeShutdownConfigOverride",
+    "ComputeStartConfigOverride",
+    "ConstructConfigOverride",
+    "DeleteContextDefConfigOverride",
+    "DeleteIdentityDefConfigOverride",
+    "DeleteResourceDefConfigOverride",
     "DestroyConfigOverride",
+    "EnactConfigOverride",
+    "GetContextDefConfigOverride",
+    "GetGrantConfigOverride",
+    "GetIdentityDefConfigOverride",
+    "GetResourceDefConfigOverride",
     "ListContextDefsConfigOverride",
+    "ListGrantRefsConfigOverride",
+    "ListGrantsConfigOverride",
     "ListIdentityDefsConfigOverride",
     "ListResourceDefsConfigOverride",
-    "ListGrantsConfigOverride",
-    "ValidateContextDefConfigOverride",
-    "GetContextDefConfigOverride",
     "PutContextDefConfigOverride",
-    "DeleteContextDefConfigOverride",
-    "ValidateIdentityDefConfigOverride",
-    "GetIdentityDefConfigOverride",
     "PutIdentityDefConfigOverride",
-    "DeleteIdentityDefConfigOverride",
-    "ValidateResourceDefConfigOverride",
-    "GetResourceDefConfigOverride",
     "PutResourceDefConfigOverride",
-    "DeleteResourceDefConfigOverride",
-    "ValidateGrantConfigOverride",
-    "GetGrantConfigOverride",
-    "EnactConfigOverride",
     "RepealConfigOverride",
-    "CleanupLatchesConfigOverride",
-    "ListGrantRefsConfigOverride",
-    "ValidateRequestConfigOverride",
+    "ShutdownConfigOverride",
+    "StartConfigOverride",
+    "StorageConstructConfigOverride",
+    "StorageDestroyConfigOverride",
+    "StorageShutdownConfigOverride",
+    "StorageStartConfigOverride",
     "ValidateBatchRequestConfigOverride",
-    "AuditConfigOverride",
-    "BatchAuditConfigOverride",
-    "AuthorizeConfigOverride",
-    "BatchAuthorizeConfigOverride",
-    "AuthzeeConfigOverride",
+    "ValidateContextDefConfigOverride",
+    "ValidateGrantConfigOverride",
+    "ValidateIdentityDefConfigOverride",
+    "ValidateRequestConfigOverride",
+    "ValidateResourceDefConfigOverride"
 ]
+
+from typing import TypedDict
 
 
 class AuthzeeBaseConfigOverride(TypedDict, total=False):
@@ -1137,13 +1136,13 @@ class AuthzeeConfigOverride(TypedDict, total=False):
     ```
     Authzee configuration override Type. All keys and nested keys are optional.
 
-    The configuration can be set at several different levels where only the provided values override the previous levels values. 
+    The configuration can be set at several different levels where only the provided values override the previous levels values.
 
     The order of least to most precedence is:
     - Default config values - None Set
     - Authzee class instances config
     - Function/Method call config
-    
+
     Examples
     --------
     **All base and nested fields are optional for this Dict.**

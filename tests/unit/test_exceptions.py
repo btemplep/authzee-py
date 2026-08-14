@@ -4,19 +4,19 @@ import pytest
 
 from authzee.exceptions import (
     AuthzeeError,
-    AuthzeeSpecError,
     AuthzeeSDKError,
+    AuthzeeSpecError,
     DefinitionError,
     EvaluationError,
     GrantError,
-    RequestError,
     LocalityIncompatibilityError,
     NotImplementedError as AuthzeeNotImplementedError,
-    ParallelPaginationNotSupported,
     PageReferenceError,
+    ParallelPaginationNotSupported,
+    RequestError,
     ResourceNotFoundError,
     StartError,
-    _exception_map,
+    _exception_map
 )
 
 
@@ -28,7 +28,7 @@ def test_authzee_error_is_exception():
 def test_authzee_spec_error():
     result = {
         "has_failed": True,
-        "errors": {},
+        "errors": {}
     }
     exc = AuthzeeSpecError("test message", result)
     assert exc.message == "test message"
@@ -40,8 +40,8 @@ def test_definition_error():
     result = {
         "has_failed": True,
         "errors": {
-            "definition": [],
-        },
+            "definition": []
+        }
     }
     exc = DefinitionError("def error", result)
     assert isinstance(exc, AuthzeeSpecError)
@@ -53,8 +53,8 @@ def test_evaluation_error():
     result = {
         "has_failed": True,
         "errors": {
-            "evaluation": [],
-        },
+            "evaluation": []
+        }
     }
     exc = EvaluationError("eval error", result)
     assert isinstance(exc, AuthzeeSpecError)
@@ -64,8 +64,8 @@ def test_grant_error():
     result = {
         "has_failed": True,
         "errors": {
-            "grant": [],
-        },
+            "grant": []
+        }
     }
     exc = GrantError("grant error", result)
     assert isinstance(exc, AuthzeeSpecError)
@@ -75,8 +75,8 @@ def test_request_error():
     result = {
         "has_failed": True,
         "errors": {
-            "request": [],
-        },
+            "request": []
+        }
     }
     exc = RequestError("request error", result)
     assert isinstance(exc, AuthzeeSpecError)
@@ -85,7 +85,7 @@ def test_request_error():
 def test_authzee_sdk_error():
     result = {
         "has_failed": True,
-        "errors": {},
+        "errors": {}
     }
     exc = AuthzeeSDKError("sdk error", result)
     assert exc.message == "sdk error"
@@ -95,7 +95,7 @@ def test_authzee_sdk_error():
 def test_locality_incompatibility_error():
     result = {
         "has_failed": True,
-        "errors": {},
+        "errors": {}
     }
     exc = LocalityIncompatibilityError("locality error", result)
     assert isinstance(exc, AuthzeeSDKError)
@@ -104,7 +104,7 @@ def test_locality_incompatibility_error():
 def test_not_implemented_error_default_message():
     result = {
         "has_failed": True,
-        "errors": {},
+        "errors": {}
     }
     exc = AuthzeeNotImplementedError(result=result)
     assert "not implemented" in exc.message.lower()
@@ -113,7 +113,7 @@ def test_not_implemented_error_default_message():
 def test_not_implemented_error_custom_message():
     result = {
         "has_failed": True,
-        "errors": {},
+        "errors": {}
     }
     exc = AuthzeeNotImplementedError("Custom msg", result=result)
     assert exc.message == "Custom msg"
@@ -122,7 +122,7 @@ def test_not_implemented_error_custom_message():
 def test_parallel_pagination_not_supported():
     result = {
         "has_failed": True,
-        "errors": {},
+        "errors": {}
     }
     exc = ParallelPaginationNotSupported("no parallel", result)
     assert isinstance(exc, AuthzeeSDKError)
@@ -131,7 +131,7 @@ def test_parallel_pagination_not_supported():
 def test_page_reference_error():
     result = {
         "has_failed": True,
-        "errors": {},
+        "errors": {}
     }
     exc = PageReferenceError("bad page ref", result)
     assert isinstance(exc, AuthzeeSDKError)
@@ -140,7 +140,7 @@ def test_page_reference_error():
 def test_resource_not_found_error():
     result = {
         "has_failed": True,
-        "errors": {},
+        "errors": {}
     }
     exc = ResourceNotFoundError("not found", result)
     assert isinstance(exc, AuthzeeSDKError)
@@ -149,7 +149,7 @@ def test_resource_not_found_error():
 def test_start_error():
     result = {
         "has_failed": True,
-        "errors": {},
+        "errors": {}
     }
     exc = StartError("start failed", result)
     assert isinstance(exc, AuthzeeSDKError)
@@ -166,7 +166,7 @@ def test_exception_map_contains_expected_keys():
         "parallel_pagination_not_supported",
         "page_reference",
         "resource_not_found",
-        "start",
+        "start"
     ]
     for key in expected_keys:
         assert key in _exception_map

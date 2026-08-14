@@ -1,43 +1,50 @@
 """Authzee core types."""
 
-from typing import Any, Dict, List, Literal, TypedDict
-
-
 __all__ = [
     "AnyJSON",
-    "GenericError",
-    "ResultErrors",
-    "GenericResult",
-    "ContextDef",
-    "ContextDefResult",
-    "ContextDefsPage",
-    "IdentityDef",
-    "IdentityDefResult",
-    "IdentityDefsPage",
-    "ResourceDef",
-    "ResourceDefResult",
-    "ResourceDefsPage",
-    "Grant",
-    "GrantResult",
-    "GrantsPage",
-    "PageRefsPage",
-    "StorageLatch",
-    "StorageLatchResult",
-    "AuthzeeRequest",
-    "BatchItem",
-    "AuthzeeBatchRequest",
-    "ExecuteResult",
-    "EvaluateResult",
     "AuditResultItem",
     "AuditResultPage",
     "AuthorizeResult",
+    "AuthzeeBatchRequest",
+    "AuthzeeRequest",
     "BatchAuditResultItem",
     "BatchAuditResultPage",
     "BatchAuthorizeResult",
+    "BatchItem",
+    "ContextDef",
+    "ContextDefResult",
+    "ContextDefsPage",
+    "EvaluateResult",
+    "ExecuteResult",
+    "GenericError",
+    "GenericResult",
+    "Grant",
+    "GrantResult",
+    "GrantsPage",
+    "IdentityDef",
+    "IdentityDefResult",
+    "IdentityDefsPage",
+    "PageRefsPage",
+    "ResourceDef",
+    "ResourceDefResult",
+    "ResourceDefsPage",
+    "ResultErrors",
+    "StorageLatch",
+    "StorageLatchResult"
 ]
 
+from typing import Any, Dict, List, Literal, TypedDict
 
-AnyJSON = bool | str | int | float | None | list | dict
+
+AnyJSON = (
+    bool
+    | str
+    | int
+    | float
+    | None
+    | list
+    | dict
+)
 
 
 class GenericError(TypedDict):
@@ -76,25 +83,26 @@ ResultErrors = Dict[
 ]
 """Result errors for all responses
 
-    Examples
-    --------
-    ```python
-    {
-        "<error_type>": [ 
-            {
-                "is_critical": False,
-                "message": "Error message."
-            }
-        ],
-        "<other_error_type>": [
-            {
-                "is_critical": False,
-                "message": "Error message."
-            }
-        ]
-    }
-    ```
-    """
+Examples
+--------
+```python
+{
+    "<error_type>": [
+        {
+            "is_critical": False,
+            "message": "Error message."
+        }
+    ],
+    "<other_error_type>": [
+        {
+            "is_critical": False,
+            "message": "Error message."
+        }
+    ]
+}
+```
+"""
+
 
 class GenericResult(TypedDict):
     """```python
@@ -107,7 +115,7 @@ class GenericResult(TypedDict):
     {
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -151,7 +159,7 @@ class ContextDefResult(TypedDict):
     Dict[str, Any]
     ```
 
-    Result of 
+    Result of
 
     Examples
     --------
@@ -170,7 +178,7 @@ class ContextDefResult(TypedDict):
         },
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -210,7 +218,7 @@ class ContextDefsPage(TypedDict):
         "next_page_ref": "abc12": # str | None
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -273,7 +281,7 @@ class IdentityDefResult(TypedDict):
         },
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -283,7 +291,7 @@ class IdentityDefResult(TypedDict):
     }
     ```
     """
-    identity_def: IdentityDef| None
+    identity_def: IdentityDef | None
     has_failed: bool
     errors: ResultErrors
 
@@ -313,7 +321,7 @@ class IdentityDefsPage(TypedDict):
         "next_page_ref": "abc12": # str | None
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -383,7 +391,7 @@ class ResourceDefResult(TypedDict):
         },
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -393,7 +401,7 @@ class ResourceDefResult(TypedDict):
     }
     ```
     """
-    resource_def: ResourceDef| None
+    resource_def: ResourceDef | None
     has_failed: bool
     errors: ResultErrors
 
@@ -426,7 +434,7 @@ class ResourceDefsPage(TypedDict):
         "next_page_ref": "abc12": # str | None
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -457,7 +465,7 @@ class Grant(TypedDict):
         "tags": {
             "my tag key": "my tag value"
         },
-        "effect": "allow", # allow | deny 
+        "effect": "allow", # allow | deny
         "actions": [
             "MyResource.MyAction"
         ],
@@ -466,7 +474,7 @@ class Grant(TypedDict):
         equality: True # AnyJSON
         data: { # top level dictionary with str keys, everything else is free form
             "str here": "anything else here
-        }  
+        }
     }
     ```
     """
@@ -502,7 +510,7 @@ class GrantResult(TypedDict):
             "tags": {
                 "my tag key": "my tag value"
             },
-            "effect": "allow", # allow | deny 
+            "effect": "allow", # allow | deny
             "actions": [
                 "MyResource.MyAction"
             ],
@@ -511,11 +519,11 @@ class GrantResult(TypedDict):
             equality: True # AnyJSON
             data: { # top level dictionary with str keys, everything else is free form
                 "str here": "anything else here
-            }  
+            }
         },
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -540,14 +548,14 @@ class GrantsPage(TypedDict):
     ```python
     {
         "grants": [
-            { 
+            {
                 "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
                 "name": "People friendly name",
                 "description": "Long description",
                 "tags": {
                     "my tag key": "my tag value"
                 },
-                "effect": "allow", # allow | deny 
+                "effect": "allow", # allow | deny
                 "actions": [
                     "MyResource.MyAction"
                 ],
@@ -556,13 +564,13 @@ class GrantsPage(TypedDict):
                 equality: True # AnyJSON
                 data: { # top level dictionary with str keys, everything else is free form
                     "str here": "anything else here
-                }  
+                }
             }
         ],
         "next_page_ref": "abc123", # str | None
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -593,7 +601,7 @@ class PageRefsPage(TypedDict):
         "next_page_ref": "abc123", # str | None
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -645,7 +653,7 @@ class StorageLatchResult(TypedDict):
         },
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -689,7 +697,10 @@ class AuthzeeRequest(TypedDict):
     }
     ```
     """
-    identities: Dict[str, List[Dict[str, AnyJSON]]]
+    identities: Dict[
+        str,
+        List[Dict[str, AnyJSON]]
+    ]
     action: str
     resource_type: str
     resource: Dict[str, AnyJSON]
@@ -731,7 +742,10 @@ class BatchItem(TypedDict):
     }
     ```
     """
-    identities: Dict[str, List[Dict[str, AnyJSON]]] | None = None
+    identities: Dict[
+        str,
+        List[Dict[str, AnyJSON]]
+    ] | None = None
     resource_type: str | None = None
     resource: Dict[str, AnyJSON] | None = None
     evaluation_handler: Literal[
@@ -782,7 +796,10 @@ class AuthzeeBatchRequest(TypedDict):
     }
     ```
     """
-    identities: Dict[str, List[Dict[str, AnyJSON]]]
+    identities: Dict[
+        str,
+        List[Dict[str, AnyJSON]]
+    ]
     action: str
     resource_type: str
     resource: Dict[str, AnyJSON]
@@ -795,6 +812,7 @@ class AuthzeeBatchRequest(TypedDict):
     context_type: str
     context: Dict[str, AnyJSON]
     batch: List[BatchItem]
+
 
 class ExecuteResult(TypedDict):
     """```python
@@ -829,7 +847,7 @@ class EvaluateResult(TypedDict):
         "query_result": True,
         "has_failed": False,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -857,7 +875,7 @@ class AuditResultItem(TypedDict):
         "is_applicable": True,
         "query_result": True,
         "errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -900,7 +918,7 @@ class AuditResultPage(TypedDict):
                 "is_applicable": True,
                 "query_result": True,
                 "errors": { # result errors
-                    "<error_type>": [ 
+                    "<error_type>": [
                         {
                             "is_critical": False,
                             "message": "Error message."
@@ -912,7 +930,7 @@ class AuditResultPage(TypedDict):
         "next_page_ref": "abc123", # str | None
         "has_failed": False,
         "errors": { # request errors and propagated result errors
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -956,7 +974,7 @@ class AuthorizeResult(TypedDict):
         "message": "Authorized by grant.",
         "has_failed": False,
         "critical_errors": {
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -987,7 +1005,7 @@ class BatchAuditResultItem(TypedDict):
                 "is_applicable": True,
                 "query_result": True,
                 "errors": { # result errors
-                    "<error_type>": [ 
+                    "<error_type>": [
                         {
                             "is_critical": False,
                             "message": "Error message."
@@ -998,7 +1016,7 @@ class BatchAuditResultItem(TypedDict):
         ],
         "has_failed": False,
         "errors": { # request errors and propagated result errors
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -1043,7 +1061,7 @@ class BatchAuditResultPage(TypedDict):
                         "is_applicable": True,
                         "query_result": True,
                         "errors": { # result errors
-                            "<error_type>": [ 
+                            "<error_type>": [
                                 {
                                     "is_critical": False,
                                     "message": "Error message."
@@ -1054,7 +1072,7 @@ class BatchAuditResultPage(TypedDict):
                 ],
                 "has_failed": False,
                 "errors": { # request errors and propagated result errors
-                    "<error_type>": [ 
+                    "<error_type>": [
                         {
                             "is_critical": False,
                             "message": "Error message."
@@ -1066,7 +1084,7 @@ class BatchAuditResultPage(TypedDict):
         "next_page_ref": "abc123", # str | None
         "has_failed": False,
         "errors": { # Batch request errors and propagated request errors
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
@@ -1110,7 +1128,7 @@ class BatchAuthorizeResult(TypedDict):
                 "message": "Authorized by grant.",
                 "has_failed": False,
                 "critical_errors": { # request errors
-                    "<error_type>": [ 
+                    "<error_type>": [
                         {
                             "is_critical": False,
                             "message": "Error message."
@@ -1121,7 +1139,7 @@ class BatchAuthorizeResult(TypedDict):
         ],
         "has_failed": False,
         "critical_errors": { # batch errors and propagated request errors
-            "<error_type>": [ 
+            "<error_type>": [
                 {
                     "is_critical": False,
                     "message": "Error message."
