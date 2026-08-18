@@ -11,7 +11,7 @@ from authzee.types.config import AuthzeeConfig
 
 default_config: AuthzeeConfig = {
     "authzee": {
-        "raise_crits": True
+        "raise_errors": True
     },
     "start": {
         "compute_start": {

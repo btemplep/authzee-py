@@ -62,16 +62,16 @@ class AuthzeeBaseConfig(TypedDict):
     --------
     ```python
     {
-        "raise_crits": True
+        "raise_errors": True
     }
     ```
 
     Attributes
     ----------
-    raise_crits : bool
+    raise_errors : bool
         Whether to raise on critical errors.
     """
-    raise_crits: bool
+    raise_errors: bool
 
 
 class StorageStartConfig(TypedDict):
@@ -1218,7 +1218,7 @@ class AuthzeeConfig(TypedDict):
     ```python
     {
         "authzee": {
-            "raise_crits": True
+            "raise_errors": True
         },
         "start": {
             "compute_start": {

@@ -129,6 +129,7 @@ def grant():
         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
 
@@ -147,6 +148,7 @@ def deny_grant():
         "query": "length(request.identities.user[?department == 'Intern']) > `0`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
 
@@ -1479,6 +1481,7 @@ def test_raise_result_with_critical_errors_key(storage_dict):
                 "query": "bad.[invalid",
                 "evaluation_handler": "critical",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             }
         )

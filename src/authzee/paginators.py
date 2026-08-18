@@ -43,7 +43,7 @@ def paginator(func: Callable, **kwargs) -> Generator[Any, None, None]:
         kwargs['page_ref'] = result['next_page_ref']
         if (
             result['next_page_ref'] is None
-            or result['has_failed'] is True
+            or result['error'] is not None
         ):
             break
 
@@ -85,6 +85,6 @@ async def paginator_async(
         kwargs['page_ref'] = result['next_page_ref']
         if (
             result['next_page_ref'] is None
-            or result['has_failed'] is True
+            or result['error'] is not None
         ):
             break

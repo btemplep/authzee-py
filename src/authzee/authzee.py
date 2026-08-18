@@ -56,7 +56,7 @@ class Authzee:
         },
         config={ # optional - AuthzeeConfigOverride | None - All keys are optional
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
             # "method_name": {<method config>}
         }
@@ -132,7 +132,6 @@ class Authzee:
             ],
             "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`", # JSON Query for the request. JMESPath is preferred
             # query runs on {"request": <request>, "grant": <grant>}
-            "evaluation_handler": "evaluate",
             "equality": True, # expected result of the query
             "data": {} # data available to this grant
         }
@@ -153,7 +152,6 @@ class Authzee:
                 "color": "inflated",
                 "is_inflated": False
             },
-            "evaluation_handler": "grant",
             "context_type": "NONE",
             "context": {}
         }
@@ -175,13 +173,11 @@ class Authzee:
                 "balloon:inflate"
             ],
             "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-            "evaluation_handler": "evaluate",
             "equality": true,
             "data": {}
         },
         "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
-        "has_failed": false,
-        "critical_errors": {}
+        "error": null
     }
     ```
     """
@@ -223,7 +219,7 @@ class Authzee:
         result = authz.start(
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "start": {
                     "compute_start": {},
@@ -238,14 +234,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "start",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -253,7 +252,7 @@ class Authzee:
         Raises
         ------
         StartError
-            If a critical error occurs during initialization.
+            If an error occurs during initialization.
         LocalityIncompatibilityError
             If the storage and compute localities are not compatible.
         """
@@ -277,7 +276,7 @@ class Authzee:
         result = authz.shutdown(
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "shutdown": {
                     "compute_shutdown": {},
@@ -292,14 +291,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "shutdown",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -307,7 +309,7 @@ class Authzee:
         Raises
         ------
         ShutdownError
-            If a critical error occurs during shutdown.
+            If an error occurs during shutdown.
         """
         return asyncio.run(self._authzee_async.shutdown(config))
 
@@ -329,7 +331,7 @@ class Authzee:
         result = authz.construct(
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "construct": {
                     "compute_construct": {},
@@ -344,14 +346,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "construct",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -359,7 +364,7 @@ class Authzee:
         Raises
         ------
         ConstructError
-            If a critical error occurs during construction.
+            If an error occurs during construction.
         """
         return asyncio.run(self._authzee_async.construct(config))
 
@@ -381,7 +386,7 @@ class Authzee:
         result = authz.destroy(
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "destroy": {
                     "compute_destroy": {},
@@ -396,14 +401,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "destroy",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -411,7 +419,7 @@ class Authzee:
         Raises
         ------
         DestroyError
-            If a critical error occurs during destruction.
+            If an error occurs during destruction.
         """
         return asyncio.run(self._authzee_async.destroy(config))
 
@@ -444,7 +452,7 @@ class Authzee:
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_context_def": {}
             }
@@ -456,14 +464,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -471,7 +482,7 @@ class Authzee:
         Raises
         ------
         DefinitionError
-            If the context definition is invalid and raise_crits is True.
+            If the context definition is invalid and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.validate_context_def(
@@ -503,7 +514,7 @@ class Authzee:
             page_ref="abc123",  # optional - str | None
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_context_defs": {
                     "page_size": 100,
@@ -538,14 +549,17 @@ class Authzee:
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -585,7 +599,7 @@ class Authzee:
             context_type="NONE",
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "get_context_def": {
                     "use_cache": False
@@ -606,14 +620,17 @@ class Authzee:
                         "additionalProperties": False
                     }
                 },
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -659,7 +676,7 @@ class Authzee:
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "put_context_def": {}
             }
@@ -671,14 +688,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -686,7 +706,7 @@ class Authzee:
         Raises
         ------
         DefinitionError
-            If the context definition is invalid and raise_crits is True.
+            If the context definition is invalid and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.put_context_def(
@@ -718,7 +738,7 @@ class Authzee:
             context_type="NONE",
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "delete_context_def": {}
             }
@@ -730,14 +750,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -745,7 +768,7 @@ class Authzee:
         Raises
         ------
         DeleteError
-            If a critical error occurs during deletion.
+            If an error occurs during deletion.
         """
         return asyncio.run(
             self._authzee_async.delete_context_def(
@@ -790,7 +813,7 @@ class Authzee:
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_identity_def": {}
             }
@@ -802,14 +825,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -817,7 +843,7 @@ class Authzee:
         Raises
         ------
         DefinitionError
-            If the identity definition is invalid and raise_crits is True.
+            If the identity definition is invalid and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.validate_identity_def(
@@ -849,7 +875,7 @@ class Authzee:
             page_ref="abc123",  # optional - str | None
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_identity_defs": {
                     "page_size": 100,
@@ -888,14 +914,17 @@ class Authzee:
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -935,7 +964,7 @@ class Authzee:
             identity_type="user",
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "get_identity_def": {
                     "use_cache": False
@@ -960,14 +989,17 @@ class Authzee:
                         }
                     }
                 },
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1020,7 +1052,7 @@ class Authzee:
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "put_identity_def": {}
             }
@@ -1032,14 +1064,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1047,7 +1082,7 @@ class Authzee:
         Raises
         ------
         DefinitionError
-            If the identity definition is invalid and raise_crits is True.
+            If the identity definition is invalid and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.put_identity_def(
@@ -1079,7 +1114,7 @@ class Authzee:
             identity_type="user",
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "delete_identity_def": {}
             }
@@ -1091,14 +1126,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1106,7 +1144,7 @@ class Authzee:
         Raises
         ------
         DeleteError
-            If a critical error occurs during deletion.
+            If an error occurs during deletion.
         """
         return asyncio.run(
             self._authzee_async.delete_identity_def(
@@ -1156,7 +1194,7 @@ class Authzee:
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_resource_def": {}
             }
@@ -1168,14 +1206,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1183,7 +1224,7 @@ class Authzee:
         Raises
         ------
         DefinitionError
-            If the resource definition is invalid and raise_crits is True.
+            If the resource definition is invalid and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.validate_resource_def(
@@ -1215,7 +1256,7 @@ class Authzee:
             page_ref="abc123",  # optional - str | None
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_resource_defs": {
                     "page_size": 100,
@@ -1258,14 +1299,17 @@ class Authzee:
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1305,7 +1349,7 @@ class Authzee:
             resource_type="balloon",
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "get_resource_def": {
                     "use_cache": False
@@ -1334,14 +1378,17 @@ class Authzee:
                         }
                     }
                 },
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1399,7 +1446,7 @@ class Authzee:
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "put_resource_def": {}
             }
@@ -1411,14 +1458,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1426,7 +1476,7 @@ class Authzee:
         Raises
         ------
         DefinitionError
-            If the resource definition is invalid and raise_crits is True.
+            If the resource definition is invalid and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.put_resource_def(
@@ -1458,7 +1508,7 @@ class Authzee:
             resource_type="balloon",
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "delete_resource_def": {}
             }
@@ -1470,14 +1520,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1485,7 +1538,7 @@ class Authzee:
         Raises
         ------
         DeleteError
-            If a critical error occurs during deletion.
+            If an error occurs during deletion.
         """
         return asyncio.run(
             self._authzee_async.delete_resource_def(
@@ -1526,13 +1579,12 @@ class Authzee:
                     "balloon:inflate"
                 ],
                 "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                "evaluation_handler": "evaluate",  # "evaluate" | "error" | "critical"
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_grant": {}
             }
@@ -1544,14 +1596,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "grant": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "grant",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1559,7 +1614,7 @@ class Authzee:
         Raises
         ------
         GrantError
-            If the grant is invalid and raise_crits is True.
+            If the grant is invalid and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.validate_grant(
@@ -1600,13 +1655,12 @@ class Authzee:
                     "balloon:inflate"
                 ],
                 "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                "evaluation_handler": "evaluate",  # "evaluate" | "error" | "critical"
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "enact": {}
             }
@@ -1618,14 +1672,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "grant": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "grant",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1633,7 +1690,7 @@ class Authzee:
         Raises
         ------
         GrantError
-            If the grant is invalid and raise_crits is True.
+            If the grant is invalid and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.enact(grant=grant, config=config)
@@ -1667,7 +1724,7 @@ class Authzee:
             purge=False, # optional
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "repeal": {}
             }
@@ -1679,14 +1736,9 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": True,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": True,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": {  # dict | None
+                    "error_type": "resource_not_found",
+                    "message": "Error message."
                 }
             }
             ```
@@ -1727,7 +1779,7 @@ class Authzee:
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "get_grant": {
                     "use_cache": False
@@ -1753,18 +1805,20 @@ class Authzee:
                         "balloon:inflate"
                     ],
                     "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                    "evaluation_handler": "evaluate",
                     "equality": True,
                     "data": {}
                 },
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1812,7 +1866,7 @@ class Authzee:
             page_ref="abc123",  # optional - str | None
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_grants": {
                     "page_size": 100,
@@ -1850,20 +1904,22 @@ class Authzee:
                             "balloon:inflate"
                         ],
                         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                        "evaluation_handler": "evaluate",
                         "equality": True,
                         "data": {}
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1913,7 +1969,7 @@ class Authzee:
             page_ref="abc123",  # optional - str | None
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_grant_refs": {
                     "page_size": 10,
@@ -1943,14 +1999,17 @@ class Authzee:
                     "page_ref_2"
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1999,7 +2058,7 @@ class Authzee:
             before=datetime.datetime(2026, 1, 1),
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "cleanup_latches": {}
             }
@@ -2011,14 +2070,17 @@ class Authzee:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "start",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2026,7 +2088,7 @@ class Authzee:
         Raises
         ------
         StartError
-            If a critical error occurs during cleanup.
+            If an error occurs during cleanup.
         """
         return asyncio.run(
             self._authzee_async.cleanup_latches(
@@ -2073,14 +2135,13 @@ class Authzee:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",  # "grant" | "evaluate" | "error" | "critical"
                 "context_type": "NONE",
                 "context": {}
             },
             page_ref="abc123",  # optional - str | None
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "audit": {
                     "validate_request": {
@@ -2125,7 +2186,7 @@ class Authzee:
         for page in paginator(
         # Assumes authz is an Authzee instance
             authz.audit,
-            request={F
+            request={
                 "identities": {
                     "user": [
                         {
@@ -2140,13 +2201,12 @@ class Authzee:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",
                 "context_type": "NONE",
                 "context": {}
             }
         ):
-            for grant, result in zip(page['grants'], page['results']):
-                print(grant['grant_uuid'], result['is_applicable'])
+            for result_item in page['results']:
+                print(result_item['grant']['grant_uuid'], result_item['is_applicable'])
         ```
 
         Returns
@@ -2154,38 +2214,38 @@ class Authzee:
         AuditResultPage
             ```python
             {
-                "grants": [
-                    {
-                        "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-                        "name": "Allow inflate",
-                        "description": "Allow balloon inflate for users.",
-                        "tags": {},
-                        "effect": "allow",
-                        "actions": [
-                            "balloon:inflate"
-                        ],
-                        "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                        "evaluation_handler": "evaluate",
-                        "equality": True,
-                        "data": {}
-                    }
-                ],
                 "results": [
                     {
+                        "grant": {
+                            "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
+                            "name": "Allow inflate",
+                            "description": "Allow balloon inflate for users.",
+                            "tags": {},
+                            "effect": "allow",
+                            "actions": [
+                                "balloon:inflate"
+                            ],
+                            "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
+                            "equality": True,
+                            "data": {}
+                        },
                         "is_applicable": True,
                         "query_result": True,
-                        "errors": {}
+                        "error": None
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "request": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "request",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2193,9 +2253,9 @@ class Authzee:
         Raises
         ------
         RequestError
-            If the request is invalid and raise_crits is True.
+            If the request is invalid and raise_errors is True.
         EvaluationError
-            If a critical evaluation error occurs and raise_crits is True.
+            If an evaluation error occurs and raise_errors is True.
         PageReferenceError
             If the page reference is invalid.
         """
@@ -2242,13 +2302,12 @@ class Authzee:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",  # "grant" | "evaluate" | "error" | "critical"
                 "context_type": "NONE",
                 "context": {}
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "authorize": {
                     "validate_request": {
@@ -2307,19 +2366,21 @@ class Authzee:
                         "balloon:inflate"
                     ],
                     "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                    "evaluation_handler": "evaluate",
                     "equality": True,
                     "data": {}
                 },
                 "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
-                "has_failed": False,
-                "critical_errors": {
-                    "evaluation": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "evaluation",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2327,9 +2388,9 @@ class Authzee:
         Raises
         ------
         RequestError
-            If the request is invalid and raise_crits is True.
+            If the request is invalid and raise_errors is True.
         EvaluationError
-            If a critical evaluation error occurs and raise_crits is True.
+            If an evaluation error occurs and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.authorize(
@@ -2376,7 +2437,6 @@ class Authzee:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",  # "grant" | "evaluate" | "error" | "critical"
                 "context_type": "NONE",
                 "context": {},
                 "batch": [
@@ -2391,7 +2451,7 @@ class Authzee:
             page_ref="abc123",  # optional - str | None
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "batch_audit": {
                     "validate_batch_request": {
@@ -2451,7 +2511,6 @@ class Authzee:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",
                 "context_type": "NONE",
                 "context": {},
                 "batch": [
@@ -2464,8 +2523,8 @@ class Authzee:
                 ]
             }
         ):
-            for batch_result in page['batch_results']:
-                for result_item in batch_result['results']:
+            for batch_item in page['batch']:
+                for result_item in batch_item['results']:
                     print(result_item['is_applicable'])
         ```
 
@@ -2474,44 +2533,43 @@ class Authzee:
         BatchAuditResultPage
             ```python
             {
-                "grants": [
-                    {
-                        "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-                        "name": "Allow inflate",
-                        "description": "Allow balloon inflate for users.",
-                        "tags": {},
-                        "effect": "allow",
-                        "actions": [
-                            "balloon:inflate"
-                        ],
-                        "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                        "evaluation_handler": "evaluate",
-                        "equality": True,
-                        "data": {}
-                    }
-                ],
-                "batch_results": [
+                "batch": [
                     {
                         "results": [
                             {
+                                "grant": {
+                                    "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
+                                    "name": "Allow inflate",
+                                    "description": "Allow balloon inflate for users.",
+                                    "tags": {},
+                                    "effect": "allow",
+                                    "actions": [
+                                        "balloon:inflate"
+                                    ],
+                                    "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
+                                    "equality": True,
+                                    "data": {}
+                                },
                                 "is_applicable": True,
                                 "query_result": True,
-                                "errors": {}
+                                "error": None
                             }
                         ],
-                        "has_failed": False,
-                        "errors": {}
+                        "error": None
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "request": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "request",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2519,9 +2577,9 @@ class Authzee:
         Raises
         ------
         RequestError
-            If the batch request is invalid and raise_crits is True.
+            If the batch request is invalid and raise_errors is True.
         EvaluationError
-            If a critical evaluation error occurs and raise_crits is True.
+            If an evaluation error occurs and raise_errors is True.
         PageReferenceError
             If the page reference is invalid.
         """
@@ -2568,7 +2626,6 @@ class Authzee:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",  # "grant" | "evaluate" | "error" | "critical"
                 "context_type": "NONE",
                 "context": {},
                 "batch": [
@@ -2582,7 +2639,7 @@ class Authzee:
             },
             config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "batch_authorize": {
                     "validate_batch_request": {
@@ -2656,7 +2713,7 @@ class Authzee:
         BatchAuthorizeResult
             ```python
             {
-                "batch_results": [
+                "batch": [
                     {
                         "is_authorized": True,
                         "grant": {
@@ -2669,30 +2726,30 @@ class Authzee:
                                 "balloon:inflate"
                             ],
                             "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                            "evaluation_handler": "evaluate",
                             "equality": True,
                             "data": {}
                         },
                         "message": "Authorized by grant.",
-                        "has_failed": False,
-                        "critical_errors": {}
+                        "error": None
                     },
                     {
                         "is_authorized": False,
                         "grant": None,
                         "message": "No matching allow grants.",
-                        "has_failed": False,
-                        "critical_errors": {}
+                        "error": None
                     }
                 ],
-                "has_failed": False,
-                "critical_errors": {
-                    "evaluation": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "evaluation",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2700,9 +2757,9 @@ class Authzee:
         Raises
         ------
         RequestError
-            If the batch request is invalid and raise_crits is True.
+            If the batch request is invalid and raise_errors is True.
         EvaluationError
-            If a critical evaluation error occurs and raise_crits is True.
+            If an evaluation error occurs and raise_errors is True.
         """
         return asyncio.run(
             self._authzee_async.batch_authorize(

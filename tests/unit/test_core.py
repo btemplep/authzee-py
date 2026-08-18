@@ -146,6 +146,7 @@ def test_validate_grant_valid():
         "query": "`true`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     result = validate_grant(grant)
@@ -260,6 +261,7 @@ def test_evaluate_applicable():
         "query": "`true`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     result = evaluate(
@@ -302,6 +304,7 @@ def test_evaluate_not_applicable():
         "query": "`false`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     result = evaluate(
@@ -346,6 +349,7 @@ def test_evaluate_query_error_with_error_handler():
         "query": "bad_query.[invalid",
         "evaluation_handler": "error",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     result = evaluate(
@@ -390,6 +394,7 @@ def test_evaluate_query_error_with_critical_handler():
         "query": "bad_query.[invalid",
         "evaluation_handler": "critical",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     result = evaluate(
@@ -434,6 +439,7 @@ def test_evaluate_query_error_with_error_handler_only_crits():
         "query": "bad_query.[invalid",
         "evaluation_handler": "error",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     result = evaluate(
@@ -478,6 +484,7 @@ def test_evaluate_request_evaluation_handler_overrides_grant():
         "query": "bad_query.[invalid",
         "evaluation_handler": "error",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     result = evaluate(

@@ -127,6 +127,7 @@ def grant():
         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
 
@@ -145,6 +146,7 @@ def deny_grant():
         "query": "length(request.identities.user[?department == 'Intern']) > `0`",
         "evaluation_handler": "evaluate",
         "equality": True,
+    "applicable_on_failure": False,
         "data": {}
     }
 

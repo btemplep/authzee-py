@@ -422,14 +422,12 @@ def jmespath_execute(expression: str, data: Any) -> dict:
     except Exception as exc:
         return {
             "result": None,
-            "has_failed": True,
-            "error_message": f"A JMESPath Query error has occurred: {exc}"
+            "failure": f"A JMESPath Query error has occurred. [{exc.__class__.__qualname__}] - {exc}"
         }
 
     return {
         "result": query_result,
-        "has_failed": False,
-        "error_message": None
+        "failure": None
     }
 
 
@@ -492,12 +490,10 @@ def jmespath_custom_execute(expression: str, data: Any) -> dict:
     except Exception as exc:
         return {
             "result": None,
-            "has_failed": True,
-            "error_message": f"A JMESPath Query error has occurred: {exc}"
+            "failure": f"A JMESPath Query error has occurred. [{exc.__class__.__qualname__}] - {exc}"
         }
 
     return {
         "result": query_result,
-        "has_failed": False,
-        "error_message": None
+        "failure": None
     }

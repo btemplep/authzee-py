@@ -28,7 +28,7 @@ from loguru import logger
 
 logger.disable("authzee")
 
-authzee_specification_version = "0.3.0"
+authzee_specification_version = "0.4.0"
 
 from authzee import exceptions, reference, types
 from authzee.authzee import Authzee

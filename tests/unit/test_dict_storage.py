@@ -578,6 +578,7 @@ def sample_grant():
         "query": "`true`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
 
@@ -643,6 +644,7 @@ def test_dict_storage_list_grants_filter_effect(storage):
         "query": "`true`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     deny_grant = {
@@ -657,6 +659,7 @@ def test_dict_storage_list_grants_filter_effect(storage):
         "query": "`true`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     asyncio.run(storage.enact(allow_grant, config={}))
@@ -689,6 +692,7 @@ def test_dict_storage_list_grants_filter_action(storage):
         "query": "`true`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     grant2 = {
@@ -703,6 +707,7 @@ def test_dict_storage_list_grants_filter_action(storage):
         "query": "`true`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     asyncio.run(storage.enact(grant1, config={}))
@@ -735,6 +740,7 @@ def test_dict_storage_list_grants_pagination(storage):
             "query": "`true`",
             "evaluation_handler": "evaluate",
             "equality": True,
+        "applicable_on_failure": False,
             "data": {}
         }
         asyncio.run(storage.enact(g, config={}))
@@ -778,6 +784,7 @@ def test_dict_storage_list_grant_refs(storage):
             "query": "`true`",
             "evaluation_handler": "evaluate",
             "equality": True,
+        "applicable_on_failure": False,
             "data": {}
         }
         asyncio.run(storage.enact(g, config={}))
@@ -821,6 +828,7 @@ def test_dict_storage_list_grant_refs_filter_effect(storage):
         "query": "`true`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     asyncio.run(storage.enact(allow_grant, config={}))
@@ -850,6 +858,7 @@ def test_dict_storage_list_grant_refs_filter_action(storage):
         "query": "`true`",
         "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     asyncio.run(storage.enact(g, config={}))

@@ -60,7 +60,7 @@ class StorageModule:
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = False
 
-        return GenericResult(has_failed=False)
+        return {"error": None}
 
 
     async def shutdown(self, config: StorageShutdownConfig) -> GenericResult:

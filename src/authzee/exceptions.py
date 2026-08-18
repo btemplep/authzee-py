@@ -6,15 +6,12 @@ __all__ = [
     "AuthzeeSDKError",
     "AuthzeeSpecError",
     "DefinitionError",
-    "EvaluationError",
     "GrantError",
     "LocalityIncompatibilityError",
     "NotImplementedError",
-    "PageReferenceError",
     "ParallelPaginationNotSupported",
     "RequestError",
-    "ResourceNotFoundError",
-    "StartError"
+    "ResourceNotFoundError"
 ]
 
 from authzee.types import GenericResult
@@ -39,11 +36,6 @@ class AuthzeeSpecError(AuthzeeError):
 
 class DefinitionError(AuthzeeSpecError):
     """Error when validating the identity and resource definitions."""
-    pass
-
-
-class EvaluationError(AuthzeeSpecError):
-    """Error when running an evaluation for a request."""
     pass
 
 
@@ -96,34 +88,42 @@ class ParallelPaginationNotSupported(AuthzeeSDKError):
     pass
 
 
-class PageReferenceError(AuthzeeSDKError):
-    """Error when processing a page reference.
+class ComputeError(AuthzeeSDKError):
+    """Base exception for errors specific to compute modules.
     """
     pass
 
 
-class ResourceNotFoundError(AuthzeeSDKError):
+class StorageError(AuthzeeSDKError):
+    """Base exception for errors specific to storage modules."""
+    pass
+
+
+class ResourceNotFoundError(StorageError):
     """The resource with a specific UUID or type was not found in the storage backend.
     """
     pass
 
 
+class PageReferenceError(AuthzeeSDKError):
+    """The page reference is not valid or has expired."""
+    pass
+
+
 class StartError(AuthzeeSDKError):
-    """There was an error during initialization of the Authzee App and modules.
-    """
+    """An error occurred during start or initialization."""
     pass
 
 
 _exception_map = {
     "definition": DefinitionError,
-    "evaluation": EvaluationError,
     "grant": GrantError,
     "request": RequestError,
     "locality_incompatibility": LocalityIncompatibilityError,
     "not_implemented": NotImplementedError,
     "parallel_pagination_not_supported": ParallelPaginationNotSupported,
-    "page_reference": PageReferenceError,
-    "resource_not_found": ResourceNotFoundError,
-    "start": StartError
+    "compute": ComputeError,
+    "storage": StorageError,
+    "resource_not_found": ResourceNotFoundError
 }
 """Mapping of error type strings to Exception classes."""

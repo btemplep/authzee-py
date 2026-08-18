@@ -126,6 +126,7 @@ def seeded_compute(compute, storage_dict):
                 "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
                 "evaluation_handler": "evaluate",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -143,6 +144,7 @@ def seeded_compute(compute, storage_dict):
                 "query": "length(request.identities.user[?department == 'Intern']) > `0`",
                 "evaluation_handler": "evaluate",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -393,6 +395,7 @@ def test_in_process_validate_grant_valid(compute):
                 "query": "`true`",
                 "evaluation_handler": "evaluate",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -856,6 +859,7 @@ def test_in_process_audit_with_critical_query_error(
         "query": "bad_query.[invalid",
         "evaluation_handler": "critical",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     storage_dict['grants_lut'][bad_grant['grant_uuid']] = bad_grant
@@ -1030,6 +1034,7 @@ def test_in_process_authorize_critical_error(seeded_compute, storage_dict):
         "query": "bad_query.[invalid",
         "evaluation_handler": "critical",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     storage_dict['grants_lut'][bad_grant['grant_uuid']] = bad_grant
@@ -1140,6 +1145,7 @@ def test_in_process_batch_audit_critical_error(seeded_compute, storage_dict):
         "query": "bad_query.[invalid",
         "evaluation_handler": "critical",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     storage_dict['grants_lut'][bad_grant['grant_uuid']] = bad_grant
@@ -1370,6 +1376,7 @@ def test_in_process_batch_authorize_critical_error(
         "query": "bad_query.[invalid",
         "evaluation_handler": "critical",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
     storage_dict['grants_lut'][bad_grant['grant_uuid']] = bad_grant
@@ -1792,6 +1799,7 @@ def test_in_process_authorize_allow_grant_critical_error(storage_dict):
                 "query": "bad_query.[invalid",
                 "evaluation_handler": "critical",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -2208,6 +2216,7 @@ def test_in_process_batch_audit_skip_failed_items(storage_dict):
                 "query": "bad.[invalid",
                 "evaluation_handler": "critical",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -2225,6 +2234,7 @@ def test_in_process_batch_audit_skip_failed_items(storage_dict):
                 "query": "`true`",
                 "evaluation_handler": "evaluate",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -2357,6 +2367,7 @@ def test_in_process_batch_authorize_deny_critical_error(storage_dict):
                 "query": "bad.[invalid",
                 "evaluation_handler": "critical",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -2488,6 +2499,7 @@ def test_in_process_batch_authorize_allow_critical_error(storage_dict):
                 "query": "bad.[invalid",
                 "evaluation_handler": "critical",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -2619,6 +2631,7 @@ def test_in_process_batch_authorize_deny_applicable_continue(storage_dict):
                 "query": "`true`",
                 "evaluation_handler": "evaluate",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -2636,6 +2649,7 @@ def test_in_process_batch_authorize_deny_applicable_continue(storage_dict):
                 "query": "`true`",
                 "evaluation_handler": "evaluate",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -2768,6 +2782,7 @@ def test_in_process_batch_authorize_deny_phase_skip_complete(storage_dict):
                 "query": "`true`",
                 "evaluation_handler": "evaluate",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}
@@ -2785,6 +2800,7 @@ def test_in_process_batch_authorize_deny_phase_skip_complete(storage_dict):
                 "query": "`true`",
                 "evaluation_handler": "evaluate",
                 "equality": True,
+        "applicable_on_failure": False,
                 "data": {}
             },
             config={}

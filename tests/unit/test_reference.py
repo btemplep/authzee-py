@@ -7,25 +7,24 @@ from authzee.reference import *
 
 
 def execute(expression, data):
-    result = {
-        "result": None,
-        "has_failed": False,
-        "error_message": None
-    }
     try:
-        result['result'] = jmespath.search(expression, data)
+        result = jmespath.search(expression, data)
     except Exception as exc:
-        result['has_failed'] = True
-        result['error_message'] = str(exc)
+        return {
+            "result": None,
+            "failure": str(exc)
+        }
 
-    return result
+    return {
+        "result": result,
+        "failure": None
+    }
 
 
 def failing_execute(expression, data):
     return {
         "result": None,
-        "has_failed": True,
-        "error_message": "forced failure"
+        "failure": "forced failure"
     }
 
 
@@ -98,8 +97,8 @@ def allow_grant():
             "Widget:Read"
         ],
         "query": "request.identities.User[0].role == 'admin'",
-        "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
 
@@ -112,8 +111,8 @@ def deny_grant():
             "Widget:Read"
         ],
         "query": "request.identities.User[0].role == 'banned'",
-        "evaluation_handler": "evaluate",
         "equality": True,
+        "applicable_on_failure": False,
         "data": {}
     }
 
@@ -136,7 +135,6 @@ def admin_request():
         },
         "context_type": "NULL",
         "context": {},
-        "evaluation_handler": "grant"
     }
 
 
@@ -188,7 +186,6 @@ def base_batch():
         },
         "context_type": "NULL",
         "context": {},
-        "evaluation_handler": "grant",
         "batch": [
             {}
         ]
@@ -197,8 +194,8 @@ def base_batch():
 
 def test_validate_context_defs_valid(context_defs):
     r = validate_context_defs(context_defs)
-    assert r['is_valid'] is True
-    assert r['errors'] == []
+    assert r['error'] is None
+    assert r['error'] is None
 
 
 def test_validate_context_defs_invalid_schema():
@@ -210,13 +207,13 @@ def test_validate_context_defs_invalid_schema():
             }
         ]
     )
-    assert r['is_valid'] is False
+    assert r['error'] is not None
 
 
 def test_validate_context_defs_duplicate_type(context_defs):
     r = validate_context_defs(context_defs + context_defs)
-    assert r['is_valid'] is False
-    assert any("more than once" in e['message'] for e in r['errors'])
+    assert r['error'] is not None
+    assert "more than once" in r['error']['message']
 
 
 def test_validate_context_defs_non_object_schema():
@@ -230,8 +227,8 @@ def test_validate_context_defs_non_object_schema():
             }
         ]
     )
-    assert r['is_valid'] is False
-    assert any("object" in e['message'] for e in r['errors'])
+    assert r['error'] is not None
+    assert "object" in r['error']['message']
 
 
 def test_validate_context_defs_missing_type_in_schema():
@@ -243,15 +240,15 @@ def test_validate_context_defs_missing_type_in_schema():
             }
         ]
     )
-    assert r['is_valid'] is False
+    assert r['error'] is not None
 
 
 def test_validate_context_defs_empty():
-    assert validate_context_defs([])['is_valid'] is True
+    assert validate_context_defs([])['error'] is None
 
 
 def test_validate_identity_defs_valid(identity_defs):
-    assert validate_identity_defs(identity_defs)['is_valid'] is True
+    assert validate_identity_defs(identity_defs)['error'] is None
 
 
 def test_validate_identity_defs_invalid_schema():
@@ -263,13 +260,13 @@ def test_validate_identity_defs_invalid_schema():
             }
         ]
     )
-    assert r['is_valid'] is False
+    assert r['error'] is not None
 
 
 def test_validate_identity_defs_duplicate_type(identity_defs):
     r = validate_identity_defs(identity_defs + identity_defs)
-    assert r['is_valid'] is False
-    assert any("more than once" in e['message'] for e in r['errors'])
+    assert r['error'] is not None
+    assert "more than once" in r['error']['message']
 
 
 def test_validate_identity_defs_non_object_schema():
@@ -283,15 +280,15 @@ def test_validate_identity_defs_non_object_schema():
             }
         ]
     )
-    assert r['is_valid'] is False
+    assert r['error'] is not None
 
 
 def test_validate_identity_defs_empty():
-    assert validate_identity_defs([])['is_valid'] is True
+    assert validate_identity_defs([])['error'] is None
 
 
 def test_validate_resource_defs_valid(resource_defs):
-    assert validate_resource_defs(resource_defs)['is_valid'] is True
+    assert validate_resource_defs(resource_defs)['error'] is None
 
 
 def test_validate_resource_defs_invalid_schema():
@@ -304,13 +301,13 @@ def test_validate_resource_defs_invalid_schema():
             }
         ]
     )
-    assert r['is_valid'] is False
+    assert r['error'] is not None
 
 
 def test_validate_resource_defs_duplicate_type(resource_defs):
     r = validate_resource_defs(resource_defs + resource_defs)
-    assert r['is_valid'] is False
-    assert any("more than once" in e['message'] for e in r['errors'])
+    assert r['error'] is not None
+    assert "more than once" in r['error']['message']
 
 
 def test_validate_resource_defs_non_object_schema():
@@ -325,23 +322,23 @@ def test_validate_resource_defs_non_object_schema():
             }
         ]
     )
-    assert r['is_valid'] is False
+    assert r['error'] is not None
 
 
 def test_validate_resource_defs_empty():
-    assert validate_resource_defs([])['is_valid'] is True
+    assert validate_resource_defs([])['error'] is None
 
 
 def test_validate_grants_valid(allow_grant, deny_grant):
-    assert validate_grants([allow_grant, deny_grant])['is_valid'] is True
+    assert validate_grants([allow_grant, deny_grant])['error'] is None
 
 
 def test_validate_grants_invalid():
-    assert validate_grants([{"effect": "bad"}])['is_valid'] is False
+    assert validate_grants([{"effect": "bad"}])['error'] is not None
 
 
 def test_validate_grants_empty():
-    assert validate_grants([])['is_valid'] is True
+    assert validate_grants([])['error'] is None
 
 
 def test_validate_request_valid(
@@ -350,7 +347,7 @@ def test_validate_request_valid(
     identity_defs,
     resource_defs
 ):
-    assert validate_request(admin_request, context_defs, identity_defs, resource_defs)['is_valid'] is True
+    assert validate_request(admin_request, context_defs, identity_defs, resource_defs)['error'] is None
 
 
 def test_validate_request_invalid_schema(
@@ -358,7 +355,7 @@ def test_validate_request_invalid_schema(
     identity_defs,
     resource_defs
 ):
-    assert validate_request({}, context_defs, identity_defs, resource_defs)['is_valid'] is False
+    assert validate_request({}, context_defs, identity_defs, resource_defs)['error'] is not None
 
 
 def test_validate_request_unknown_identity_type(
@@ -383,8 +380,8 @@ def test_validate_request_unknown_identity_type(
         identity_defs,
         resource_defs
     )
-    assert r['is_valid'] is False
-    assert any("Ghost" in e['message'] for e in r['errors'])
+    assert r['error'] is not None
+    assert "Ghost" in r['error']['message']
 
 
 def test_validate_request_invalid_identity_instance(
@@ -403,7 +400,7 @@ def test_validate_request_invalid_identity_instance(
             ]
         }
     }
-    assert validate_request(req, context_defs, identity_defs, resource_defs)['is_valid'] is False
+    assert validate_request(req, context_defs, identity_defs, resource_defs)['error'] is not None
 
 
 def test_validate_request_unknown_resource_type(
@@ -422,8 +419,8 @@ def test_validate_request_unknown_resource_type(
         identity_defs,
         resource_defs
     )
-    assert r['is_valid'] is False
-    assert any("Unknown" in e['message'] for e in r['errors'])
+    assert r['error'] is not None
+    assert "Unknown" in r['error']['message']
 
 
 def test_validate_request_invalid_resource_instance(
@@ -438,7 +435,7 @@ def test_validate_request_invalid_resource_instance(
             "id": 999
         }
     }
-    assert validate_request(req, context_defs, identity_defs, resource_defs)['is_valid'] is False
+    assert validate_request(req, context_defs, identity_defs, resource_defs)['error'] is not None
 
 
 def test_validate_request_invalid_action(
@@ -457,8 +454,8 @@ def test_validate_request_invalid_action(
         identity_defs,
         resource_defs
     )
-    assert r['is_valid'] is False
-    assert any("Widget:Delete" in e['message'] for e in r['errors'])
+    assert r['error'] is not None
+    assert "Widget:Delete" in r['error']['message']
 
 
 def test_validate_request_unknown_context_type(
@@ -477,8 +474,8 @@ def test_validate_request_unknown_context_type(
         identity_defs,
         resource_defs
     )
-    assert r['is_valid'] is False
-    assert any("Unknown" in e['message'] for e in r['errors'])
+    assert r['error'] is not None
+    assert "Unknown" in r['error']['message']
 
 
 def test_validate_request_invalid_context_instance(
@@ -493,7 +490,7 @@ def test_validate_request_invalid_context_instance(
             "extra": "not_allowed"
         }
     }
-    assert validate_request(req, context_defs, identity_defs, resource_defs)['is_valid'] is False
+    assert validate_request(req, context_defs, identity_defs, resource_defs)['error'] is not None
 
 
 def test_validate_batch_request_valid(
@@ -502,7 +499,7 @@ def test_validate_batch_request_valid(
     identity_defs,
     resource_defs
 ):
-    assert validate_batch_request(base_batch, context_defs, identity_defs, resource_defs)['is_valid'] is True
+    assert validate_batch_request(base_batch, context_defs, identity_defs, resource_defs)['error'] is None
 
 
 def test_validate_batch_request_invalid_schema(
@@ -510,7 +507,7 @@ def test_validate_batch_request_invalid_schema(
     identity_defs,
     resource_defs
 ):
-    assert validate_batch_request({}, context_defs, identity_defs, resource_defs)['is_valid'] is False
+    assert validate_batch_request({}, context_defs, identity_defs, resource_defs)['error'] is not None
 
 
 def test_validate_batch_request_item_overrides_identities(
@@ -534,7 +531,7 @@ def test_validate_batch_request_item_overrides_identities(
             }
         ]
     }
-    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['is_valid'] is True
+    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['error'] is None
 
 
 def test_validate_batch_request_item_invalid_identity(
@@ -561,7 +558,7 @@ def test_validate_batch_request_item_invalid_identity(
         identity_defs,
         resource_defs
     )
-    assert r['batch_errors'][0]['request'] != []
+    assert r['batch_errors'][0] is not None
 
 
 def test_validate_batch_request_item_overrides_resource(
@@ -580,7 +577,7 @@ def test_validate_batch_request_item_overrides_resource(
             }
         ]
     }
-    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['is_valid'] is True
+    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['error'] is None
 
 
 def test_validate_batch_request_item_overrides_resource_type(
@@ -600,7 +597,7 @@ def test_validate_batch_request_item_overrides_resource_type(
             }
         ]
     }
-    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['is_valid'] is True
+    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['error'] is None
 
 
 def test_validate_batch_request_item_overrides_context(
@@ -618,7 +615,7 @@ def test_validate_batch_request_item_overrides_context(
             }
         ]
     }
-    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['is_valid'] is True
+    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['error'] is None
 
 
 def test_validate_batch_request_item_context_only(
@@ -635,7 +632,7 @@ def test_validate_batch_request_item_context_only(
             }
         ]
     }
-    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['is_valid'] is True
+    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['error'] is None
 
 
 def test_validate_batch_request_top_level_invalid_identity(
@@ -652,7 +649,7 @@ def test_validate_batch_request_top_level_invalid_identity(
             ]
         }
     }
-    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['is_valid'] is False
+    assert validate_batch_request(batch, context_defs, identity_defs, resource_defs)['error'] is not None
 
 
 def test_evaluate_one_action_not_in_grant(admin_request, allow_grant):
@@ -662,7 +659,7 @@ def test_evaluate_one_action_not_in_grant(admin_request, allow_grant):
             "Widget:Write"
         ]
     }
-    r = evaluate_one(admin_request, grant, execute, False)
+    r = evaluate_one(admin_request, grant, execute)
     assert r['is_applicable'] is False
     assert r['query_result'] is None
 
@@ -674,11 +671,11 @@ def test_evaluate_one_empty_actions_matches_any(admin_request, allow_grant):
         "query": "`true`",
         "equality": True
     }
-    assert evaluate_one(admin_request, grant, execute, False)['is_applicable'] is True
+    assert evaluate_one(admin_request, grant, execute)['is_applicable'] is True
 
 
 def test_evaluate_one_applicable(admin_request, allow_grant):
-    assert evaluate_one(admin_request, allow_grant, execute, False)['is_applicable'] is True
+    assert evaluate_one(admin_request, allow_grant, execute)['is_applicable'] is True
 
 
 def test_evaluate_one_wrong_equality(admin_request, allow_grant):
@@ -686,79 +683,27 @@ def test_evaluate_one_wrong_equality(admin_request, allow_grant):
         **allow_grant,
         "equality": False
     }
-    assert evaluate_one(admin_request, grant, execute, False)['is_applicable'] is False
+    assert evaluate_one(admin_request, grant, execute)['is_applicable'] is False
 
 
-def test_evaluate_one_query_failure_evaluate_no_error(
-    admin_request,
-    allow_grant
-):
-    r = evaluate_one(
-        admin_request,
-        allow_grant,
-        failing_execute,
-        False
-    )
+def test_evaluate_one_query_failure_not_applicable(admin_request, allow_grant):
+    r = evaluate_one(admin_request, allow_grant, failing_execute)
     assert r['is_applicable'] is False
-    assert r['has_failed'] is False
-    assert "evaluation" not in r['errors']
+    assert r['query_result'] is None
+    assert r['failure'] is not None
+    assert "forced failure" in r['failure']
 
 
-def test_evaluate_one_query_failure_error_handler(admin_request, allow_grant):
+def test_evaluate_one_query_failure_applicable_on_failure(admin_request, allow_grant):
     grant = {
         **allow_grant,
-        "evaluation_handler": "error"
+        "applicable_on_failure": True
     }
-    r = evaluate_one(admin_request, grant, failing_execute, False)
-    assert r['has_failed'] is False
-    assert r['errors']['evaluation'][0]['is_critical'] is False
-
-
-def test_evaluate_one_query_failure_critical_handler(
-    admin_request,
-    allow_grant
-):
-    grant = {
-        **allow_grant,
-        "evaluation_handler": "critical"
-    }
-    r = evaluate_one(admin_request, grant, failing_execute, False)
-    assert r['has_failed'] is True
-    assert r['errors']['evaluation'][0]['is_critical'] is True
-
-
-def test_evaluate_one_only_crits_suppresses_error(admin_request, allow_grant):
-    grant = {
-        **allow_grant,
-        "evaluation_handler": "error"
-    }
-    assert "evaluation" not in evaluate_one(admin_request, grant, failing_execute, True)['errors']
-
-
-def test_evaluate_one_request_override_critical(admin_request, allow_grant):
-    req = {
-        **admin_request,
-        "evaluation_handler": "critical"
-    }
-    grant = {
-        **allow_grant,
-        "evaluation_handler": "evaluate"
-    }
-    assert evaluate_one(req, grant, failing_execute, False)['has_failed'] is True
-
-
-def test_evaluate_one_request_override_error(admin_request, allow_grant):
-    req = {
-        **admin_request,
-        "evaluation_handler": "error"
-    }
-    grant = {
-        **allow_grant,
-        "evaluation_handler": "evaluate"
-    }
-    r = evaluate_one(req, grant, failing_execute, False)
-    assert "evaluation" in r['errors']
-    assert r['has_failed'] is False
+    r = evaluate_one(admin_request, grant, failing_execute)
+    assert r['is_applicable'] is True
+    assert r['query_result'] is None
+    assert r['failure'] is not None
+    assert "forced failure" in r['failure']
 
 
 def test_audit_applicable_grant(admin_request, allow_grant):
@@ -767,32 +712,28 @@ def test_audit_applicable_grant(admin_request, allow_grant):
         [allow_grant],
         execute
     )
-    assert r['has_failed'] is False
     assert r['results'][0]['is_applicable'] is True
+    assert r['error'] is None
 
 
 def test_audit_no_applicable_grant(guest_request, allow_grant):
     assert audit(guest_request, [allow_grant], execute)['results'][0]['is_applicable'] is False
 
 
-def test_audit_critical_error_stops_early(admin_request, allow_grant):
-    grant = {
-        **allow_grant,
-        "evaluation_handler": "critical"
-    }
+def test_audit_failure_recorded(admin_request, allow_grant):
     r = audit(
         admin_request,
-        [grant, allow_grant],
+        [allow_grant],
         failing_execute
     )
-    assert r['has_failed'] is True
-    assert len(r['results']) == 1
+    assert r['results'][0]['is_applicable'] is False
+    assert r['results'][0]['failure'] is not None
 
 
 def test_audit_empty_grants(admin_request):
     r = audit(admin_request, [], execute)
     assert r['results'] == []
-    assert r['has_failed'] is False
+    assert r['error'] is None
 
 
 def test_authorize_allow_grant(admin_request, allow_grant):
@@ -826,35 +767,6 @@ def test_authorize_no_applicable_grant(guest_request, allow_grant):
     assert "implicitly denied" in r['message']
 
 
-def test_authorize_critical_error_in_deny(admin_request, deny_grant):
-    grant = {
-        **deny_grant,
-        "evaluation_handler": "critical"
-    }
-    r = authorize(
-        admin_request,
-        [grant],
-        failing_execute
-    )
-    assert r['is_authorized'] is False
-    assert r['has_failed'] is True
-    assert "critical error" in r['message']
-
-
-def test_authorize_critical_error_in_allow(admin_request, allow_grant):
-    grant = {
-        **allow_grant,
-        "evaluation_handler": "critical"
-    }
-    r = authorize(
-        admin_request,
-        [grant],
-        failing_execute
-    )
-    assert r['is_authorized'] is False
-    assert r['has_failed'] is True
-
-
 def test_authorize_deny_checked_before_allow(
     admin_request,
     allow_grant,
@@ -879,8 +791,8 @@ def test_batch_audit_basic(base_batch, allow_grant):
         [allow_grant],
         execute
     )
-    assert len(r['batch_results']) == 1
-    assert r['batch_results'][0]['results'][0]['is_applicable'] is True
+    assert len(r['batch']) == 1
+    assert r['batch'][0]['results'][0]['is_applicable'] is True
 
 
 def test_batch_audit_item_overrides(base_batch, allow_grant):
@@ -899,7 +811,7 @@ def test_batch_audit_item_overrides(base_batch, allow_grant):
             }
         ]
     }
-    assert batch_audit(batch, [allow_grant], execute)['batch_results'][0]['results'][0]['is_applicable'] is False
+    assert batch_audit(batch, [allow_grant], execute)['batch'][0]['results'][0]['is_applicable'] is False
 
 
 def test_batch_audit_multiple_items(base_batch, allow_grant):
@@ -911,7 +823,7 @@ def test_batch_audit_multiple_items(base_batch, allow_grant):
         ]
     }
     assert len(
-        batch_audit(batch, [allow_grant], execute)['batch_results']
+        batch_audit(batch, [allow_grant], execute)['batch']
     ) == 2
 
 
@@ -921,7 +833,7 @@ def test_batch_authorize_basic(base_batch, allow_grant):
         [allow_grant],
         execute
     )
-    assert r['results'][0]['is_authorized'] is True
+    assert r['batch'][0]['is_authorized'] is True
 
 
 def test_batch_authorize_item_overrides(base_batch, allow_grant):
@@ -940,7 +852,7 @@ def test_batch_authorize_item_overrides(base_batch, allow_grant):
             }
         ]
     }
-    assert batch_authorize(batch, [allow_grant], execute)['results'][0]['is_authorized'] is False
+    assert batch_authorize(batch, [allow_grant], execute)['batch'][0]['is_authorized'] is False
 
 
 def test_batch_authorize_multiple_items(base_batch, allow_grant):
@@ -952,7 +864,7 @@ def test_batch_authorize_multiple_items(base_batch, allow_grant):
         ]
     }
     assert len(
-        batch_authorize(batch, [allow_grant], execute)['results']
+        batch_authorize(batch, [allow_grant], execute)['batch']
     ) == 2
 
 
@@ -987,7 +899,7 @@ def test_audit_workflow_invalid_context_defs(
             }
         }
     ]
-    assert audit_workflow(bad_ctx, identity_defs, resource_defs, [allow_grant], admin_request, execute)['is_valid'] is False
+    assert audit_workflow(bad_ctx, identity_defs, resource_defs, [allow_grant], admin_request, execute)['error'] is not None
 
 
 def test_audit_workflow_invalid_identity_defs(
@@ -1004,7 +916,7 @@ def test_audit_workflow_invalid_identity_defs(
             }
         }
     ]
-    assert audit_workflow(context_defs, bad_id, resource_defs, [allow_grant], admin_request, execute)['is_valid'] is False
+    assert audit_workflow(context_defs, bad_id, resource_defs, [allow_grant], admin_request, execute)['error'] is not None
 
 
 def test_audit_workflow_invalid_resource_defs(
@@ -1022,7 +934,7 @@ def test_audit_workflow_invalid_resource_defs(
             }
         }
     ]
-    assert audit_workflow(context_defs, identity_defs, bad_res, [allow_grant], admin_request, execute)['is_valid'] is False
+    assert audit_workflow(context_defs, identity_defs, bad_res, [allow_grant], admin_request, execute)['error'] is not None
 
 
 def test_audit_workflow_invalid_grants(
@@ -1031,7 +943,7 @@ def test_audit_workflow_invalid_grants(
     resource_defs,
     admin_request
 ):
-    assert audit_workflow(context_defs, identity_defs, resource_defs, [{"effect": "bad"}], admin_request, execute)['is_valid'] is False
+    assert audit_workflow(context_defs, identity_defs, resource_defs, [{"effect": "bad"}], admin_request, execute)['error'] is not None
 
 
 def test_audit_workflow_invalid_request(
@@ -1040,7 +952,7 @@ def test_audit_workflow_invalid_request(
     resource_defs,
     allow_grant
 ):
-    assert audit_workflow(context_defs, identity_defs, resource_defs, [allow_grant], {}, execute)['is_valid'] is False
+    assert audit_workflow(context_defs, identity_defs, resource_defs, [allow_grant], {}, execute)['error'] is not None
 
 
 def test_authorize_workflow_authorized(
@@ -1069,7 +981,7 @@ def test_authorize_workflow_invalid_request(
     resource_defs,
     allow_grant
 ):
-    assert authorize_workflow(context_defs, identity_defs, resource_defs, [allow_grant], {}, execute)['is_valid'] is False
+    assert authorize_workflow(context_defs, identity_defs, resource_defs, [allow_grant], {}, execute)['error'] is not None
 
 
 def test_batch_audit_workflow_valid(
@@ -1079,7 +991,7 @@ def test_batch_audit_workflow_valid(
     allow_grant,
     base_batch
 ):
-    assert "batch_results" in batch_audit_workflow(
+    assert "batch" in batch_audit_workflow(
         context_defs,
         identity_defs,
         resource_defs,
@@ -1095,7 +1007,7 @@ def test_batch_audit_workflow_invalid_batch(
     resource_defs,
     allow_grant
 ):
-    assert batch_audit_workflow(context_defs, identity_defs, resource_defs, [allow_grant], {}, execute)['is_valid'] is False
+    assert batch_audit_workflow(context_defs, identity_defs, resource_defs, [allow_grant], {}, execute)['error'] is not None
 
 
 def test_batch_audit_workflow_invalid_context_defs(
@@ -1112,7 +1024,7 @@ def test_batch_audit_workflow_invalid_context_defs(
             }
         }
     ]
-    assert batch_audit_workflow(bad_ctx, identity_defs, resource_defs, [allow_grant], base_batch, execute)['is_valid'] is False
+    assert batch_audit_workflow(bad_ctx, identity_defs, resource_defs, [allow_grant], base_batch, execute)['error'] is not None
 
 
 def test_batch_authorize_workflow_valid(
@@ -1122,7 +1034,7 @@ def test_batch_authorize_workflow_valid(
     allow_grant,
     base_batch
 ):
-    assert "results" in batch_authorize_workflow(
+    assert "batch" in batch_authorize_workflow(
         context_defs,
         identity_defs,
         resource_defs,
@@ -1138,4 +1050,4 @@ def test_batch_authorize_workflow_invalid_batch(
     resource_defs,
     allow_grant
 ):
-    assert batch_authorize_workflow(context_defs, identity_defs, resource_defs, [allow_grant], {}, execute)['is_valid'] is False
+    assert batch_authorize_workflow(context_defs, identity_defs, resource_defs, [allow_grant], {}, execute)['error'] is not None
