@@ -20,6 +20,7 @@ from authzee import (
     jmespath_execute,
     paginator_async
 )
+from authzee.module_locality import ModuleLocality
 
 
 @pytest.fixture
@@ -29,7 +30,7 @@ def storage_dict():
 
 @pytest.fixture
 def authz(storage_dict):
-    """Create a fully initialized AuthzeeAsync instance with raise_crits=False."""
+    """Create a fully initialized AuthzeeAsync instance with raise_errors=False."""
     a = AuthzeeAsync(
         execute=jmespath_execute,
         compute_type=InProcessCompute,
@@ -40,7 +41,7 @@ def authz(storage_dict):
         },
         config={
             "authzee": {
-                "raise_crits": False
+                "raise_errors": False
             }
         }
     )
@@ -127,7 +128,6 @@ def grant():
             "balloon:inflate"
         ],
         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -146,7 +146,6 @@ def deny_grant():
             "balloon:pop"
         ],
         "query": "length(request.identities.user[?department == 'Intern']) > `0`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -170,7 +169,6 @@ def auth_request():
             "color": "blue",
             "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {}
     }
@@ -193,7 +191,6 @@ def batch_request():
             "color": "blue",
             "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
@@ -246,7 +243,7 @@ def test_construct(storage_dict):
         }
     )
     result = asyncio.run(authz.construct())
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_start(storage_dict):
@@ -261,12 +258,12 @@ def test_start(storage_dict):
     )
     asyncio.run(authz.construct())
     result = asyncio.run(authz.start())
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_shutdown(authz):
     result = asyncio.run(authz.shutdown())
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_destroy(storage_dict):
@@ -282,7 +279,7 @@ def test_destroy(storage_dict):
     asyncio.run(authz.construct())
     asyncio.run(authz.start())
     result = asyncio.run(authz.destroy())
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_construct_with_config(storage_dict):
@@ -299,12 +296,12 @@ def test_construct_with_config(storage_dict):
         authz.construct(
             config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_start_with_config(storage_dict):
@@ -322,12 +319,12 @@ def test_start_with_config(storage_dict):
         authz.start(
             config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_shutdown_with_config(authz):
@@ -335,12 +332,12 @@ def test_shutdown_with_config(authz):
         authz.shutdown(
             config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_destroy_with_config(storage_dict):
@@ -359,17 +356,17 @@ def test_destroy_with_config(storage_dict):
         authz.destroy(
             config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_context_def_valid(authz, context_def):
     result = asyncio.run(authz.validate_context_def(context_def))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_context_def_invalid(authz):
@@ -381,7 +378,7 @@ def test_validate_context_def_invalid(authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_validate_context_def_non_object_schema(authz):
@@ -395,12 +392,12 @@ def test_validate_context_def_non_object_schema(authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_put_context_def(authz, context_def):
     result = asyncio.run(authz.put_context_def(context_def))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_context_def_invalid(authz):
@@ -412,13 +409,13 @@ def test_put_context_def_invalid(authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_get_context_def(authz, context_def):
     asyncio.run(authz.put_context_def(context_def))
     result = asyncio.run(authz.get_context_def(context_type="NONE"))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['context_def']['context_type'] == "NONE"
 
 
@@ -427,12 +424,12 @@ def test_get_context_def_not_found(authz):
         authz.get_context_def(context_type="DOES_NOT_EXIST")
     )
     assert result['context_def'] is None
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_list_context_defs_empty(authz):
     result = asyncio.run(authz.list_context_defs())
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['context_defs'] == []
     assert result['next_page_ref'] is None
 
@@ -461,17 +458,17 @@ def test_list_context_defs_paginator_async(authz, context_def):
 def test_delete_context_def(authz, context_def):
     asyncio.run(authz.put_context_def(context_def))
     result = asyncio.run(authz.delete_context_def(context_type="NONE"))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     get_result = asyncio.run(authz.get_context_def(context_type="NONE"))
     assert get_result['context_def'] is None
-    assert get_result['has_failed'] is True
+    assert get_result['error'] is not None
 
 
 def test_delete_context_def_not_found(authz):
     result = asyncio.run(
         authz.delete_context_def(context_type="DOES_NOT_EXIST")
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_context_def_with_config(authz, context_def):
@@ -479,12 +476,12 @@ def test_validate_context_def_with_config(authz, context_def):
         authz.validate_context_def(
             context_def, config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_context_def_with_config(authz, context_def):
@@ -493,17 +490,17 @@ def test_put_context_def_with_config(authz, context_def):
             context_def,
             config={
                 "authzee": {
-                    "raise_crits": False
+                    "raise_errors": False
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_identity_def_valid(authz, identity_def):
     result = asyncio.run(authz.validate_identity_def(identity_def))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_identity_def_invalid(authz):
@@ -515,7 +512,7 @@ def test_validate_identity_def_invalid(authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_validate_identity_def_non_object_schema(authz):
@@ -529,12 +526,12 @@ def test_validate_identity_def_non_object_schema(authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_put_identity_def(authz, identity_def):
     result = asyncio.run(authz.put_identity_def(identity_def))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_identity_def_invalid(authz):
@@ -546,13 +543,13 @@ def test_put_identity_def_invalid(authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_get_identity_def(authz, identity_def):
     asyncio.run(authz.put_identity_def(identity_def))
     result = asyncio.run(authz.get_identity_def(identity_type="user"))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['identity_def']['identity_type'] == "user"
 
 
@@ -561,12 +558,12 @@ def test_get_identity_def_not_found(authz):
         authz.get_identity_def(identity_type="DOES_NOT_EXIST")
     )
     assert result['identity_def'] is None
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_list_identity_defs_empty(authz):
     result = asyncio.run(authz.list_identity_defs())
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['identity_defs'] == []
 
 
@@ -593,17 +590,17 @@ def test_list_identity_defs_paginator_async(authz, identity_def):
 def test_delete_identity_def(authz, identity_def):
     asyncio.run(authz.put_identity_def(identity_def))
     result = asyncio.run(authz.delete_identity_def(identity_type="user"))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     get_result = asyncio.run(authz.get_identity_def(identity_type="user"))
     assert get_result['identity_def'] is None
-    assert get_result['has_failed'] is True
+    assert get_result['error'] is not None
 
 
 def test_delete_identity_def_not_found(authz):
     result = asyncio.run(
         authz.delete_identity_def(identity_type="DOES_NOT_EXIST")
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_identity_def_with_config(authz, identity_def):
@@ -611,17 +608,17 @@ def test_validate_identity_def_with_config(authz, identity_def):
         authz.validate_identity_def(
             identity_def, config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_resource_def_valid(authz, resource_def):
     result = asyncio.run(authz.validate_resource_def(resource_def))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_resource_def_invalid(authz):
@@ -634,7 +631,7 @@ def test_validate_resource_def_invalid(authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_validate_resource_def_non_object_schema(authz):
@@ -649,12 +646,12 @@ def test_validate_resource_def_non_object_schema(authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_put_resource_def(authz, resource_def):
     result = asyncio.run(authz.put_resource_def(resource_def))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_resource_def_invalid(authz):
@@ -667,13 +664,13 @@ def test_put_resource_def_invalid(authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_get_resource_def(authz, resource_def):
     asyncio.run(authz.put_resource_def(resource_def))
     result = asyncio.run(authz.get_resource_def(resource_type="balloon"))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['resource_def']['resource_type'] == "balloon"
 
 
@@ -682,12 +679,12 @@ def test_get_resource_def_not_found(authz):
         authz.get_resource_def(resource_type="DOES_NOT_EXIST")
     )
     assert result['resource_def'] is None
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_list_resource_defs_empty(authz):
     result = asyncio.run(authz.list_resource_defs())
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['resource_defs'] == []
 
 
@@ -716,17 +713,17 @@ def test_delete_resource_def(authz, resource_def):
     result = asyncio.run(
         authz.delete_resource_def(resource_type="balloon")
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
     get_result = asyncio.run(authz.get_resource_def(resource_type="balloon"))
     assert get_result['resource_def'] is None
-    assert get_result['has_failed'] is True
+    assert get_result['error'] is not None
 
 
 def test_delete_resource_def_not_found(authz):
     result = asyncio.run(
         authz.delete_resource_def(resource_type="DOES_NOT_EXIST")
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_resource_def_with_config(authz, resource_def):
@@ -734,50 +731,50 @@ def test_validate_resource_def_with_config(authz, resource_def):
         authz.validate_resource_def(
             resource_def, config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_grant_valid(authz, grant):
     result = asyncio.run(authz.validate_grant(grant))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_grant_invalid(authz):
     result = asyncio.run(authz.validate_grant({"effect": "bad"}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_enact_grant(authz, grant):
     result = asyncio.run(authz.enact(grant))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_enact_invalid_grant(authz):
     result = asyncio.run(authz.enact({"effect": "bad"}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_get_grant(authz, grant):
     asyncio.run(authz.enact(grant))
     result = asyncio.run(authz.get_grant(grant_uuid=grant['grant_uuid']))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['grant']['grant_uuid'] == grant['grant_uuid']
 
 
 def test_get_grant_not_found(authz):
     result = asyncio.run(authz.get_grant(grant_uuid="nonexistent-uuid"))
     assert result['grant'] is None
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_list_grants_empty(authz):
     result = asyncio.run(authz.list_grants())
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['grants'] == []
 
 
@@ -820,7 +817,7 @@ def test_list_grants_paginator_async(authz, grant):
 def test_list_grant_refs(authz, grant):
     asyncio.run(authz.enact(grant))
     result = asyncio.run(authz.list_grant_refs())
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert "page_refs" in result
 
 
@@ -828,7 +825,7 @@ def test_list_grant_refs_filter_by_effect(authz, grant, deny_grant):
     asyncio.run(authz.enact(grant))
     asyncio.run(authz.enact(deny_grant))
     result = asyncio.run(authz.list_grant_refs(effect="allow"))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_list_grant_refs_paginator_async(authz, grant):
@@ -850,10 +847,10 @@ def test_repeal_grant(authz, grant):
     result = asyncio.run(
         authz.repeal(grant_uuid=grant['grant_uuid'], purge=False)
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
     get_result = asyncio.run(authz.get_grant(grant_uuid=grant['grant_uuid']))
     assert get_result['grant'] is None
-    assert get_result['has_failed'] is True
+    assert get_result['error'] is not None
 
 
 def test_repeal_grant_purge(authz, grant):
@@ -861,7 +858,7 @@ def test_repeal_grant_purge(authz, grant):
     result = asyncio.run(
         authz.repeal(grant_uuid=grant['grant_uuid'], purge=True)
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_repeal_grant_not_found(authz):
@@ -869,7 +866,7 @@ def test_repeal_grant_not_found(authz):
     result = asyncio.run(
         authz.repeal(grant_uuid="nonexistent-uuid", purge=False)
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_grant_with_config(authz, grant):
@@ -878,12 +875,12 @@ def test_validate_grant_with_config(authz, grant):
             grant,
             config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_enact_with_config(authz, grant):
@@ -892,19 +889,19 @@ def test_enact_with_config(authz, grant):
             grant,
             config={
                 "authzee": {
-                    "raise_crits": False
+                    "raise_errors": False
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_cleanup_latches(authz):
     result = asyncio.run(
         authz.cleanup_latches(before=datetime.datetime(2030, 1, 1))
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_cleanup_latches_with_config(authz):
@@ -913,18 +910,18 @@ def test_cleanup_latches_with_config(authz):
             before=datetime.datetime(2030, 1, 1),
             config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_authorize_allowed(seeded_authz, auth_request):
     result = asyncio.run(seeded_authz.authorize(request=auth_request))
     assert result['is_authorized'] is True
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['grant'] is not None
     assert isinstance(result['message'], str)
 
@@ -955,7 +952,6 @@ def test_authorize_denied_by_deny_grant(seeded_authz, deny_grant):
             "color": "blue",
             "is_inflated": True
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {}
     }
@@ -968,7 +964,7 @@ def test_authorize_with_config(seeded_authz, auth_request):
         seeded_authz.authorize(
             request=auth_request, config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
@@ -978,10 +974,10 @@ def test_authorize_with_config(seeded_authz, auth_request):
 
 def test_audit(seeded_authz, auth_request):
     result = asyncio.run(seeded_authz.audit(request=auth_request))
-    assert result['has_failed'] is False
-    assert "grants" in result
+    assert result['error'] is None
     assert "results" in result
-    assert len(result['grants']) == len(result['results'])
+    assert len(result['results']) > 0
+    assert result['results'][0]['grant'] is not None
 
 
 def test_audit_with_applicable_grant(seeded_authz, auth_request):
@@ -994,7 +990,7 @@ def test_audit_paginator_async(seeded_authz, auth_request):
         all_grants = []
         all_results = []
         async for page in paginator_async(seeded_authz.audit, request=auth_request):
-            all_grants.extend(page['grants'])
+            all_grants.extend([r['grant'] for r in page['results']])
             all_results.extend(page['results'])
 
         return all_grants, all_results
@@ -1008,28 +1004,28 @@ def test_audit_with_config(seeded_authz, auth_request):
         seeded_authz.audit(
             request=auth_request, config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_batch_authorize(seeded_authz, batch_request):
     result = asyncio.run(
         seeded_authz.batch_authorize(batch_request=batch_request)
     )
-    assert result['has_failed'] is False
-    assert "batch_results" in result
-    assert len(result['batch_results']) == 2
+    assert result['error'] is None
+    assert "batch" in result
+    assert len(result['batch']) == 2
 
 
 def test_batch_authorize_all_authorized(seeded_authz, batch_request):
     result = asyncio.run(
         seeded_authz.batch_authorize(batch_request=batch_request)
     )
-    for item in result['batch_results']:
+    for item in result['batch']:
         assert item['is_authorized'] is True
 
 
@@ -1038,22 +1034,22 @@ def test_batch_authorize_with_config(seeded_authz, batch_request):
         seeded_authz.batch_authorize(
             batch_request=batch_request, config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_batch_audit(seeded_authz, batch_request):
     result = asyncio.run(
         seeded_authz.batch_audit(batch_request=batch_request)
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert "grants" in result
-    assert "batch_results" in result
-    assert len(result['batch_results']) == 2
+    assert "batch" in result
+    assert len(result['batch']) == 2
 
 
 def test_batch_audit_paginator_async(seeded_authz, batch_request):
@@ -1065,7 +1061,7 @@ def test_batch_audit_paginator_async(seeded_authz, batch_request):
             batch_request=batch_request
         ):
             all_grants.extend(page['grants'])
-            all_batch.extend(page['batch_results'])
+            all_batch.extend(page['batch'])
 
         return all_grants, all_batch
 
@@ -1078,12 +1074,12 @@ def test_batch_audit_with_config(seeded_authz, batch_request):
         seeded_authz.batch_audit(
             batch_request=batch_request, config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_instance_level_config():
@@ -1099,18 +1095,18 @@ def test_instance_level_config():
         },
         config={
             "authzee": {
-                "raise_crits": False
+                "raise_errors": False
             }
         }
     )
     result = asyncio.run(authz.construct())
-    assert result['has_failed'] is False
+    assert result['error'] is None
     result = asyncio.run(authz.start())
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
-def test_raise_crits_config_raises_on_invalid_def():
-    """Test that raise_crits=True raises DefinitionError on invalid validation."""
+def test_raise_errors_config_raises_on_invalid_def():
+    """Test that raise_errors=True raises DefinitionError on invalid validation."""
     storage_dict = {}
     authz = AuthzeeAsync(
         execute=jmespath_execute,
@@ -1122,7 +1118,7 @@ def test_raise_crits_config_raises_on_invalid_def():
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1139,7 +1135,7 @@ def test_raise_crits_config_raises_on_invalid_def():
         )
 
 
-def test_raise_crits_override_at_call_level(authz):
+def test_raise_errors_override_at_call_level(authz):
     """Test that config override at method level takes precedence."""
     with pytest.raises(exceptions.DefinitionError):
         asyncio.run(
@@ -1150,15 +1146,15 @@ def test_raise_crits_override_at_call_level(authz):
                 },
                 config={
                     "authzee": {
-                        "raise_crits": True
+                        "raise_errors": True
                     }
                 }
             )
         )
 
 
-def test_raise_crits_false_does_not_raise(authz):
-    """Test that raise_crits=False returns error result without raising."""
+def test_raise_errors_false_does_not_raise(authz):
+    """Test that raise_errors=False returns error result without raising."""
     result = asyncio.run(
         authz.validate_context_def(
             {
@@ -1167,16 +1163,16 @@ def test_raise_crits_false_does_not_raise(authz):
             },
             config={
                 "authzee": {
-                    "raise_crits": False
+                    "raise_errors": False
                 }
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
-def test_raise_crits_grant_error():
-    """Test that raise_crits raises GrantError on invalid grant validation."""
+def test_raise_errors_grant_error():
+    """Test that raise_errors raises GrantError on invalid grant validation."""
     storage_dict = {}
     authz = AuthzeeAsync(
         execute=jmespath_execute,
@@ -1188,7 +1184,7 @@ def test_raise_crits_grant_error():
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1215,7 +1211,7 @@ def test_compute_storage_kwargs_override():
     )
     asyncio.run(authz.construct())
     result = asyncio.run(authz.start())
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_context_def_overwrite(authz, context_def):
@@ -1228,7 +1224,7 @@ def test_put_context_def_overwrite(authz, context_def):
         }
     }
     result = asyncio.run(authz.put_context_def(updated_def))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_identity_def_overwrite(authz, identity_def):
@@ -1245,7 +1241,7 @@ def test_put_identity_def_overwrite(authz, identity_def):
         }
     }
     result = asyncio.run(authz.put_identity_def(updated_def))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_resource_def_overwrite(authz, resource_def):
@@ -1260,7 +1256,7 @@ def test_put_resource_def_overwrite(authz, resource_def):
         ]
     }
     result = asyncio.run(authz.put_resource_def(updated_def))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_multiple_grants(authz, grant, deny_grant):
@@ -1352,7 +1348,7 @@ def test_multiple_resource_defs(authz):
 
 
 def test_raise_result_raises_on_critical_definition_error(storage_dict):
-    """Test that _raise_result raises DefinitionError when raise_crits=True."""
+    """Test that _raise_result raises DefinitionError when raise_errors=True."""
     a = AuthzeeAsync(
         execute=jmespath_execute,
         compute_type=InProcessCompute,
@@ -1363,7 +1359,7 @@ def test_raise_result_raises_on_critical_definition_error(storage_dict):
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1386,7 +1382,7 @@ def test_raise_result_raises_on_critical_resource_not_found(storage_dict):
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1394,120 +1390,6 @@ def test_raise_result_raises_on_critical_resource_not_found(storage_dict):
     asyncio.run(a.start())
     with pytest.raises(exceptions.ResourceNotFoundError):
         asyncio.run(a.get_context_def("NONEXISTENT"))
-
-
-def test_raise_result_with_critical_errors_key(storage_dict):
-    """Test _raise_result when result has 'critical_errors' key (authorize path)."""
-    a = AuthzeeAsync(
-        execute=jmespath_execute,
-        compute_type=InProcessCompute,
-        compute_kwargs={},
-        storage_type=DictStorage,
-        storage_kwargs={
-            "storage_dict": storage_dict
-        },
-        config={
-            "authzee": {
-                "raise_crits": True
-            }
-        }
-    )
-    asyncio.run(a.construct())
-    asyncio.run(a.start())
-    asyncio.run(
-        a.put_context_def(
-            {
-                "context_type": "NONE",
-                "schema": {
-                    "type": "object",
-                    "additionalProperties": False
-                }
-            }
-        )
-    )
-    asyncio.run(
-        a.put_identity_def(
-            {
-                "identity_type": "user",
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "username"
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "username": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        )
-    )
-    asyncio.run(
-        a.put_resource_def(
-            {
-                "resource_type": "file",
-                "actions": [
-                    "read"
-                ],
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "path"
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "path": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        )
-    )
-    # Enact a grant with bad query + critical handler
-    asyncio.run(
-        a.enact(
-            {
-                "grant_uuid": str(uuid4()),
-                "name": "Bad Grant",
-                "description": "",
-                "tags": {},
-                "effect": "allow",
-                "actions": [
-                    "read"
-                ],
-                "query": "bad.[invalid",
-                "evaluation_handler": "critical",
-                "equality": True,
-        "applicable_on_failure": False,
-                "data": {}
-            }
-        )
-    )
-    with pytest.raises(exceptions.EvaluationError):
-        asyncio.run(
-            a.authorize(
-                {
-                    "identities": {
-                        "user": [
-                            {
-                                "username": "test"
-                            }
-                        ]
-                    },
-                    "action": "read",
-                    "resource_type": "file",
-                    "resource": {
-                        "path": "/tmp"
-                    },
-                    "evaluation_handler": "grant",
-                    "context_type": "NONE",
-                    "context": {}
-                }
-            )
-        )
 
 
 def test_combine_errors_called_during_start(storage_dict):
@@ -1523,19 +1405,19 @@ def test_combine_errors_called_during_start(storage_dict):
     )
     asyncio.run(a.construct())
     result = asyncio.run(a.start())
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_authorize_validation_failure(seeded_authz):
     """authorize with an invalid request returns failure without raising."""
     result = asyncio.run(seeded_authz.authorize({"bad": "request"}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
     assert result['is_authorized'] is False
-    assert "critical_errors" in result
+    assert result['error'] is not None
 
 
 def test_authorize_validation_failure_raises(storage_dict):
-    """authorize with invalid request and raise_crits=True raises an exception."""
+    """authorize with invalid request and raise_errors=True raises an exception."""
     a = AuthzeeAsync(
         execute=jmespath_execute,
         compute_type=InProcessCompute,
@@ -1546,7 +1428,7 @@ def test_authorize_validation_failure_raises(storage_dict):
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1559,13 +1441,13 @@ def test_authorize_validation_failure_raises(storage_dict):
 def test_audit_validation_failure(seeded_authz):
     """audit with an invalid request returns failure."""
     result = asyncio.run(seeded_authz.audit({"bad": "request"}))
-    assert result['has_failed'] is True
-    assert result['grants'] == []
+    assert result['error'] is not None
+    assert result['results'] == []
     assert result['results'] == []
 
 
 def test_audit_validation_failure_raises(storage_dict):
-    """audit with invalid request and raise_crits=True raises an exception."""
+    """audit with invalid request and raise_errors=True raises an exception."""
     a = AuthzeeAsync(
         execute=jmespath_execute,
         compute_type=InProcessCompute,
@@ -1576,7 +1458,7 @@ def test_audit_validation_failure_raises(storage_dict):
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1589,13 +1471,13 @@ def test_audit_validation_failure_raises(storage_dict):
 def test_batch_audit_validation_failure(seeded_authz):
     """batch_audit with an invalid request returns failure."""
     result = asyncio.run(seeded_authz.batch_audit({"bad": "request"}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
     assert result['grants'] == []
-    assert result['batch_results'] == []
+    assert result['batch'] == []
 
 
 def test_batch_audit_validation_failure_raises(storage_dict):
-    """batch_audit with invalid request and raise_crits=True raises an exception."""
+    """batch_audit with invalid request and raise_errors=True raises an exception."""
     a = AuthzeeAsync(
         execute=jmespath_execute,
         compute_type=InProcessCompute,
@@ -1606,7 +1488,7 @@ def test_batch_audit_validation_failure_raises(storage_dict):
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1625,12 +1507,12 @@ def test_batch_authorize_validation_failure(seeded_authz):
             }
         )
     )
-    assert result['has_failed'] is True
-    assert result['batch_results'] == []
+    assert result['error'] is not None
+    assert result['batch'] == []
 
 
 def test_batch_authorize_validation_failure_raises(storage_dict):
-    """batch_authorize with invalid request and raise_crits=True raises an exception."""
+    """batch_authorize with invalid request and raise_errors=True raises an exception."""
     a = AuthzeeAsync(
         execute=jmespath_execute,
         compute_type=InProcessCompute,
@@ -1641,7 +1523,7 @@ def test_batch_authorize_validation_failure_raises(storage_dict):
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1667,7 +1549,7 @@ def test_compute_storage_kwargs_override(storage_dict):
     )
     asyncio.run(a.construct())
     result = asyncio.run(a.start())
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_batch_request_valid(seeded_authz):
@@ -1686,7 +1568,6 @@ def test_validate_batch_request_valid(seeded_authz):
             "color": "blue",
             "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
@@ -1701,7 +1582,7 @@ def test_validate_batch_request_valid(seeded_authz):
     result = asyncio.run(
         seeded_authz.validate_batch_request(batch_request)
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_batch_request_invalid(seeded_authz):
@@ -1712,7 +1593,7 @@ def test_validate_batch_request_invalid(seeded_authz):
             }
         )
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_validate_request_valid(seeded_authz):
@@ -1731,17 +1612,16 @@ def test_validate_request_valid(seeded_authz):
             "color": "blue",
             "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {}
     }
     result = asyncio.run(seeded_authz.validate_request(request))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_request_invalid(seeded_authz):
     result = asyncio.run(seeded_authz.validate_request({"bad": "data"}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_combine_errors_method_via_shutdown(storage_dict):
@@ -1759,83 +1639,7 @@ def test_combine_errors_method_via_shutdown(storage_dict):
     asyncio.run(a.start())
     # Calling shutdown exercises _combine_errors internally via core.combine_errors
     result = asyncio.run(a.shutdown())
-    assert result['has_failed'] is False
-
-
-def test_combine_errors_instance_method_directly(storage_dict):
-    """Directly test the _combine_errors private method for coverage."""
-    a = AuthzeeAsync(
-        execute=jmespath_execute,
-        compute_type=InProcessCompute,
-        compute_kwargs={},
-        storage_type=DictStorage,
-        storage_kwargs={
-            "storage_dict": storage_dict
-        }
-    )
-    result = {
-        "has_failed": False,
-        "errors": {
-            "a": [
-                {
-                    "is_critical": False,
-                    "message": "x"
-                }
-            ]
-        }
-    }
-    new_result = {
-        "has_failed": True,
-        "errors": {
-            "b": [
-                {
-                    "is_critical": True,
-                    "message": "y"
-                }
-            ]
-        }
-    }
-    a._combine_errors(result, new_result)
-    assert result['has_failed'] is True
-    assert "a" in result['errors']
-    assert "b" in result['errors']
-
-
-def test_combine_errors_instance_method_merges_existing_keys(storage_dict):
-    """Test _combine_errors merging into existing error keys."""
-    a = AuthzeeAsync(
-        execute=jmespath_execute,
-        compute_type=InProcessCompute,
-        compute_kwargs={},
-        storage_type=DictStorage,
-        storage_kwargs={
-            "storage_dict": storage_dict
-        }
-    )
-    result = {
-        "has_failed": False,
-        "errors": {
-            "a": [
-                {
-                    "is_critical": False,
-                    "message": "1"
-                }
-            ]
-        }
-    }
-    new_result = {
-        "has_failed": False,
-        "errors": {
-            "a": [
-                {
-                    "is_critical": False,
-                    "message": "2"
-                }
-            ]
-        }
-    }
-    a._combine_errors(result, new_result)
-    assert len(result['errors']['a']) == 2
+    assert result['error'] is None
 
 
 def test_locality_incompatibility_warning(storage_dict):
@@ -1872,4 +1676,369 @@ def test_locality_incompatibility_warning(storage_dict):
     result = asyncio.run(a.start())
     # DictStorage has PROCESS locality, NetworkCompute has NETWORK locality
     # PROCESS storage is not compatible with NETWORK compute (only NETWORK storage is)
-    assert "locality_incompatibility" in result.get("errors", {})
+    assert (
+        result.get("error") is not None
+        and result['error']['error_type'] == "locality_incompatibility"
+    )
+
+
+def test_start_compute_error(storage_dict):
+    """start() returns compute error when compute module fails."""
+    a = AuthzeeAsync(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        },
+        config={
+            "authzee": {
+                "raise_errors": False
+            }
+        }
+    )
+
+    async def _test():
+        orig_compute_start = InProcessCompute.start
+
+        async def failing_compute_start(self, *args, **kwargs):
+            self.locality = ModuleLocality.PROCESS
+
+            return {
+                "error": {
+                    "error_type": "compute",
+                    "message": "compute start failed"
+                }
+            }
+
+        InProcessCompute.start = failing_compute_start
+        try:
+            result = await a.start()
+        finally:
+            InProcessCompute.start = orig_compute_start
+
+        return result
+
+    result = asyncio.run(_test())
+    assert result['error'] is not None
+    assert result['error']['error_type'] == "compute"
+
+
+def test_start_storage_error(storage_dict):
+    """start() returns storage error when storage module fails."""
+    a = AuthzeeAsync(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        },
+        config={
+            "authzee": {
+                "raise_errors": False
+            }
+        }
+    )
+
+    async def _test():
+        orig_storage_start = DictStorage.start
+
+        async def failing_storage_start(self, *args, **kwargs):
+            self.locality = ModuleLocality.PROCESS
+
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": "storage start failed"
+                }
+            }
+
+        DictStorage.start = failing_storage_start
+        try:
+            result = await a.start()
+        finally:
+            DictStorage.start = orig_storage_start
+
+        return result
+
+    result = asyncio.run(_test())
+    assert result['error'] is not None
+    assert result['error']['error_type'] == "storage"
+
+
+def test_shutdown_compute_error(storage_dict):
+    """shutdown() returns compute error when compute module fails."""
+    from unittest.mock import AsyncMock
+
+    a = AuthzeeAsync(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        },
+        config={
+            "authzee": {
+                "raise_errors": False
+            }
+        }
+    )
+    asyncio.run(a.construct())
+    asyncio.run(a.start())
+
+    async def _test():
+        a._compute.shutdown = AsyncMock(
+            return_value={
+                "error": {
+                    "error_type": "compute",
+                    "message": "compute shutdown failed"
+                }
+            }
+        )
+        a._storage.shutdown = AsyncMock(
+            return_value={
+                "error": None
+            }
+        )
+        result = await a.shutdown()
+
+        return result
+
+    result = asyncio.run(_test())
+    assert result['error'] is not None
+    assert result['error']['error_type'] == "compute"
+
+
+def test_shutdown_storage_error(storage_dict):
+    """shutdown() returns storage error when storage module fails."""
+    from unittest.mock import AsyncMock
+
+    a = AuthzeeAsync(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        },
+        config={
+            "authzee": {
+                "raise_errors": False
+            }
+        }
+    )
+    asyncio.run(a.construct())
+    asyncio.run(a.start())
+
+    async def _test():
+        a._compute.shutdown = AsyncMock(
+            return_value={
+                "error": None
+            }
+        )
+        a._storage.shutdown = AsyncMock(
+            return_value={
+                "error": {
+                    "error_type": "storage",
+                    "message": "storage shutdown failed"
+                }
+            }
+        )
+        result = await a.shutdown()
+
+        return result
+
+    result = asyncio.run(_test())
+    assert result['error'] is not None
+    assert result['error']['error_type'] == "storage"
+
+
+def test_construct_compute_error(storage_dict):
+    """construct() returns compute error when compute module fails."""
+    from unittest.mock import AsyncMock, patch
+
+    a = AuthzeeAsync(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        },
+        config={
+            "authzee": {
+                "raise_errors": False
+            }
+        }
+    )
+
+    async def _test():
+        with patch.object(
+            InProcessCompute,
+            "construct",
+            new=AsyncMock(
+                return_value={
+                    "error": {
+                        "error_type": "compute",
+                        "message": "compute construct failed"
+                    }
+                }
+            )
+        ):
+            with patch.object(
+                DictStorage,
+                "construct",
+                new=AsyncMock(
+                    return_value={
+                        "error": None
+                    }
+                )
+            ):
+                result = await a.construct()
+
+        return result
+
+    result = asyncio.run(_test())
+    assert result['error'] is not None
+    assert result['error']['error_type'] == "compute"
+
+
+def test_construct_storage_error(storage_dict):
+    """construct() returns storage error when storage module fails."""
+    from unittest.mock import AsyncMock, patch
+
+    a = AuthzeeAsync(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        },
+        config={
+            "authzee": {
+                "raise_errors": False
+            }
+        }
+    )
+
+    async def _test():
+        with patch.object(
+            InProcessCompute,
+            "construct",
+            new=AsyncMock(
+                return_value={
+                    "error": None
+                }
+            )
+        ):
+            with patch.object(
+                DictStorage,
+                "construct",
+                new=AsyncMock(
+                    return_value={
+                        "error": {
+                            "error_type": "storage",
+                            "message": "storage construct failed"
+                        }
+                    }
+                )
+            ):
+                result = await a.construct()
+
+        return result
+
+    result = asyncio.run(_test())
+    assert result['error'] is not None
+    assert result['error']['error_type'] == "storage"
+
+
+def test_destroy_compute_error(storage_dict):
+    """destroy() returns compute error when compute module fails."""
+    from unittest.mock import AsyncMock
+
+    a = AuthzeeAsync(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        },
+        config={
+            "authzee": {
+                "raise_errors": False
+            }
+        }
+    )
+    asyncio.run(a.construct())
+    asyncio.run(a.start())
+
+    async def _test():
+        a._compute.destroy = AsyncMock(
+            return_value={
+                "error": {
+                    "error_type": "compute",
+                    "message": "compute destroy failed"
+                }
+            }
+        )
+        a._storage.destroy = AsyncMock(
+            return_value={
+                "error": None
+            }
+        )
+        result = await a.destroy()
+
+        return result
+
+    result = asyncio.run(_test())
+    assert result['error'] is not None
+    assert result['error']['error_type'] == "compute"
+
+
+def test_destroy_storage_error(storage_dict):
+    """destroy() returns storage error when storage module fails."""
+    from unittest.mock import AsyncMock
+
+    a = AuthzeeAsync(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        },
+        config={
+            "authzee": {
+                "raise_errors": False
+            }
+        }
+    )
+    asyncio.run(a.construct())
+    asyncio.run(a.start())
+
+    async def _test():
+        a._compute.destroy = AsyncMock(
+            return_value={
+                "error": None
+            }
+        )
+        a._storage.destroy = AsyncMock(
+            return_value={
+                "error": {
+                    "error_type": "storage",
+                    "message": "storage destroy failed"
+                }
+            }
+        )
+        result = await a.destroy()
+
+        return result
+
+    result = asyncio.run(_test())
+    assert result['error'] is not None
+    assert result['error']['error_type'] == "storage"

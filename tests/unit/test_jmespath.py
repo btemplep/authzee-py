@@ -19,8 +19,7 @@ def test_jmespath_execute_simple_expression():
     )
     assert result == {
         "result": 1,
-        "has_failed": False,
-        "error_message": None
+        "failure": None
     }
 
 
@@ -32,7 +31,7 @@ def test_jmespath_execute_returns_none_for_missing_key():
         }
     )
     assert result['result'] is None
-    assert result['has_failed'] is False
+    assert result['failure'] is None
 
 
 def test_jmespath_execute_invalid_expression():
@@ -42,9 +41,9 @@ def test_jmespath_execute_invalid_expression():
             "a": 1
         }
     )
-    assert result['has_failed'] is True
+    assert result['failure'] is not None
     assert result['result'] is None
-    assert "JMESPath Query error" in result['error_message']
+    assert "JMESPath Query error" in result['failure']
 
 
 def test_jmespath_execute_nested():
@@ -57,7 +56,7 @@ def test_jmespath_execute_nested():
     }
     result = jmespath_execute("a.b.c", data)
     assert result['result'] == 42
-    assert result['has_failed'] is False
+    assert result['failure'] is None
 
 
 def test_jmespath_custom_execute_simple():
@@ -69,8 +68,7 @@ def test_jmespath_custom_execute_simple():
     )
     assert result == {
         "result": "hello",
-        "has_failed": False,
-        "error_message": None
+        "failure": None
     }
 
 
@@ -81,9 +79,9 @@ def test_jmespath_custom_execute_invalid_expression():
             "a": 1
         }
     )
-    assert result['has_failed'] is True
+    assert result['failure'] is not None
     assert result['result'] is None
-    assert "JMESPath Query error" in result['error_message']
+    assert "JMESPath Query error" in result['failure']
 
 
 def test_custom_lower():
@@ -113,7 +111,7 @@ def test_inner_join_basic():
         "inner_join(lhs_arr, rhs_arr, 'lhs == rhs')",
         data
     )
-    assert result['has_failed'] is False
+    assert result['failure'] is None
     joined = result['result']
     assert len(joined) == 2
     assert {
@@ -139,7 +137,7 @@ def test_inner_join_no_matches():
         "inner_join(lhs_arr, rhs_arr, 'lhs == rhs')",
         data
     )
-    assert result['has_failed'] is False
+    assert result['failure'] is None
     assert result['result'] == []
 
 
@@ -160,7 +158,7 @@ def test_left_join_basic():
         "left_join(lhs_arr, rhs_arr, 'lhs == rhs')",
         data
     )
-    assert result['has_failed'] is False
+    assert result['failure'] is None
     joined = result['result']
     assert {
         "lhs": 1,
@@ -190,7 +188,7 @@ def test_left_join_no_rhs_matches():
         "left_join(lhs_arr, rhs_arr, 'lhs == rhs')",
         data
     )
-    assert result['has_failed'] is False
+    assert result['failure'] is None
     joined = result['result']
     assert {
         "lhs": 1,
@@ -217,7 +215,7 @@ def test_outer_join_basic():
         "outer_join(lhs_arr, rhs_arr, 'lhs == rhs')",
         data
     )
-    assert result['has_failed'] is False
+    assert result['failure'] is None
     joined = result['result']
     assert {
         "lhs": 1,
@@ -373,7 +371,7 @@ def test_is_identity_present_true():
         "is_identity_present(itype, request)",
         data
     )
-    if result['has_failed'] is False:
+    if result['failure'] is None:
         assert result['result'] is True
 
 
@@ -394,7 +392,7 @@ def test_is_identity_present_false():
         "is_identity_present(itype, request)",
         data
     )
-    if result['has_failed'] is False:
+    if result['failure'] is None:
         assert result['result'] is False
 
 

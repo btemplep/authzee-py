@@ -134,7 +134,7 @@ def admin_request():
             "id": "w1"
         },
         "context_type": "NULL",
-        "context": {},
+        "context": {}
     }
 
 
@@ -694,7 +694,10 @@ def test_evaluate_one_query_failure_not_applicable(admin_request, allow_grant):
     assert "forced failure" in r['failure']
 
 
-def test_evaluate_one_query_failure_applicable_on_failure(admin_request, allow_grant):
+def test_evaluate_one_query_failure_applicable_on_failure(
+    admin_request,
+    allow_grant
+):
     grant = {
         **allow_grant,
         "applicable_on_failure": True
@@ -822,9 +825,7 @@ def test_batch_audit_multiple_items(base_batch, allow_grant):
             {}
         ]
     }
-    assert len(
-        batch_audit(batch, [allow_grant], execute)['batch']
-    ) == 2
+    assert len(batch_audit(batch, [allow_grant], execute)['batch']) == 2
 
 
 def test_batch_authorize_basic(base_batch, allow_grant):
@@ -863,9 +864,7 @@ def test_batch_authorize_multiple_items(base_batch, allow_grant):
             {}
         ]
     }
-    assert len(
-        batch_authorize(batch, [allow_grant], execute)['batch']
-    ) == 2
+    assert len(batch_authorize(batch, [allow_grant], execute)['batch']) == 2
 
 
 def test_audit_workflow_valid(
@@ -1051,3 +1050,152 @@ def test_batch_authorize_workflow_invalid_batch(
     allow_grant
 ):
     assert batch_authorize_workflow(context_defs, identity_defs, resource_defs, [allow_grant], {}, execute)['error'] is not None
+
+
+def test_validate_batch_request_invalid_resource_type(
+    context_defs,
+    identity_defs,
+    resource_defs
+):
+    """validate_batch_request with invalid resource_type at root level."""
+    batch = {
+        "identities": {
+            "User": [
+                {
+                    "id": "u1",
+                    "role": "admin"
+                }
+            ]
+        },
+        "action": "Widget:Read",
+        "resource_type": "NonExistent",
+        "resource": {
+            "id": "w1"
+        },
+        "context_type": "NULL",
+        "context": {},
+        "batch": [
+            {}
+        ]
+    }
+    r = validate_batch_request(
+        batch,
+        context_defs,
+        identity_defs,
+        resource_defs
+    )
+    assert r['error'] is not None
+    assert (
+        "NonExistent" in r['error']['message']
+        or "resource" in r['error']['message'].lower()
+    )
+
+
+def test_validate_batch_request_invalid_context_type(
+    context_defs,
+    identity_defs,
+    resource_defs
+):
+    """validate_batch_request with invalid context_type at root level."""
+    batch = {
+        "identities": {
+            "User": [
+                {
+                    "id": "u1",
+                    "role": "admin"
+                }
+            ]
+        },
+        "action": "Widget:Read",
+        "resource_type": "Widget",
+        "resource": {
+            "id": "w1"
+        },
+        "context_type": "NonExistentContext",
+        "context": {},
+        "batch": [
+            {}
+        ]
+    }
+    r = validate_batch_request(
+        batch,
+        context_defs,
+        identity_defs,
+        resource_defs
+    )
+    assert r['error'] is not None
+    assert (
+        "NonExistentContext" in r['error']['message']
+        or "context" in r['error']['message'].lower()
+    )
+
+
+def test_batch_audit_workflow_per_item_error(
+    context_defs,
+    identity_defs,
+    resource_defs,
+    allow_grant,
+    base_batch
+):
+    """batch_audit_workflow with a batch item that has a validation error."""
+    batch = {
+        **base_batch,
+        "batch": [
+            {},
+            {
+                "identities": {
+                    "Ghost": [
+                        {}
+                    ]
+                }
+            }
+        ]
+    }
+    r = batch_audit_workflow(
+        context_defs,
+        identity_defs,
+        resource_defs,
+        [allow_grant],
+        batch,
+        execute
+    )
+    assert r['error'] is None
+    assert len(r['batch']) == 2
+    assert r['batch'][0]['error'] is None
+    assert r['batch'][1]['error'] is not None
+
+
+def test_batch_authorize_workflow_per_item_error(
+    context_defs,
+    identity_defs,
+    resource_defs,
+    allow_grant,
+    base_batch
+):
+    """batch_authorize_workflow with a batch item that has a validation error."""
+    batch = {
+        **base_batch,
+        "batch": [
+            {},
+            {
+                "identities": {
+                    "Ghost": [
+                        {}
+                    ]
+                }
+            }
+        ]
+    }
+    r = batch_authorize_workflow(
+        context_defs,
+        identity_defs,
+        resource_defs,
+        [allow_grant],
+        batch,
+        execute
+    )
+    assert r['error'] is None
+    assert len(r['batch']) == 2
+    assert r['batch'][0]['error'] is None
+    assert r['batch'][1]['error'] is not None
+    assert r['batch'][1]['is_authorized'] is False

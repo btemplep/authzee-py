@@ -225,20 +225,20 @@ def test_dict_storage_start(storage_dict):
     s = DictStorage(storage_dict=storage_dict)
     asyncio.run(s.construct(config={}))
     result = asyncio.run(s.start(config={}))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert s.locality == ModuleLocality.PROCESS
     assert s.has_parallel_paging is True
 
 
 def test_dict_storage_shutdown(storage):
     result = asyncio.run(storage.shutdown(config={}))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_dict_storage_construct(storage_dict):
     s = DictStorage(storage_dict=storage_dict)
     result = asyncio.run(s.construct(config={}))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert "context_defs_lut" in storage_dict
     assert "identity_defs_lut" in storage_dict
     assert "resource_defs_lut" in storage_dict
@@ -248,7 +248,7 @@ def test_dict_storage_construct(storage_dict):
 
 def test_dict_storage_destroy(storage, storage_dict):
     result = asyncio.run(storage.destroy(config={}))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert "context_defs_lut" not in storage_dict
 
 
@@ -261,13 +261,13 @@ def test_dict_storage_put_and_get_context_def(storage):
     }
     asyncio.run(storage.put_context_def(context_def, config={}))
     result = asyncio.run(storage.get_context_def("NONE", config={}))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['context_def'] == context_def
 
 
 def test_dict_storage_get_context_def_not_found(storage):
     result = asyncio.run(storage.get_context_def("MISSING", config={}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
     assert result['context_def'] is None
 
 
@@ -302,7 +302,7 @@ def test_dict_storage_list_context_defs(storage):
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert len(result['context_defs']) == 2
     assert result['next_page_ref'] is None
 
@@ -355,7 +355,7 @@ def test_dict_storage_delete_context_def(storage):
         )
     )
     result = asyncio.run(storage.delete_context_def("DEL", config={}))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     get_result = asyncio.run(storage.get_context_def("DEL", config={}))
     assert get_result['context_def'] is None
 
@@ -371,13 +371,13 @@ def test_dict_storage_put_and_get_identity_def(storage):
         storage.put_identity_def(identity_def, config={})
     )
     result = asyncio.run(storage.get_identity_def("user", config={}))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['identity_def'] == identity_def
 
 
 def test_dict_storage_get_identity_def_not_found(storage):
     result = asyncio.run(storage.get_identity_def("MISSING", config={}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
     assert result['identity_def'] is None
 
 
@@ -470,13 +470,13 @@ def test_dict_storage_put_and_get_resource_def(storage):
         storage.put_resource_def(resource_def, config={})
     )
     result = asyncio.run(storage.get_resource_def("file", config={}))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['resource_def'] == resource_def
 
 
 def test_dict_storage_get_resource_def_not_found(storage):
     result = asyncio.run(storage.get_resource_def("MISSING", config={}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
     assert result['resource_def'] is None
 
 
@@ -576,7 +576,6 @@ def sample_grant():
             "read"
         ],
         "query": "`true`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -588,7 +587,7 @@ def test_dict_storage_enact_and_get_grant(storage, sample_grant):
     result = asyncio.run(
         storage.get_grant(sample_grant['grant_uuid'], config={})
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['grant'] == sample_grant
 
 
@@ -596,7 +595,7 @@ def test_dict_storage_get_grant_not_found(storage):
     result = asyncio.run(
         storage.get_grant("nonexistent-uuid", config={})
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
     assert result['grant'] is None
 
 
@@ -609,7 +608,7 @@ def test_dict_storage_repeal(storage, sample_grant):
             config={}
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
     get_result = asyncio.run(
         storage.get_grant(sample_grant['grant_uuid'], config={})
     )
@@ -642,7 +641,6 @@ def test_dict_storage_list_grants_filter_effect(storage):
             "read"
         ],
         "query": "`true`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -657,7 +655,6 @@ def test_dict_storage_list_grants_filter_effect(storage):
             "read"
         ],
         "query": "`true`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -690,7 +687,6 @@ def test_dict_storage_list_grants_filter_action(storage):
             "write"
         ],
         "query": "`true`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -705,7 +701,6 @@ def test_dict_storage_list_grants_filter_action(storage):
             "delete"
         ],
         "query": "`true`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -738,9 +733,8 @@ def test_dict_storage_list_grants_pagination(storage):
                 "read"
             ],
             "query": "`true`",
-            "evaluation_handler": "evaluate",
             "equality": True,
-        "applicable_on_failure": False,
+            "applicable_on_failure": False,
             "data": {}
         }
         asyncio.run(storage.enact(g, config={}))
@@ -782,9 +776,8 @@ def test_dict_storage_list_grant_refs(storage):
                 "read"
             ],
             "query": "`true`",
-            "evaluation_handler": "evaluate",
             "equality": True,
-        "applicable_on_failure": False,
+            "applicable_on_failure": False,
             "data": {}
         }
         asyncio.run(storage.enact(g, config={}))
@@ -799,7 +792,7 @@ def test_dict_storage_list_grant_refs(storage):
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert len(result['page_refs']) > 0
     if result['next_page_ref'] is not None:
         result2 = asyncio.run(
@@ -812,7 +805,7 @@ def test_dict_storage_list_grant_refs(storage):
                 }
             )
         )
-        assert result2['has_failed'] is False
+        assert result2['error'] is None
 
 
 def test_dict_storage_list_grant_refs_filter_effect(storage):
@@ -826,7 +819,6 @@ def test_dict_storage_list_grant_refs_filter_effect(storage):
             "read"
         ],
         "query": "`true`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -856,7 +848,6 @@ def test_dict_storage_list_grant_refs_filter_action(storage):
             "write"
         ],
         "query": "`true`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -872,47 +863,47 @@ def test_dict_storage_list_grant_refs_filter_action(storage):
             }
         )
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_dict_storage_create_and_get_latch(storage):
     create_result = asyncio.run(storage.create_latch(config={}))
-    assert create_result['has_failed'] is False
+    assert create_result['error'] is None
     latch = create_result['storage_latch']
     assert latch['is_set'] is False
 
     get_result = asyncio.run(
         storage.get_latch(latch['storage_latch_uuid'], config={})
     )
-    assert get_result['has_failed'] is False
+    assert get_result['error'] is None
     assert get_result['storage_latch'] == latch
 
 
 def test_dict_storage_get_latch_not_found(storage):
     result = asyncio.run(storage.get_latch("nonexistent", config={}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_dict_storage_set_latch(storage):
     create_result = asyncio.run(storage.create_latch(config={}))
     latch_uuid = create_result['storage_latch']['storage_latch_uuid']
     set_result = asyncio.run(storage.set_latch(latch_uuid, config={}))
-    assert set_result['has_failed'] is False
+    assert set_result['error'] is None
     assert set_result['storage_latch']['is_set'] is True
 
 
 def test_dict_storage_set_latch_not_found(storage):
     result = asyncio.run(storage.set_latch("nonexistent", config={}))
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_dict_storage_delete_latch(storage):
     create_result = asyncio.run(storage.create_latch(config={}))
     latch_uuid = create_result['storage_latch']['storage_latch_uuid']
     del_result = asyncio.run(storage.delete_latch(latch_uuid, config={}))
-    assert del_result['has_failed'] is False
+    assert del_result['error'] is None
     get_result = asyncio.run(storage.get_latch(latch_uuid, config={}))
-    assert get_result['has_failed'] is True
+    assert get_result['error'] is not None
 
 
 def test_dict_storage_cleanup_latches(storage):
@@ -925,7 +916,7 @@ def test_dict_storage_cleanup_latches(storage):
     result = asyncio.run(
         storage.cleanup_latches(before=future, config={})
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert len(storage._storage_dict['latches_lut']) == 0
 
 
@@ -936,5 +927,5 @@ def test_dict_storage_cleanup_latches_keeps_recent(storage):
         - datetime.timedelta(seconds=10)
     )
     result = asyncio.run(storage.cleanup_latches(before=past, config={}))
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert len(storage._storage_dict['latches_lut']) == 1

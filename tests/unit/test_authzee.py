@@ -27,7 +27,7 @@ def storage_dict():
 
 @pytest.fixture
 def authz(storage_dict):
-    """Create a fully initialized Authzee instance with raise_crits=False for black-box testing."""
+    """Create a fully initialized Authzee instance with raise_errors=False for black-box testing."""
     a = Authzee(
         execute=jmespath_execute,
         compute_type=InProcessCompute,
@@ -38,7 +38,7 @@ def authz(storage_dict):
         },
         config={
             "authzee": {
-                "raise_crits": False
+                "raise_errors": False
             }
         }
     )
@@ -125,7 +125,6 @@ def grant():
             "balloon:inflate"
         ],
         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-        "evaluation_handler": "evaluate",
         "equality": True,
         "applicable_on_failure": False,
         "data": {}
@@ -144,9 +143,8 @@ def deny_grant():
             "balloon:pop"
         ],
         "query": "length(request.identities.user[?department == 'Intern']) > `0`",
-        "evaluation_handler": "evaluate",
         "equality": True,
-    "applicable_on_failure": False,
+        "applicable_on_failure": False,
         "data": {}
     }
 
@@ -168,7 +166,6 @@ def auth_request():
             "color": "blue",
             "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {}
     }
@@ -191,7 +188,6 @@ def batch_request():
             "color": "blue",
             "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
@@ -244,7 +240,7 @@ def test_construct(storage_dict):
         }
     )
     result = authz.construct()
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_start(storage_dict):
@@ -259,12 +255,12 @@ def test_start(storage_dict):
     )
     authz.construct()
     result = authz.start()
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_shutdown(authz):
     result = authz.shutdown()
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_destroy(storage_dict):
@@ -280,7 +276,7 @@ def test_destroy(storage_dict):
     authz.construct()
     authz.start()
     result = authz.destroy()
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_construct_with_config(storage_dict):
@@ -296,11 +292,11 @@ def test_construct_with_config(storage_dict):
     result = authz.construct(
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_start_with_config(storage_dict):
@@ -317,22 +313,22 @@ def test_start_with_config(storage_dict):
     result = authz.start(
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_shutdown_with_config(authz):
     result = authz.shutdown(
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_destroy_with_config(storage_dict):
@@ -350,16 +346,16 @@ def test_destroy_with_config(storage_dict):
     result = authz.destroy(
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_context_def_valid(authz, context_def):
     result = authz.validate_context_def(context_def)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_context_def_invalid(authz):
@@ -369,7 +365,7 @@ def test_validate_context_def_invalid(authz):
             "schema": "not_a_dict"
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_validate_context_def_non_object_schema(authz):
@@ -381,12 +377,12 @@ def test_validate_context_def_non_object_schema(authz):
             }
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_put_context_def(authz, context_def):
     result = authz.put_context_def(context_def)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_context_def_invalid(authz):
@@ -396,25 +392,25 @@ def test_put_context_def_invalid(authz):
             "schema": "nope"
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_get_context_def(authz, context_def):
     authz.put_context_def(context_def)
     result = authz.get_context_def(context_type="NONE")
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['context_def']['context_type'] == "NONE"
 
 
 def test_get_context_def_not_found(authz):
     result = authz.get_context_def(context_type="DOES_NOT_EXIST")
     assert result['context_def'] is None
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_list_context_defs_empty(authz):
     result = authz.list_context_defs()
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['context_defs'] == []
     assert result['next_page_ref'] is None
 
@@ -438,43 +434,43 @@ def test_list_context_defs_paginator(authz, context_def):
 def test_delete_context_def(authz, context_def):
     authz.put_context_def(context_def)
     result = authz.delete_context_def(context_type="NONE")
-    assert result['has_failed'] is False
+    assert result['error'] is None
     # Verify it was deleted - get returns has_failed=True with resource_not_found
     get_result = authz.get_context_def(context_type="NONE")
     assert get_result['context_def'] is None
-    assert get_result['has_failed'] is True
+    assert get_result['error'] is not None
 
 
 def test_delete_context_def_not_found(authz):
     result = authz.delete_context_def(context_type="DOES_NOT_EXIST")
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_context_def_with_config(authz, context_def):
     result = authz.validate_context_def(
         context_def, config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_context_def_with_config(authz, context_def):
     result = authz.put_context_def(
         context_def, config={
             "authzee": {
-                "raise_crits": False
+                "raise_errors": False
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_identity_def_valid(authz, identity_def):
     result = authz.validate_identity_def(identity_def)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_identity_def_invalid(authz):
@@ -484,7 +480,7 @@ def test_validate_identity_def_invalid(authz):
             "schema": "not_a_dict"
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_validate_identity_def_non_object_schema(authz):
@@ -496,12 +492,12 @@ def test_validate_identity_def_non_object_schema(authz):
             }
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_put_identity_def(authz, identity_def):
     result = authz.put_identity_def(identity_def)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_identity_def_invalid(authz):
@@ -511,25 +507,25 @@ def test_put_identity_def_invalid(authz):
             "schema": 123
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_get_identity_def(authz, identity_def):
     authz.put_identity_def(identity_def)
     result = authz.get_identity_def(identity_type="user")
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['identity_def']['identity_type'] == "user"
 
 
 def test_get_identity_def_not_found(authz):
     result = authz.get_identity_def(identity_type="DOES_NOT_EXIST")
     assert result['identity_def'] is None
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_list_identity_defs_empty(authz):
     result = authz.list_identity_defs()
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['identity_defs'] == []
 
 
@@ -551,31 +547,31 @@ def test_list_identity_defs_paginator(authz, identity_def):
 def test_delete_identity_def(authz, identity_def):
     authz.put_identity_def(identity_def)
     result = authz.delete_identity_def(identity_type="user")
-    assert result['has_failed'] is False
+    assert result['error'] is None
     get_result = authz.get_identity_def(identity_type="user")
     assert get_result['identity_def'] is None
-    assert get_result['has_failed'] is True
+    assert get_result['error'] is not None
 
 
 def test_delete_identity_def_not_found(authz):
     result = authz.delete_identity_def(identity_type="DOES_NOT_EXIST")
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_identity_def_with_config(authz, identity_def):
     result = authz.validate_identity_def(
         identity_def, config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_resource_def_valid(authz, resource_def):
     result = authz.validate_resource_def(resource_def)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_resource_def_invalid(authz):
@@ -586,7 +582,7 @@ def test_validate_resource_def_invalid(authz):
             "schema": "bad"
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_validate_resource_def_non_object_schema(authz):
@@ -599,12 +595,12 @@ def test_validate_resource_def_non_object_schema(authz):
             }
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_put_resource_def(authz, resource_def):
     result = authz.put_resource_def(resource_def)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_resource_def_invalid(authz):
@@ -615,25 +611,25 @@ def test_put_resource_def_invalid(authz):
             "schema": "bad"
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_get_resource_def(authz, resource_def):
     authz.put_resource_def(resource_def)
     result = authz.get_resource_def(resource_type="balloon")
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['resource_def']['resource_type'] == "balloon"
 
 
 def test_get_resource_def_not_found(authz):
     result = authz.get_resource_def(resource_type="DOES_NOT_EXIST")
     assert result['resource_def'] is None
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_list_resource_defs_empty(authz):
     result = authz.list_resource_defs()
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['resource_defs'] == []
 
 
@@ -655,31 +651,31 @@ def test_list_resource_defs_paginator(authz, resource_def):
 def test_delete_resource_def(authz, resource_def):
     authz.put_resource_def(resource_def)
     result = authz.delete_resource_def(resource_type="balloon")
-    assert result['has_failed'] is False
+    assert result['error'] is None
     get_result = authz.get_resource_def(resource_type="balloon")
     assert get_result['resource_def'] is None
-    assert get_result['has_failed'] is True
+    assert get_result['error'] is not None
 
 
 def test_delete_resource_def_not_found(authz):
     result = authz.delete_resource_def(resource_type="DOES_NOT_EXIST")
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_resource_def_with_config(authz, resource_def):
     result = authz.validate_resource_def(
         resource_def, config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_grant_valid(authz, grant):
     result = authz.validate_grant(grant)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_grant_invalid(authz):
@@ -688,12 +684,12 @@ def test_validate_grant_invalid(authz):
             "effect": "bad"
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_enact_grant(authz, grant):
     result = authz.enact(grant)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_enact_invalid_grant(authz):
@@ -702,25 +698,25 @@ def test_enact_invalid_grant(authz):
             "effect": "bad"
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_get_grant(authz, grant):
     authz.enact(grant)
     result = authz.get_grant(grant_uuid=grant['grant_uuid'])
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['grant']['grant_uuid'] == grant['grant_uuid']
 
 
 def test_get_grant_not_found(authz):
     result = authz.get_grant(grant_uuid="nonexistent-uuid")
     assert result['grant'] is None
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
 def test_list_grants_empty(authz):
     result = authz.list_grants()
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['grants'] == []
 
 
@@ -758,7 +754,7 @@ def test_list_grants_paginator(authz, grant):
 def test_list_grant_refs(authz, grant):
     authz.enact(grant)
     result = authz.list_grant_refs()
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert "page_refs" in result
 
 
@@ -766,7 +762,7 @@ def test_list_grant_refs_filter_by_effect(authz, grant, deny_grant):
     authz.enact(grant)
     authz.enact(deny_grant)
     result = authz.list_grant_refs(effect="allow")
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_list_grant_refs_paginator(authz, grant):
@@ -781,23 +777,23 @@ def test_list_grant_refs_paginator(authz, grant):
 def test_repeal_grant(authz, grant):
     authz.enact(grant)
     result = authz.repeal(grant_uuid=grant['grant_uuid'], purge=False)
-    assert result['has_failed'] is False
+    assert result['error'] is None
     # Verify it was repealed - get returns has_failed=True with not found
     get_result = authz.get_grant(grant_uuid=grant['grant_uuid'])
     assert get_result['grant'] is None
-    assert get_result['has_failed'] is True
+    assert get_result['error'] is not None
 
 
 def test_repeal_grant_purge(authz, grant):
     authz.enact(grant)
     result = authz.repeal(grant_uuid=grant['grant_uuid'], purge=True)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_repeal_grant_not_found(authz):
     # DictStorage repeal returns has_failed=False even when not found
     result = authz.repeal(grant_uuid="nonexistent-uuid", purge=False)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_validate_grant_with_config(authz, grant):
@@ -805,11 +801,11 @@ def test_validate_grant_with_config(authz, grant):
         grant,
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_enact_with_config(authz, grant):
@@ -817,16 +813,16 @@ def test_enact_with_config(authz, grant):
         grant,
         config={
             "authzee": {
-                "raise_crits": False
+                "raise_errors": False
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_cleanup_latches(authz):
     result = authz.cleanup_latches(before=datetime.datetime(2030, 1, 1))
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_cleanup_latches_with_config(authz):
@@ -834,17 +830,17 @@ def test_cleanup_latches_with_config(authz):
         before=datetime.datetime(2030, 1, 1),
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_authorize_allowed(seeded_authz, auth_request):
     result = seeded_authz.authorize(request=auth_request)
     assert result['is_authorized'] is True
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert result['grant'] is not None
     assert isinstance(result['message'], str)
 
@@ -877,7 +873,6 @@ def test_authorize_denied_by_deny_grant(seeded_authz, deny_grant):
             "color": "blue",
             "is_inflated": True
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {}
     }
@@ -889,7 +884,7 @@ def test_authorize_with_config(seeded_authz, auth_request):
     result = seeded_authz.authorize(
         request=auth_request, config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -898,10 +893,10 @@ def test_authorize_with_config(seeded_authz, auth_request):
 
 def test_audit(seeded_authz, auth_request):
     result = seeded_authz.audit(request=auth_request)
-    assert result['has_failed'] is False
-    assert "grants" in result
+    assert result['error'] is None
     assert "results" in result
-    assert len(result['grants']) == len(result['results'])
+    assert len(result['results']) > 0
+    assert result['results'][0]['grant'] is not None
 
 
 def test_audit_with_applicable_grant(seeded_authz, auth_request):
@@ -913,7 +908,7 @@ def test_audit_paginator(seeded_authz, auth_request):
     all_grants = []
     all_results = []
     for page in paginator(seeded_authz.audit, request=auth_request):
-        all_grants.extend(page['grants'])
+        all_grants.extend([r['grant'] for r in page['results']])
         all_results.extend(page['results'])
 
     assert len(all_grants) >= 1
@@ -923,23 +918,23 @@ def test_audit_with_config(seeded_authz, auth_request):
     result = seeded_authz.audit(
         request=auth_request, config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_batch_authorize(seeded_authz, batch_request):
     result = seeded_authz.batch_authorize(batch_request=batch_request)
-    assert result['has_failed'] is False
-    assert "batch_results" in result
-    assert len(result['batch_results']) == 2
+    assert result['error'] is None
+    assert "batch" in result
+    assert len(result['batch']) == 2
 
 
 def test_batch_authorize_all_authorized(seeded_authz, batch_request):
     result = seeded_authz.batch_authorize(batch_request=batch_request)
-    for item in result['batch_results']:
+    for item in result['batch']:
         assert item['is_authorized'] is True
 
 
@@ -947,19 +942,19 @@ def test_batch_authorize_with_config(seeded_authz, batch_request):
     result = seeded_authz.batch_authorize(
         batch_request=batch_request, config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_batch_audit(seeded_authz, batch_request):
     result = seeded_authz.batch_audit(batch_request=batch_request)
-    assert result['has_failed'] is False
+    assert result['error'] is None
     assert "grants" in result
-    assert "batch_results" in result
-    assert len(result['batch_results']) == 2
+    assert "batch" in result
+    assert len(result['batch']) == 2
 
 
 def test_batch_audit_paginator(seeded_authz, batch_request):
@@ -970,7 +965,7 @@ def test_batch_audit_paginator(seeded_authz, batch_request):
         batch_request=batch_request
     ):
         all_grants.extend(page['grants'])
-        all_batch.extend(page['batch_results'])
+        all_batch.extend(page['batch'])
 
     assert len(all_grants) >= 1
 
@@ -979,11 +974,11 @@ def test_batch_audit_with_config(seeded_authz, batch_request):
     result = seeded_authz.batch_audit(
         batch_request=batch_request, config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_instance_level_config():
@@ -999,18 +994,18 @@ def test_instance_level_config():
         },
         config={
             "authzee": {
-                "raise_crits": False
+                "raise_errors": False
             }
         }
     )
     result = authz.construct()
-    assert result['has_failed'] is False
+    assert result['error'] is None
     result = authz.start()
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
-def test_raise_crits_config_raises_on_invalid_def():
-    """Test that raise_crits=True raises DefinitionError on invalid put."""
+def test_raise_errors_config_raises_on_invalid_def():
+    """Test that raise_errors=True raises DefinitionError on invalid put."""
     storage_dict = {}
     authz = Authzee(
         execute=jmespath_execute,
@@ -1022,7 +1017,7 @@ def test_raise_crits_config_raises_on_invalid_def():
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1037,7 +1032,7 @@ def test_raise_crits_config_raises_on_invalid_def():
         )
 
 
-def test_raise_crits_override_at_call_level(authz):
+def test_raise_errors_override_at_call_level(authz):
     """Test that config override at method level takes precedence."""
     with pytest.raises(exceptions.DefinitionError):
         authz.validate_context_def(
@@ -1047,14 +1042,14 @@ def test_raise_crits_override_at_call_level(authz):
             },
             config={
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 }
             }
         )
 
 
-def test_raise_crits_false_does_not_raise(authz):
-    """Test that raise_crits=False returns error result without raising."""
+def test_raise_errors_false_does_not_raise(authz):
+    """Test that raise_errors=False returns error result without raising."""
     result = authz.validate_context_def(
         {
             "context_type": "BAD",
@@ -1062,15 +1057,15 @@ def test_raise_crits_false_does_not_raise(authz):
         },
         config={
             "authzee": {
-                "raise_crits": False
+                "raise_errors": False
             }
         }
     )
-    assert result['has_failed'] is True
+    assert result['error'] is not None
 
 
-def test_raise_crits_grant_error():
-    """Test that raise_crits raises GrantError on invalid grant validation."""
+def test_raise_errors_grant_error():
+    """Test that raise_errors raises GrantError on invalid grant validation."""
     storage_dict = {}
     authz = Authzee(
         execute=jmespath_execute,
@@ -1082,7 +1077,7 @@ def test_raise_crits_grant_error():
         },
         config={
             "authzee": {
-                "raise_crits": True
+                "raise_errors": True
             }
         }
     )
@@ -1113,7 +1108,7 @@ def test_compute_storage_kwargs_override():
     )
     authz.construct()
     result = authz.start()
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_context_def_overwrite(authz, context_def):
@@ -1126,7 +1121,7 @@ def test_put_context_def_overwrite(authz, context_def):
         }
     }
     result = authz.put_context_def(updated_def)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_identity_def_overwrite(authz, identity_def):
@@ -1143,7 +1138,7 @@ def test_put_identity_def_overwrite(authz, identity_def):
         }
     }
     result = authz.put_identity_def(updated_def)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_put_resource_def_overwrite(authz, resource_def):
@@ -1158,7 +1153,7 @@ def test_put_resource_def_overwrite(authz, resource_def):
         ]
     }
     result = authz.put_resource_def(updated_def)
-    assert result['has_failed'] is False
+    assert result['error'] is None
 
 
 def test_multiple_grants(authz, grant, deny_grant):
