@@ -1,6 +1,6 @@
 """Dict-based in-memory storage module for Authzee.
 
-See {py:class}`authzee.storage.dict_storage.DictStorage`
+See [](authzee.storage.dict_storage.DictStorage)
 """
 
 __all__ = [

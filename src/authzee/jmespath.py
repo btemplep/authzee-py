@@ -1,6 +1,6 @@
 """JMESPath custom function provided by Authzee.
 
-See {py:class}`authzee.jmespath.CustomJMESPathFunctions`
+See [](authzee.jmespath.CustomJMESPathFunctions)
 """
 
 __all__ = [

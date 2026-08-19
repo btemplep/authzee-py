@@ -1,7 +1,7 @@
 """A reference implementation for the Authzee specification.
 
 SDK may only use part of this reference implementation or none at all.
-See {py:mod}`authzee.core` for internally focused SDK code.
+See [](authzee.core) for internally focused SDK code.
 
 Core workflow:
 
@@ -448,7 +448,10 @@ audit_result_schema = {
                     "is_applicable": _is_applicable_schema,
                     "query_result": _query_result_schema,
                     "failure": {
-                        "type": ["string", "null"],
+                        "type": [
+                            "string",
+                            "null"
+                        ],
                         "description": "A message describing why the evaluation failed, or null if no failure occurred."
                     }
                 }
@@ -638,7 +641,10 @@ batch_audit_result_schema = {
                                 "is_applicable": _is_applicable_schema,
                                 "query_result": _query_result_schema,
                                 "failure": {
-                                    "type": ["string", "null"],
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
                                     "description": "A message describing why the evaluation failed, or null if no failure occurred."
                                 }
                             }

@@ -1,4 +1,4 @@
-"""Enum for locality and compatibility"""
+"""See [](authzee.module_locality.ModuleLocality)"""
 
 __all__ = [
     "ModuleLocality",

@@ -1,6 +1,6 @@
 """Base storage module for Authzee.
 
-See {py:class}`authzee.storage.storage_module.StorageModule`
+See [](authzee.storage.storage_module.StorageModule)
 """
 
 __all__ = [
@@ -60,7 +60,9 @@ class StorageModule:
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = False
 
-        return {"error": None}
+        return {
+            "error": None
+        }
 
 
     async def shutdown(self, config: StorageShutdownConfig) -> GenericResult:

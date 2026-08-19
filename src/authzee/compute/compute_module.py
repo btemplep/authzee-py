@@ -1,6 +1,6 @@
 """Base compute module for Authzee.
 
-See {py:class}`authzee.compute.compute_module.ComputeModule`
+See [](authzee.compute.compute_module.ComputeModule)
 """
 
 __all__ = [

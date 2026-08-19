@@ -275,9 +275,9 @@ class ResourceDef(TypedDict):
     --------
     ```python
     {
-        "resource_type": "MyResource",
+        "resource_type": "Balloon",
         "actions": [
-            "MyResource.MyAction"
+            "balloon:inflate"
         ],
         "schema": {
             "type": "object",
@@ -305,9 +305,9 @@ class ResourceDefResult(TypedDict):
     ```python
     {
         "resource_def": {
-            "resource_type": "MyResource",
+            "resource_type": "Balloon",
             "actions": [
-                "MyResource.MyAction"
+                "balloon:inflate"
             ],
             "schema": {
                 "type": "object",
@@ -340,9 +340,9 @@ class ResourceDefsPage(TypedDict):
     {
         "resource_defs": [
             {
-                "resource_type": "MyResource",
+                "resource_type": "Balloon",
                 "actions": [
-                    "MyResource.MyAction"
+                    "balloon:inflate"
                 ],
                 "schema": {
                     "type": "object",
@@ -384,7 +384,7 @@ class Grant(TypedDict):
         },
         "effect": "allow",
         "actions": [
-            "MyResource.MyAction"
+            "balloon:inflate"
         ],
         "query": "contains(request.identities, 'User')",
         "equality": True,
@@ -425,7 +425,7 @@ class GrantResult(TypedDict):
             },
             "effect": "allow",
             "actions": [
-                "MyResource.MyAction"
+                "balloon:inflate"
             ],
             "query": "contains(request.identities, 'User')",
             "equality": True,
@@ -461,7 +461,7 @@ class GrantsPage(TypedDict):
                 },
                 "effect": "allow",
                 "actions": [
-                    "MyResource.MyAction"
+                    "balloon:inflate"
                 ],
                 "query": "contains(request.identities, 'User')",
                 "equality": True,
@@ -730,7 +730,7 @@ class AuditResultItem(TypedDict):
             "description": "Long description",
             "tags": {},
             "effect": "allow",
-            "actions": ["MyResource.MyAction"],
+            "actions": ["balloon:inflate"],
             "query": "contains(request.identities, 'User')",
             "equality": True,
             "data": {}
@@ -764,7 +764,7 @@ class AuditResultPage(TypedDict):
                     "description": "Long description",
                     "tags": {},
                     "effect": "allow",
-                    "actions": ["MyResource.MyAction"],
+                    "actions": ["balloon:inflate"],
                     "query": "contains(request.identities, 'User')",
                     "equality": True,
                     "data": {}
@@ -805,7 +805,7 @@ class AuthorizeResult(TypedDict):
                 "my tag key": "my tag value"
             },
             "effect": "allow",
-            "actions": ["MyResource.MyAction"],
+            "actions": ["balloon:inflate"],
             "query": "contains(request.identities, 'User')",
             "equality": True,
             "data": {}
@@ -867,7 +867,7 @@ class BatchAuditResultPage(TypedDict):
                 "description": "Long description",
                 "tags": {},
                 "effect": "allow",
-                "actions": ["MyResource.MyAction"],
+                "actions": ["balloon:inflate"],
                 "query": "contains(request.identities, 'User')",
                 "equality": True,
                 "data": {}
@@ -920,7 +920,7 @@ class BatchAuthorizeResult(TypedDict):
                     "description": "Long description",
                     "tags": {},
                     "effect": "allow",
-                    "actions": ["MyResource.MyAction"],
+                    "actions": ["balloon:inflate"],
                     "query": "contains(request.identities, 'User')",
                     "equality": True,
                     "data": {}

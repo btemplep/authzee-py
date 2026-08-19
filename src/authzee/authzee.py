@@ -1,4 +1,4 @@
-"""See {py:class}`authzee.authzee.Authzee`"""
+"""See [](authzee.authzee.Authzee)"""
 
 __all__ = [
     "Authzee"
@@ -251,8 +251,10 @@ class Authzee:
 
         Raises
         ------
-        StartError
-            If an error occurs during initialization.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         LocalityIncompatibilityError
             If the storage and compute localities are not compatible.
         """
@@ -308,8 +310,10 @@ class Authzee:
 
         Raises
         ------
-        ShutdownError
-            If an error occurs during shutdown.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(self._authzee_async.shutdown(config))
 
@@ -363,8 +367,10 @@ class Authzee:
 
         Raises
         ------
-        ConstructError
-            If an error occurs during construction.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(self._authzee_async.construct(config))
 
@@ -418,8 +424,10 @@ class Authzee:
 
         Raises
         ------
-        DestroyError
-            If an error occurs during destruction.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(self._authzee_async.destroy(config))
 
@@ -566,8 +574,8 @@ class Authzee:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.list_context_defs(
@@ -767,8 +775,8 @@ class Authzee:
 
         Raises
         ------
-        DeleteError
-            If an error occurs during deletion.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.delete_context_def(
@@ -931,8 +939,8 @@ class Authzee:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.list_identity_defs(
@@ -1143,8 +1151,8 @@ class Authzee:
 
         Raises
         ------
-        DeleteError
-            If an error occurs during deletion.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.delete_identity_def(
@@ -1316,8 +1324,8 @@ class Authzee:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.list_resource_defs(
@@ -1537,8 +1545,8 @@ class Authzee:
 
         Raises
         ------
-        DeleteError
-            If an error occurs during deletion.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.delete_resource_def(
@@ -1736,7 +1744,7 @@ class Authzee:
         GenericResult
             ```python
             {
-                "error": {  # dict | None
+                "error": { # dict | None
                     "error_type": "resource_not_found",
                     "message": "Error message."
                 }
@@ -1926,8 +1934,8 @@ class Authzee:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.list_grants(
@@ -2016,8 +2024,8 @@ class Authzee:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         ParallelPaginationNotSupported
             If the storage backend does not support parallel pagination.
         """
@@ -2087,8 +2095,10 @@ class Authzee:
 
         Raises
         ------
-        StartError
-            If an error occurs during cleanup.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.cleanup_latches(
@@ -2254,10 +2264,8 @@ class Authzee:
         ------
         RequestError
             If the request is invalid and raise_errors is True.
-        EvaluationError
-            If an evaluation error occurs and raise_errors is True.
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.audit(
@@ -2389,8 +2397,10 @@ class Authzee:
         ------
         RequestError
             If the request is invalid and raise_errors is True.
-        EvaluationError
-            If an evaluation error occurs and raise_errors is True.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.authorize(
@@ -2578,10 +2588,8 @@ class Authzee:
         ------
         RequestError
             If the batch request is invalid and raise_errors is True.
-        EvaluationError
-            If an evaluation error occurs and raise_errors is True.
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.batch_audit(
@@ -2758,8 +2766,10 @@ class Authzee:
         ------
         RequestError
             If the batch request is invalid and raise_errors is True.
-        EvaluationError
-            If an evaluation error occurs and raise_errors is True.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         return asyncio.run(
             self._authzee_async.batch_authorize(

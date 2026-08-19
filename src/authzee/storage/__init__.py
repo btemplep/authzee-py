@@ -1,4 +1,4 @@
-"""TODO: Add module docstring."""
+"""Authzee storage modules."""
 
 __all__ = [
     "DictStorage",

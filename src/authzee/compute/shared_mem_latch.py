@@ -1,4 +1,4 @@
-"""TODO: Add module docstring."""
+"""See [](authzee.compute.shared_mem_latch.SharedMemLatch)"""
 
 __all__ = [
     "SharedMemLatch"

@@ -5,13 +5,15 @@ __all__ = [
     "AuthzeeError",
     "AuthzeeSDKError",
     "AuthzeeSpecError",
+    "ComputeError",
     "DefinitionError",
     "GrantError",
     "LocalityIncompatibilityError",
     "NotImplementedError",
     "ParallelPaginationNotSupported",
     "RequestError",
-    "ResourceNotFoundError"
+    "ResourceNotFoundError",
+    "StorageError"
 ]
 
 from authzee.types import GenericResult
@@ -102,16 +104,6 @@ class StorageError(AuthzeeSDKError):
 class ResourceNotFoundError(StorageError):
     """The resource with a specific UUID or type was not found in the storage backend.
     """
-    pass
-
-
-class PageReferenceError(AuthzeeSDKError):
-    """The page reference is not valid or has expired."""
-    pass
-
-
-class StartError(AuthzeeSDKError):
-    """An error occurred during start or initialization."""
     pass
 
 

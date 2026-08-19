@@ -2,8 +2,8 @@
 
 Authzee is a highly expressive grant-based authorization engine. Check out the [Authzee Repo](https://github.com/btemplep/authzee) for the core engine and specification.
 
-See {py:class}`authzee.authzee.Authzee`
-or {py:class}`authzee.authzee_async.AuthzeeAsync` for asyncio support!
+See [](authzee.authzee.Authzee)
+or [](authzee.authzee_async.AuthzeeAsync) for asyncio support!
 """
 
 __version__ = "0.1.0a4"
@@ -44,8 +44,10 @@ from authzee.core import (
 from authzee.paginators import paginator, paginator_async
 from authzee.storage import *
 from authzee.storage import __all__ as storage_all
+from authzee.types import *
+from authzee.types import __all__ as types_all
 
-__all__ += compute_all + storage_all
+__all__ += compute_all + storage_all + types_all
 
 
 try:

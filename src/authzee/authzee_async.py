@@ -1,4 +1,4 @@
-"""See {py:class}`authzee.authzee_async.AuthzeeAsync`"""
+"""See [](authzee.authzee_async.AuthzeeAsync)"""
 
 __all__ = [
     "AuthzeeAsync"
@@ -270,8 +270,10 @@ class AuthzeeAsync:
 
         Raises
         ------
-        StartError
-            If an error occurs during initialization.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         LocalityIncompatibilityError
             If the storage and compute localities are not compatible.
         """
@@ -361,8 +363,10 @@ class AuthzeeAsync:
 
         Raises
         ------
-        ShutdownError
-            If an error occurs during shutdown.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = {
@@ -438,8 +442,10 @@ class AuthzeeAsync:
 
         Raises
         ------
-        ConstructError
-            If an error occurs during construction.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = {
@@ -513,8 +519,10 @@ class AuthzeeAsync:
 
         Raises
         ------
-        DestroyError
-            If an error occurs during destruction.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = {
@@ -678,8 +686,8 @@ class AuthzeeAsync:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.list_context_defs(
@@ -892,8 +900,8 @@ class AuthzeeAsync:
 
         Raises
         ------
-        DeleteError
-            If an error occurs during deletion.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.delete_context_def(
@@ -1060,8 +1068,8 @@ class AuthzeeAsync:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.list_identity_defs(
@@ -1285,8 +1293,8 @@ class AuthzeeAsync:
 
         Raises
         ------
-        DeleteError
-            If an error occurs during deletion.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.delete_identity_def(
@@ -1462,8 +1470,8 @@ class AuthzeeAsync:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.list_resource_defs(
@@ -1696,8 +1704,8 @@ class AuthzeeAsync:
 
         Raises
         ------
-        DeleteError
-            If an error occurs during deletion.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.delete_resource_def(
@@ -2107,8 +2115,8 @@ class AuthzeeAsync:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.list_grants(
@@ -2199,8 +2207,8 @@ class AuthzeeAsync:
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         ParallelPaginationNotSupported
             If the storage backend does not support parallel pagination.
         """
@@ -2272,8 +2280,10 @@ class AuthzeeAsync:
 
         Raises
         ------
-        StartError
-            If an error occurs during cleanup.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.cleanup_latches(
@@ -2547,10 +2557,8 @@ class AuthzeeAsync:
         ------
         RequestError
             If the request is invalid and raise_errors is True.
-        EvaluationError
-            If an evaluation error occurs and raise_errors is True.
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         valid_result = await self._compute.validate_request(
@@ -2698,8 +2706,10 @@ class AuthzeeAsync:
         ------
         RequestError
             If the request is invalid and raise_errors is True.
-        EvaluationError
-            If an evaluation error occurs and raise_errors is True.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         valid_result = await self._compute.validate_request(
@@ -3021,10 +3031,8 @@ class AuthzeeAsync:
         ------
         RequestError
             If the batch request is invalid and raise_errors is True.
-        EvaluationError
-            If an evaluation error occurs and raise_errors is True.
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         valid_result = await self._compute.validate_batch_request(
@@ -3218,8 +3226,10 @@ class AuthzeeAsync:
         ------
         RequestError
             If the batch request is invalid and raise_errors is True.
-        EvaluationError
-            If an evaluation error occurs and raise_errors is True.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         valid_result = await self._compute.validate_batch_request(

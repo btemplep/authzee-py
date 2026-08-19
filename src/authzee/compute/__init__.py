@@ -1,4 +1,4 @@
-"""TODO: Add module docstring."""
+"""Authzee compute modules."""
 
 __all__ = [
     "ComputeModule",

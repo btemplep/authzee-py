@@ -3,6 +3,10 @@
 All compute is done within the same process/asyncio event loop.
 """
 
+__all__ = [
+    "InProcessCompute"
+]
+
 from asyncio import Task, as_completed, create_task
 from typing import Any, Callable, Dict, List, Type
 
@@ -235,10 +239,7 @@ class InProcessCompute(ComputeModule):
 
         base_request: AuthzeeBatchRequest = batch_request.copy()
         base_request.pop("batch")
-        base_result = await self.validate_request(
-            request=base_request,
-            config=config
-        )
+        base_result = await self.validate_request(request=base_request, config=config)
         if base_result['error'] is not None:
             return base_result
 

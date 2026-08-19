@@ -1,4 +1,4 @@
-"""Paginators for {py:class}`authzee.authzee.Authzee` and {py:class}`authzee.authzee_async.AuthzeeAsync`.
+"""Paginators for [](authzee.authzee.Authzee) and [](authzee.authzee_async.AuthzeeAsync).
 """
 
 __all__ = [
@@ -10,7 +10,7 @@ from typing import Any, AsyncGenerator, Callable, Generator
 
 
 def paginator(func: Callable, **kwargs) -> Generator[Any, None, None]:
-    """Paginator for {py:class}`authzee.authzee.Authzee`.
+    """Paginator for [](authzee.authzee.Authzee).
 
     Parameters
     ----------
@@ -52,7 +52,7 @@ async def paginator_async(
     afunc: Callable,
     **kwargs
 ) -> AsyncGenerator[Any, None]:
-    """Paginator for {py:class}`authzee.authzee_async.AuthzeeAsync`.
+    """Paginator for [](authzee.authzee_async.AuthzeeAsync).
 
     Parameters
     ----------
