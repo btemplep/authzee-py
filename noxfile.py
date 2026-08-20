@@ -31,7 +31,7 @@ def docs_server(session: nox.Session):
     session.run("python", "-m", "http.server", "-d", "docs/_build/html/", "7999")
 
 
-@nox.session(name="publish-package")
+@nox.session(name="publish")
 def publish(session: nox.Session):
     """Build a new src and wheel and publish to PYPI
     """

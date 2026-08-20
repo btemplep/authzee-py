@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "authzee"
-version = "0.1.0a4"
+dynamic = ["version"]
 description = "Official Authzee Python SDK."
 readme = {file = "README.md", content-type = "text/markdown"}
 license = "MIT"
@@ -64,3 +64,6 @@ Repository = "https://github.com/btemplep/authzee-py"
 [tool.setuptools.packages.find]
 where = ["src"]
 exclude = ["tests"]
+
+[tool.setuptools.dynamic]
+version = {attr = "authzee.__version__"}
