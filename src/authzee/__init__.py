@@ -6,7 +6,7 @@ See [](authzee.authzee.Authzee)
 or [](authzee.authzee_async.AuthzeeAsync) for asyncio support!
 """
 
-__version__ = "0.1.0a4"
+__version__ = "0.1.0a5"
 
 __all__ = [
     "Authzee",
