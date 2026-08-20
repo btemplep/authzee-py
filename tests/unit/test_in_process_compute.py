@@ -31,8 +31,12 @@ def compute(storage_dict):
         await c.start(
             execute=jmespath_execute,
             storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
+            storage_kwargs={
+                "storage_dict": storage_dict
+            },
+            config={
+                "storage": {}
+            }
         )
 
         return c
@@ -54,10 +58,10 @@ def seeded_compute(compute, storage_dict):
                 "context_type": "NONE",
                 "schema": {
                     "type": "object",
-                    "additionalProperties": False,
-                },
+                    "additionalProperties": False
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_identity_def(
             {
@@ -66,20 +70,20 @@ def seeded_compute(compute, storage_dict):
                     "type": "object",
                     "required": [
                         "username",
-                        "department",
+                        "department"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "username": {
-                            "type": "string",
+                            "type": "string"
                         },
                         "department": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_resource_def(
             {
@@ -87,26 +91,26 @@ def seeded_compute(compute, storage_dict):
                 "actions": [
                     "balloon:read",
                     "balloon:inflate",
-                    "balloon:pop",
+                    "balloon:pop"
                 ],
                 "schema": {
                     "type": "object",
                     "required": [
                         "color",
-                        "is_inflated",
+                        "is_inflated"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "color": {
-                            "type": "string",
+                            "type": "string"
                         },
                         "is_inflated": {
-                            "type": "boolean",
-                        },
-                    },
-                },
+                            "type": "boolean"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         await storage.enact(
             grant={
@@ -117,14 +121,14 @@ def seeded_compute(compute, storage_dict):
                 "effect": "allow",
                 "actions": [
                     "balloon:read",
-                    "balloon:inflate",
+                    "balloon:inflate"
                 ],
                 "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                "evaluation_handler": "evaluate",
                 "equality": True,
-                "data": {},
+                "applicable_on_failure": False,
+                "data": {}
             },
-            config={},
+            config={}
         )
         await storage.enact(
             grant={
@@ -134,14 +138,14 @@ def seeded_compute(compute, storage_dict):
                 "tags": {},
                 "effect": "deny",
                 "actions": [
-                    "balloon:pop",
+                    "balloon:pop"
                 ],
                 "query": "length(request.identities.user[?department == 'Intern']) > `0`",
-                "evaluation_handler": "evaluate",
                 "equality": True,
-                "data": {},
+                "applicable_on_failure": False,
+                "data": {}
             },
-            config={},
+            config={}
         )
 
     asyncio.run(seed())
@@ -170,19 +174,25 @@ def test_compute_module_destroy_raises():
 def test_compute_module_validate_context_def_raises():
     cm = ComputeModule()
     with pytest.raises(TypeError):
-        asyncio.run(cm.validate_context_def(context_def={}, config={}))
+        asyncio.run(
+            cm.validate_context_def(context_def={}, config={})
+        )
 
 
 def test_compute_module_validate_identity_def_raises():
     cm = ComputeModule()
     with pytest.raises(TypeError):
-        asyncio.run(cm.validate_identity_def(identity_def={}, config={}))
+        asyncio.run(
+            cm.validate_identity_def(identity_def={}, config={})
+        )
 
 
 def test_compute_module_validate_resource_def_raises():
     cm = ComputeModule()
     with pytest.raises(TypeError):
-        asyncio.run(cm.validate_resource_def(resource_def={}, config={}))
+        asyncio.run(
+            cm.validate_resource_def(resource_def={}, config={})
+        )
 
 
 def test_compute_module_validate_grant_raises():
@@ -200,7 +210,9 @@ def test_compute_module_validate_request_raises():
 def test_compute_module_validate_batch_request_raises():
     cm = ComputeModule()
     with pytest.raises(TypeError):
-        asyncio.run(cm.validate_batch_request(batch_request={}, config={}))
+        asyncio.run(
+            cm.validate_batch_request(batch_request={}, config={})
+        )
 
 
 def test_compute_module_audit_raises():
@@ -210,7 +222,7 @@ def test_compute_module_audit_raises():
             cm.audit(
                 request={},
                 page_ref=None,
-                config={},
+                config={}
             )
         )
 
@@ -228,7 +240,7 @@ def test_compute_module_batch_audit_raises():
             cm.batch_audit(
                 batch_request={},
                 page_ref=None,
-                config={},
+                config={}
             )
         )
 
@@ -248,33 +260,37 @@ def test_in_process_compute_start(storage_dict):
         result = await c.start(
             execute=jmespath_execute,
             storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
+            storage_kwargs={
+                "storage_dict": storage_dict
+            },
+            config={
+                "storage": {}
+            }
         )
 
         return result
 
     result = asyncio.run(run())
-    assert result["has_failed"] is False
+    assert result['error'] is None
     assert c.locality == ModuleLocality.PROCESS
     assert c.has_parallel_paging is False
 
 
 def test_in_process_compute_shutdown(compute):
     result = asyncio.run(compute.shutdown(config={"storage": {}}))
-    assert result["has_failed"] is False
+    assert result['error'] is None
 
 
 def test_in_process_compute_construct(storage_dict):
     c = InProcessCompute()
     result = asyncio.run(c.construct(config={}))
-    assert result["has_failed"] is False
+    assert result['error'] is None
 
 
 def test_in_process_compute_destroy(storage_dict):
     c = InProcessCompute()
     result = asyncio.run(c.destroy(config={}))
-    assert result["has_failed"] is False
+    assert result['error'] is None
 
 
 def test_in_process_validate_context_def_valid(compute):
@@ -284,23 +300,25 @@ def test_in_process_validate_context_def_valid(compute):
                 "context_type": "NONE",
                 "schema": {
                     "type": "object",
-                    "additionalProperties": False,
-                },
+                    "additionalProperties": False
+                }
             },
-            config={},
+            config={}
         )
     )
-    assert result["has_failed"] is False
+    assert result['error'] is None
 
 
 def test_in_process_validate_context_def_invalid(compute):
     result = asyncio.run(
         compute.validate_context_def(
-            context_def={"bad": "data"},
-            config={},
+            context_def={
+                "bad": "data"
+            },
+            config={}
         )
     )
-    assert result["has_failed"] is True
+    assert result['error'] is not None
 
 
 def test_in_process_validate_identity_def_valid(compute):
@@ -309,23 +327,25 @@ def test_in_process_validate_identity_def_valid(compute):
             identity_def={
                 "identity_type": "user",
                 "schema": {
-                    "type": "object",
-                },
+                    "type": "object"
+                }
             },
-            config={},
+            config={}
         )
     )
-    assert result["has_failed"] is False
+    assert result['error'] is None
 
 
 def test_in_process_validate_identity_def_invalid(compute):
     result = asyncio.run(
         compute.validate_identity_def(
-            identity_def={"bad": "data"},
-            config={},
+            identity_def={
+                "bad": "data"
+            },
+            config={}
         )
     )
-    assert result["has_failed"] is True
+    assert result['error'] is not None
 
 
 def test_in_process_validate_resource_def_valid(compute):
@@ -334,26 +354,28 @@ def test_in_process_validate_resource_def_valid(compute):
             resource_def={
                 "resource_type": "file",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "schema": {
-                    "type": "object",
-                },
+                    "type": "object"
+                }
             },
-            config={},
+            config={}
         )
     )
-    assert result["has_failed"] is False
+    assert result['error'] is None
 
 
 def test_in_process_validate_resource_def_invalid(compute):
     result = asyncio.run(
         compute.validate_resource_def(
-            resource_def={"bad": "data"},
-            config={},
+            resource_def={
+                "bad": "data"
+            },
+            config={}
         )
     )
-    assert result["has_failed"] is True
+    assert result['error'] is not None
 
 
 def test_in_process_validate_grant_valid(compute):
@@ -366,22 +388,29 @@ def test_in_process_validate_grant_valid(compute):
                 "tags": {},
                 "effect": "allow",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "query": "`true`",
-                "evaluation_handler": "evaluate",
                 "equality": True,
-                "data": {},
+                "applicable_on_failure": False,
+                "data": {}
             },
-            config={},
+            config={}
         )
     )
-    assert result["has_failed"] is False
+    assert result['error'] is None
 
 
 def test_in_process_validate_grant_invalid(compute):
-    result = asyncio.run(compute.validate_grant(grant={"bad": "data"}, config={}))
-    assert result["has_failed"] is True
+    result = asyncio.run(
+        compute.validate_grant(
+            grant={
+                "bad": "data"
+            },
+            config={}
+        )
+    )
+    assert result['error'] is not None
 
 
 def test_in_process_validate_request_valid(seeded_compute):
@@ -390,37 +419,43 @@ def test_in_process_validate_request_valid(seeded_compute):
             "user": [
                 {
                     "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
+                    "department": "Balloon Dept"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
-    result = asyncio.run(seeded_compute.validate_request(request=request, config=config))
-    assert result["has_failed"] is False
+    result = asyncio.run(
+        seeded_compute.validate_request(
+            request=request,
+            config=config
+        )
+    )
+    assert result['error'] is None
 
 
 def test_in_process_validate_request_invalid_schema(seeded_compute):
     result = asyncio.run(
         seeded_compute.validate_request(
-            request={"bad": "data"},
-            config={},
+            request={
+                "bad": "data"
+            },
+            config={}
         )
     )
-    assert result["has_failed"] is True
+    assert result['error'] is not None
 
 
 def test_in_process_validate_request_unknown_context_type(seeded_compute):
@@ -429,28 +464,32 @@ def test_in_process_validate_request_unknown_context_type(seeded_compute):
             "user": [
                 {
                     "username": "a",
-                    "department": "b",
-                },
-            ],
+                    "department": "b"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "UNKNOWN",
-        "context": {},
+        "context": {}
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
-    result = asyncio.run(seeded_compute.validate_request(request=request, config=config))
-    assert result["has_failed"] is True
-    assert "request" in result["errors"]
+    result = asyncio.run(
+        seeded_compute.validate_request(
+            request=request,
+            config=config
+        )
+    )
+    assert result['error'] is not None
+    assert result['error'] is not None
 
 
 def test_in_process_validate_request_invalid_context_data(seeded_compute):
@@ -459,29 +498,33 @@ def test_in_process_validate_request_invalid_context_data(seeded_compute):
             "user": [
                 {
                     "username": "a",
-                    "department": "b",
-                },
-            ],
+                    "department": "b"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {
-            "extra_field": "not allowed",
-        },
+            "extra_field": "not allowed"
+        }
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
-    result = asyncio.run(seeded_compute.validate_request(request=request, config=config))
-    assert result["has_failed"] is True
+    result = asyncio.run(
+        seeded_compute.validate_request(
+            request=request,
+            config=config
+        )
+    )
+    assert result['error'] is not None
 
 
 def test_in_process_validate_request_unknown_resource_type(seeded_compute):
@@ -490,27 +533,31 @@ def test_in_process_validate_request_unknown_resource_type(seeded_compute):
             "user": [
                 {
                     "username": "a",
-                    "department": "b",
-                },
-            ],
+                    "department": "b"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "UNKNOWN",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
-    result = asyncio.run(seeded_compute.validate_request(request=request, config=config))
-    assert result["has_failed"] is True
+    result = asyncio.run(
+        seeded_compute.validate_request(
+            request=request,
+            config=config
+        )
+    )
+    assert result['error'] is not None
 
 
 def test_in_process_validate_request_invalid_resource_data(seeded_compute):
@@ -519,27 +566,31 @@ def test_in_process_validate_request_invalid_resource_data(seeded_compute):
             "user": [
                 {
                     "username": "a",
-                    "department": "b",
-                },
-            ],
+                    "department": "b"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": 123,
-            "is_inflated": "not_bool",
+            "is_inflated": "not_bool"
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
-    result = asyncio.run(seeded_compute.validate_request(request=request, config=config))
-    assert result["has_failed"] is True
+    result = asyncio.run(
+        seeded_compute.validate_request(
+            request=request,
+            config=config
+        )
+    )
+    assert result['error'] is not None
 
 
 def test_in_process_validate_request_invalid_action(seeded_compute):
@@ -548,27 +599,31 @@ def test_in_process_validate_request_invalid_action(seeded_compute):
             "user": [
                 {
                     "username": "a",
-                    "department": "b",
-                },
-            ],
+                    "department": "b"
+                }
+            ]
         },
         "action": "balloon:NONEXISTENT",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
-    result = asyncio.run(seeded_compute.validate_request(request=request, config=config))
-    assert result["has_failed"] is True
+    result = asyncio.run(
+        seeded_compute.validate_request(
+            request=request,
+            config=config
+        )
+    )
+    assert result['error'] is not None
 
 
 def test_in_process_validate_request_unknown_identity_type(seeded_compute):
@@ -577,27 +632,31 @@ def test_in_process_validate_request_unknown_identity_type(seeded_compute):
             "unknown_id": [
                 {
                     "username": "a",
-                    "department": "b",
-                },
-            ],
+                    "department": "b"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
-    result = asyncio.run(seeded_compute.validate_request(request=request, config=config))
-    assert result["has_failed"] is True
+    result = asyncio.run(
+        seeded_compute.validate_request(
+            request=request,
+            config=config
+        )
+    )
+    assert result['error'] is not None
 
 
 def test_in_process_validate_request_invalid_identity_data(seeded_compute):
@@ -606,27 +665,31 @@ def test_in_process_validate_request_invalid_identity_data(seeded_compute):
             "user": [
                 {
                     "username": 123,
-                    "department": 456,
-                },
-            ],
+                    "department": 456
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
-    result = asyncio.run(seeded_compute.validate_request(request=request, config=config))
-    assert result["has_failed"] is True
+    result = asyncio.run(
+        seeded_compute.validate_request(
+            request=request,
+            config=config
+        )
+    )
+    assert result['error'] is not None
 
 
 def test_in_process_validate_batch_request_valid(seeded_compute):
@@ -635,47 +698,51 @@ def test_in_process_validate_batch_request_valid(seeded_compute):
             "user": [
                 {
                     "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
+                    "department": "Balloon Dept"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
             {
                 "resource": {
                     "color": "red",
-                    "is_inflated": True,
-                },
-            },
-        ],
+                    "is_inflated": True
+                }
+            }
+        ]
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
     result = asyncio.run(
-        seeded_compute.validate_batch_request(batch_request=batch_request, config=config)
+        seeded_compute.validate_batch_request(
+            batch_request=batch_request,
+            config=config
+        )
     )
-    assert result["has_failed"] is False
+    assert result['error'] is None
 
 
 def test_in_process_validate_batch_request_invalid_schema(seeded_compute):
     result = asyncio.run(
         seeded_compute.validate_batch_request(
-            batch_request={"bad": "data"},
-            config={},
+            batch_request={
+                "bad": "data"
+            },
+            config={}
         )
     )
-    assert result["has_failed"] is True
+    assert result['error'] is not None
 
 
 def test_in_process_validate_batch_request_invalid_batch_item(seeded_compute):
@@ -684,37 +751,39 @@ def test_in_process_validate_batch_request_invalid_batch_item(seeded_compute):
             "user": [
                 {
                     "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
+                    "department": "Balloon Dept"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
             {
                 "resource": {
                     "color": 123,
-                    "is_inflated": "bad",
-                },
-            },
-        ],
+                    "is_inflated": "bad"
+                }
+            }
+        ]
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
     result = asyncio.run(
-        seeded_compute.validate_batch_request(batch_request=batch_request, config=config)
+        seeded_compute.validate_batch_request(
+            batch_request=batch_request,
+            config=config
+        )
     )
-    assert result["has_failed"] is True
+    assert result['error'] is not None
 
 
 def test_in_process_audit(seeded_compute):
@@ -723,99 +792,40 @@ def test_in_process_audit(seeded_compute):
             "user": [
                 {
                     "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
+                    "department": "Balloon Dept"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "validate_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
     result = asyncio.run(
         seeded_compute.audit(
             request=request,
             page_ref=None,
-            config=config,
+            config=config
         )
     )
-    assert result["has_failed"] is False
-    assert len(result["grants"]) > 0
-    assert len(result["results"]) > 0
-
-
-def test_in_process_audit_with_critical_query_error(seeded_compute, storage_dict):
-    """Test audit with a grant that has a bad query and critical evaluation handler."""
-    bad_grant = {
-        "grant_uuid": str(uuid4()),
-        "name": "Bad Grant",
-        "description": "",
-        "tags": {},
-        "effect": "allow",
-        "actions": [
-            "balloon:inflate",
-        ],
-        "query": "bad_query.[invalid",
-        "evaluation_handler": "critical",
-        "equality": True,
-        "data": {},
-    }
-    storage_dict["grants_lut"][bad_grant["grant_uuid"]] = bad_grant
-
-    request = {
-        "identities": {
-            "user": [
-                {
-                    "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
-        },
-        "action": "balloon:inflate",
-        "resource_type": "balloon",
-        "resource": {
-            "color": "blue",
-            "is_inflated": False,
-        },
-        "evaluation_handler": "grant",
-        "context_type": "NONE",
-        "context": {},
-    }
-    config = {
-        "validate_request": {
-            "get_context_def": {},
-            "get_identity_def": {},
-            "get_resource_def": {},
-        },
-        "list_grants": {
-            "page_size": 100,
-            "use_cache": False,
-        },
-    }
-    result = asyncio.run(
-        seeded_compute.audit(
-            request=request,
-            page_ref=None,
-            config=config,
-        )
-    )
-    assert result["has_failed"] is True
+    assert result['error'] is None
+    assert len(result['results']) > 0
+    assert result['results'][0]['grant'] is not None
 
 
 def test_in_process_authorize_allowed(seeded_compute):
@@ -824,34 +834,35 @@ def test_in_process_authorize_allowed(seeded_compute):
             "user": [
                 {
                     "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
+                    "department": "Balloon Dept"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "validate_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
-    result = asyncio.run(seeded_compute.authorize(request=request, config=config))
-    assert result["is_authorized"] is True
-    assert result["has_failed"] is False
+    result = asyncio.run(
+        seeded_compute.authorize(request=request, config=config)
+    )
+    assert result['is_authorized'] is True
+    assert result['error'] is None
 
 
 def test_in_process_authorize_denied(seeded_compute):
@@ -860,34 +871,35 @@ def test_in_process_authorize_denied(seeded_compute):
             "user": [
                 {
                     "username": "intern_person",
-                    "department": "Intern",
-                },
-            ],
+                    "department": "Intern"
+                }
+            ]
         },
         "action": "balloon:pop",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": True,
+            "is_inflated": True
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "validate_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
-    result = asyncio.run(seeded_compute.authorize(request=request, config=config))
-    assert result["is_authorized"] is False
-    assert result["has_failed"] is False
+    result = asyncio.run(
+        seeded_compute.authorize(request=request, config=config)
+    )
+    assert result['is_authorized'] is False
+    assert result['error'] is None
 
 
 def test_in_process_authorize_implicit_deny(seeded_compute):
@@ -897,87 +909,36 @@ def test_in_process_authorize_implicit_deny(seeded_compute):
             "user": [
                 {
                     "username": "nobody",
-                    "department": "None",
-                },
-            ],
+                    "department": "None"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "validate_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
-    result = asyncio.run(seeded_compute.authorize(request=request, config=config))
-    assert result["is_authorized"] is False
-    assert result["has_failed"] is False
-    assert "implicitly denied" in result["message"]
-
-
-def test_in_process_authorize_critical_error(seeded_compute, storage_dict):
-    """Test authorize with a grant that has bad query and critical handler."""
-    bad_grant = {
-        "grant_uuid": str(uuid4()),
-        "name": "Bad Grant",
-        "description": "",
-        "tags": {},
-        "effect": "deny",
-        "actions": [
-            "balloon:inflate",
-        ],
-        "query": "bad_query.[invalid",
-        "evaluation_handler": "critical",
-        "equality": True,
-        "data": {},
-    }
-    storage_dict["grants_lut"][bad_grant["grant_uuid"]] = bad_grant
-
-    request = {
-        "identities": {
-            "user": [
-                {
-                    "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
-        },
-        "action": "balloon:inflate",
-        "resource_type": "balloon",
-        "resource": {
-            "color": "blue",
-            "is_inflated": False,
-        },
-        "evaluation_handler": "grant",
-        "context_type": "NONE",
-        "context": {},
-    }
-    config = {
-        "validate_request": {
-            "get_context_def": {},
-            "get_identity_def": {},
-            "get_resource_def": {},
-        },
-        "list_grants": {
-            "page_size": 100,
-            "use_cache": False,
-        },
-    }
-    result = asyncio.run(seeded_compute.authorize(request=request, config=config))
-    assert result["has_failed"] is True
+    result = asyncio.run(
+        seeded_compute.authorize(request=request, config=config)
+    )
+    assert result['is_authorized'] is False
+    assert result['error'] is None
+    assert "implicitly denied" in result['message']
 
 
 def test_in_process_batch_audit(seeded_compute):
@@ -986,121 +947,53 @@ def test_in_process_batch_audit(seeded_compute):
             "user": [
                 {
                     "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
+                    "department": "Balloon Dept"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
             {
                 "resource": {
                     "color": "red",
-                    "is_inflated": True,
-                },
+                    "is_inflated": True
+                }
             },
             {
                 "resource": {
                     "color": "green",
-                    "is_inflated": False,
-                },
-            },
-        ],
+                    "is_inflated": False
+                }
+            }
+        ]
     }
     config = {
         "validate_batch_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
     result = asyncio.run(
         seeded_compute.batch_audit(
             batch_request=batch_request,
             page_ref=None,
-            config=config,
+            config=config
         )
     )
-    assert result["has_failed"] is False
-    assert len(result["batch_results"]) == 2
-
-
-def test_in_process_batch_audit_critical_error(seeded_compute, storage_dict):
-    """Test batch_audit with a grant that causes critical error."""
-    bad_grant = {
-        "grant_uuid": str(uuid4()),
-        "name": "Bad Grant",
-        "description": "",
-        "tags": {},
-        "effect": "allow",
-        "actions": [
-            "balloon:inflate",
-        ],
-        "query": "bad_query.[invalid",
-        "evaluation_handler": "critical",
-        "equality": True,
-        "data": {},
-    }
-    storage_dict["grants_lut"][bad_grant["grant_uuid"]] = bad_grant
-
-    batch_request = {
-        "identities": {
-            "user": [
-                {
-                    "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
-        },
-        "action": "balloon:inflate",
-        "resource_type": "balloon",
-        "resource": {
-            "color": "blue",
-            "is_inflated": False,
-        },
-        "evaluation_handler": "grant",
-        "context_type": "NONE",
-        "context": {},
-        "batch": [
-            {
-                "resource": {
-                    "color": "red",
-                    "is_inflated": True,
-                },
-            },
-        ],
-    }
-    config = {
-        "validate_batch_request": {
-            "get_context_def": {},
-            "get_identity_def": {},
-            "get_resource_def": {},
-        },
-        "list_grants": {
-            "page_size": 100,
-            "use_cache": False,
-        },
-    }
-    result = asyncio.run(
-        seeded_compute.batch_audit(
-            batch_request=batch_request,
-            page_ref=None,
-            config=config,
-        )
-    )
-    has_failure = any(br["has_failed"] for br in result["batch_results"])
-    assert has_failure is True
+    assert result['error'] is None
+    assert len(result['batch']) == 2
 
 
 def test_in_process_batch_authorize_mixed(seeded_compute):
@@ -1109,52 +1002,54 @@ def test_in_process_batch_authorize_mixed(seeded_compute):
             "user": [
                 {
                     "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
+                    "department": "Balloon Dept"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
             {
                 "resource": {
                     "color": "red",
-                    "is_inflated": True,
-                },
+                    "is_inflated": True
+                }
             },
             {
                 "resource": {
                     "color": "green",
-                    "is_inflated": False,
-                },
-            },
-        ],
+                    "is_inflated": False
+                }
+            }
+        ]
     }
     config = {
         "validate_batch_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
     result = asyncio.run(
-        seeded_compute.batch_authorize(batch_request=batch_request, config=config)
+        seeded_compute.batch_authorize(
+            batch_request=batch_request,
+            config=config
+        )
     )
-    assert result["has_failed"] is False
-    assert len(result["batch_results"]) == 2
-    for br in result["batch_results"]:
-        assert br["is_authorized"] is True
+    assert result['error'] is None
+    assert len(result['batch']) == 2
+    for br in result['batch']:
+        assert br['is_authorized'] is True
 
 
 def test_in_process_batch_authorize_deny(seeded_compute):
@@ -1164,45 +1059,47 @@ def test_in_process_batch_authorize_deny(seeded_compute):
             "user": [
                 {
                     "username": "intern_person",
-                    "department": "Intern",
-                },
-            ],
+                    "department": "Intern"
+                }
+            ]
         },
         "action": "balloon:pop",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": True,
+            "is_inflated": True
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
             {
                 "resource": {
                     "color": "red",
-                    "is_inflated": True,
-                },
-            },
-        ],
+                    "is_inflated": True
+                }
+            }
+        ]
     }
     config = {
         "validate_batch_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
     result = asyncio.run(
-        seeded_compute.batch_authorize(batch_request=batch_request, config=config)
+        seeded_compute.batch_authorize(
+            batch_request=batch_request,
+            config=config
+        )
     )
-    assert result["has_failed"] is False
-    for br in result["batch_results"]:
-        assert br["is_authorized"] is False
+    assert result['error'] is None
+    for br in result['batch']:
+        assert br['is_authorized'] is False
 
 
 def test_in_process_batch_authorize_implicit_deny(seeded_compute):
@@ -1212,129 +1109,93 @@ def test_in_process_batch_authorize_implicit_deny(seeded_compute):
             "user": [
                 {
                     "username": "nobody",
-                    "department": "None",
-                },
-            ],
+                    "department": "None"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
             {
                 "resource": {
                     "color": "red",
-                    "is_inflated": True,
-                },
-            },
-        ],
+                    "is_inflated": True
+                }
+            }
+        ]
     }
     config = {
         "validate_batch_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
     result = asyncio.run(
-        seeded_compute.batch_authorize(batch_request=batch_request, config=config)
+        seeded_compute.batch_authorize(
+            batch_request=batch_request,
+            config=config
+        )
     )
-    assert result["has_failed"] is False
-    for br in result["batch_results"]:
-        assert br["is_authorized"] is False
-        assert "implicitly denied" in br["message"]
-
-
-def test_in_process_batch_authorize_critical_error(seeded_compute, storage_dict):
-    """Batch authorize with a critical query error."""
-    bad_grant = {
-        "grant_uuid": str(uuid4()),
-        "name": "Bad Grant",
-        "description": "",
-        "tags": {},
-        "effect": "deny",
-        "actions": [
-            "balloon:inflate",
-        ],
-        "query": "bad_query.[invalid",
-        "evaluation_handler": "critical",
-        "equality": True,
-        "data": {},
-    }
-    storage_dict["grants_lut"][bad_grant["grant_uuid"]] = bad_grant
-
-    batch_request = {
-        "identities": {
-            "user": [
-                {
-                    "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
-        },
-        "action": "balloon:inflate",
-        "resource_type": "balloon",
-        "resource": {
-            "color": "blue",
-            "is_inflated": False,
-        },
-        "evaluation_handler": "grant",
-        "context_type": "NONE",
-        "context": {},
-        "batch": [
-            {
-                "resource": {
-                    "color": "red",
-                    "is_inflated": True,
-                },
-            },
-        ],
-    }
-    config = {
-        "validate_batch_request": {
-            "get_context_def": {},
-            "get_identity_def": {},
-            "get_resource_def": {},
-        },
-        "list_grants": {
-            "page_size": 100,
-            "use_cache": False,
-        },
-    }
-    result = asyncio.run(
-        seeded_compute.batch_authorize(batch_request=batch_request, config=config)
-    )
-    has_failure = any(br["has_failed"] for br in result["batch_results"])
-    assert has_failure is True
+    assert result['error'] is None
+    for br in result['batch']:
+        assert br['is_authorized'] is False
+        assert "implicitly denied" in br['message']
 
 
 class FailingStorage(DictStorage):
-    """A storage class that always returns has_failed=True for list_grants."""
+    """A storage class that always returns an error for list_grants."""
 
-    async def list_grants(self, effect, action, page_ref, config):
 
+    async def list_grants(
+        self,
+        effect,
+        action,
+        page_ref,
+        config
+    ):
         return {
             "grants": [],
             "next_page_ref": None,
-            "has_failed": True,
-            "errors": {
-                "start": [
-                    {
-                        "is_critical": True,
-                        "message": "Storage failure",
-                    },
-                ],
-            },
+            "error": {
+                "error_type": "storage",
+                "message": "forced failure"
+            }
         }
+
+
+class FailOnAllowStorage(DictStorage):
+    """A storage class that fails only when listing allow grants."""
+
+
+    async def list_grants(
+        self,
+        effect,
+        action,
+        page_ref,
+        config
+    ):
+        if effect == "allow":
+            return {
+                "grants": [],
+                "next_page_ref": None,
+                "error": {
+                    "error_type": "storage",
+                    "message": "forced failure"
+                }
+            }
+
+        return await super().list_grants(effect, action, page_ref, config)
 
 
 @pytest.fixture
@@ -1348,8 +1209,12 @@ def failing_compute(storage_dict):
         await c.start(
             execute=jmespath_execute,
             storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
+            storage_kwargs={
+                "storage_dict": storage_dict
+            },
+            config={
+                "storage": {}
+            }
         )
         failing = FailingStorage(storage_dict=storage_dict)
         await failing.start(config={})
@@ -1374,10 +1239,10 @@ def seeded_failing_compute(failing_compute, storage_dict):
                 "context_type": "NONE",
                 "schema": {
                     "type": "object",
-                    "additionalProperties": False,
-                },
+                    "additionalProperties": False
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_identity_def(
             {
@@ -1385,38 +1250,38 @@ def seeded_failing_compute(failing_compute, storage_dict):
                 "schema": {
                     "type": "object",
                     "required": [
-                        "username",
+                        "username"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "username": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_resource_def(
             {
                 "resource_type": "file",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "schema": {
                     "type": "object",
                     "required": [
-                        "path",
+                        "path"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "path": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
 
     asyncio.run(seed())
@@ -1430,38 +1295,37 @@ def test_in_process_audit_storage_failure(seeded_failing_compute):
         "identities": {
             "user": [
                 {
-                    "username": "test",
-                },
-            ],
+                    "username": "test"
+                }
+            ]
         },
         "action": "read",
         "resource_type": "file",
         "resource": {
-            "path": "/tmp",
+            "path": "/tmp"
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "validate_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
     result = asyncio.run(
         seeded_failing_compute.audit(
             request=request,
             page_ref=None,
-            config=config,
+            config=config
         )
     )
-    assert result["has_failed"] is True
+    assert result['error'] is not None
 
 
 def test_in_process_authorize_storage_failure(seeded_failing_compute):
@@ -1470,32 +1334,36 @@ def test_in_process_authorize_storage_failure(seeded_failing_compute):
         "identities": {
             "user": [
                 {
-                    "username": "test",
-                },
-            ],
+                    "username": "test"
+                }
+            ]
         },
         "action": "read",
         "resource_type": "file",
         "resource": {
-            "path": "/tmp",
+            "path": "/tmp"
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
-        "context": {},
+        "context": {}
     }
     config = {
         "validate_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
-    result = asyncio.run(seeded_failing_compute.authorize(request=request, config=config))
-    assert result["has_failed"] is True
+    result = asyncio.run(
+        seeded_failing_compute.authorize(
+            request=request,
+            config=config
+        )
+    )
+    assert result['error'] is not None
 
 
 def test_in_process_batch_audit_storage_failure(seeded_failing_compute):
@@ -1504,45 +1372,44 @@ def test_in_process_batch_audit_storage_failure(seeded_failing_compute):
         "identities": {
             "user": [
                 {
-                    "username": "test",
-                },
-            ],
+                    "username": "test"
+                }
+            ]
         },
         "action": "read",
         "resource_type": "file",
         "resource": {
-            "path": "/tmp",
+            "path": "/tmp"
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
             {
                 "resource": {
-                    "path": "/other",
-                },
-            },
-        ],
+                    "path": "/other"
+                }
+            }
+        ]
     }
     config = {
         "validate_batch_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
     result = asyncio.run(
         seeded_failing_compute.batch_audit(
             batch_request=batch_request,
             page_ref=None,
-            config=config,
+            config=config
         )
     )
-    assert result["has_failed"] is True
+    assert result['error'] is not None
 
 
 def test_in_process_batch_authorize_storage_failure(seeded_failing_compute):
@@ -1551,184 +1418,44 @@ def test_in_process_batch_authorize_storage_failure(seeded_failing_compute):
         "identities": {
             "user": [
                 {
-                    "username": "test",
-                },
-            ],
+                    "username": "test"
+                }
+            ]
         },
         "action": "read",
         "resource_type": "file",
         "resource": {
-            "path": "/tmp",
+            "path": "/tmp"
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {},
         "batch": [
             {
                 "resource": {
-                    "path": "/other",
-                },
-            },
-        ],
+                    "path": "/other"
+                }
+            }
+        ]
     }
     config = {
         "validate_batch_request": {
             "get_context_def": {},
             "get_identity_def": {},
-            "get_resource_def": {},
+            "get_resource_def": {}
         },
         "list_grants": {
             "page_size": 100,
-            "use_cache": False,
-        },
+            "use_cache": False
+        }
     }
     result = asyncio.run(
         seeded_failing_compute.batch_authorize(
             batch_request=batch_request,
-            config=config,
+            config=config
         )
     )
-    assert result['critical_errors'] != {}
-    assert result['critical_errors'] != []
-
-
-def test_in_process_authorize_allow_grant_critical_error(storage_dict):
-    """Test authorize where critical error is in the allow grants phase."""
-    c = InProcessCompute()
-
-    async def setup_and_run():
-        storage = DictStorage(storage_dict=storage_dict)
-        await storage.construct(config={})
-        await c.start(
-            execute=jmespath_execute,
-            storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
-        )
-        await storage.start(config={})
-        await storage.put_context_def(
-            {
-                "context_type": "NONE",
-                "schema": {
-                    "type": "object",
-                    "additionalProperties": False,
-                },
-            },
-            config={},
-        )
-        await storage.put_identity_def(
-            {
-                "identity_type": "user",
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "username",
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "username": {
-                            "type": "string",
-                        },
-                    },
-                },
-            },
-            config={},
-        )
-        await storage.put_resource_def(
-            {
-                "resource_type": "file",
-                "actions": [
-                    "read",
-                ],
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "path",
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "path": {
-                            "type": "string",
-                        },
-                    },
-                },
-            },
-            config={},
-        )
-        await storage.enact(
-            grant={
-                "grant_uuid": str(uuid4()),
-                "name": "Bad Allow Grant",
-                "description": "",
-                "tags": {},
-                "effect": "allow",
-                "actions": [
-                    "read",
-                ],
-                "query": "bad_query.[invalid",
-                "evaluation_handler": "critical",
-                "equality": True,
-                "data": {},
-            },
-            config={},
-        )
-
-        request = {
-            "identities": {
-                "user": [
-                    {
-                        "username": "test",
-                    },
-                ],
-            },
-            "action": "read",
-            "resource_type": "file",
-            "resource": {
-                "path": "/tmp",
-            },
-            "evaluation_handler": "grant",
-            "context_type": "NONE",
-            "context": {},
-        }
-        config_val = {
-            "validate_request": {
-                "get_context_def": {},
-                "get_identity_def": {},
-                "get_resource_def": {},
-            },
-            "list_grants": {
-                "page_size": 100,
-                "use_cache": False,
-            },
-        }
-
-        return await c.authorize(request=request, config=config_val)
-
-    result = asyncio.run(setup_and_run())
-    assert result["has_failed"] is True
-
-
-class FailOnAllowStorage(DictStorage):
-    """A storage class that fails only when listing allow grants."""
-
-    async def list_grants(self, effect, action, page_ref, config):
-        if effect == "allow":
-
-            return {
-                "grants": [],
-                "next_page_ref": None,
-                "has_failed": True,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": True,
-                            "message": "Allow storage failure",
-                        },
-                    ],
-                },
-            }
-
-        return await super().list_grants(effect, action, page_ref, config)
+    assert result['error'] is not None
+    assert result['error'] is not None
 
 
 def test_in_process_batch_authorize_allow_phase_storage_failure(storage_dict):
@@ -1741,8 +1468,12 @@ def test_in_process_batch_authorize_allow_phase_storage_failure(storage_dict):
         await c.start(
             execute=jmespath_execute,
             storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
+            storage_kwargs={
+                "storage_dict": storage_dict
+            },
+            config={
+                "storage": {}
+            }
         )
         await storage.start(config={})
         await storage.put_context_def(
@@ -1750,10 +1481,10 @@ def test_in_process_batch_authorize_allow_phase_storage_failure(storage_dict):
                 "context_type": "NONE",
                 "schema": {
                     "type": "object",
-                    "additionalProperties": False,
-                },
+                    "additionalProperties": False
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_identity_def(
             {
@@ -1761,38 +1492,38 @@ def test_in_process_batch_authorize_allow_phase_storage_failure(storage_dict):
                 "schema": {
                     "type": "object",
                     "required": [
-                        "username",
+                        "username"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "username": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_resource_def(
             {
                 "resource_type": "file",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "schema": {
                     "type": "object",
                     "required": [
-                        "path",
+                        "path"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "path": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         failing = FailOnAllowStorage(storage_dict=storage_dict)
         await failing.start(config={})
@@ -1802,46 +1533,45 @@ def test_in_process_batch_authorize_allow_phase_storage_failure(storage_dict):
             "identities": {
                 "user": [
                     {
-                        "username": "test",
-                    },
-                ],
+                        "username": "test"
+                    }
+                ]
             },
             "action": "read",
             "resource_type": "file",
             "resource": {
-                "path": "/tmp",
+                "path": "/tmp"
             },
-            "evaluation_handler": "grant",
             "context_type": "NONE",
             "context": {},
             "batch": [
                 {
                     "resource": {
-                        "path": "/other",
-                    },
-                },
-            ],
+                        "path": "/other"
+                    }
+                }
+            ]
         }
         config_val = {
             "validate_batch_request": {
                 "get_context_def": {},
                 "get_identity_def": {},
-                "get_resource_def": {},
+                "get_resource_def": {}
             },
             "list_grants": {
                 "page_size": 100,
-                "use_cache": False,
-            },
+                "use_cache": False
+            }
         }
 
         return await c.batch_authorize(
             batch_request=batch_request,
-            config=config_val,
+            config=config_val
         )
 
     result = asyncio.run(setup_and_run())
-    assert result['critical_errors'] != {}
-    assert result['critical_errors'] != []
+    assert result['error'] is not None
+    assert result['error'] is not None
 
 
 def test_in_process_authorize_allow_phase_storage_failure(storage_dict):
@@ -1854,8 +1584,12 @@ def test_in_process_authorize_allow_phase_storage_failure(storage_dict):
         await c.start(
             execute=jmespath_execute,
             storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
+            storage_kwargs={
+                "storage_dict": storage_dict
+            },
+            config={
+                "storage": {}
+            }
         )
         await storage.start(config={})
         await storage.put_context_def(
@@ -1863,10 +1597,10 @@ def test_in_process_authorize_allow_phase_storage_failure(storage_dict):
                 "context_type": "NONE",
                 "schema": {
                     "type": "object",
-                    "additionalProperties": False,
-                },
+                    "additionalProperties": False
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_identity_def(
             {
@@ -1874,38 +1608,38 @@ def test_in_process_authorize_allow_phase_storage_failure(storage_dict):
                 "schema": {
                     "type": "object",
                     "required": [
-                        "username",
+                        "username"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "username": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_resource_def(
             {
                 "resource_type": "file",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "schema": {
                     "type": "object",
                     "required": [
-                        "path",
+                        "path"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "path": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         failing = FailOnAllowStorage(storage_dict=storage_dict)
         await failing.start(config={})
@@ -1915,35 +1649,34 @@ def test_in_process_authorize_allow_phase_storage_failure(storage_dict):
             "identities": {
                 "user": [
                     {
-                        "username": "test",
-                    },
-                ],
+                        "username": "test"
+                    }
+                ]
             },
             "action": "read",
             "resource_type": "file",
             "resource": {
-                "path": "/tmp",
+                "path": "/tmp"
             },
-            "evaluation_handler": "grant",
             "context_type": "NONE",
-            "context": {},
+            "context": {}
         }
         config_val = {
             "validate_request": {
                 "get_context_def": {},
                 "get_identity_def": {},
-                "get_resource_def": {},
+                "get_resource_def": {}
             },
             "list_grants": {
                 "page_size": 100,
-                "use_cache": False,
-            },
+                "use_cache": False
+            }
         }
 
         return await c.authorize(request=request, config=config_val)
 
     result = asyncio.run(setup_and_run())
-    assert result["has_failed"] is True
+    assert result['error'] is not None
 
 
 def test_in_process_validate_batch_request_base_request_invalid(seeded_compute):
@@ -1953,431 +1686,39 @@ def test_in_process_validate_batch_request_base_request_invalid(seeded_compute):
             "user": [
                 {
                     "username": "balloon_person",
-                    "department": "Balloon Dept",
-                },
-            ],
+                    "department": "Balloon Dept"
+                }
+            ]
         },
         "action": "balloon:inflate",
         "resource_type": "balloon",
         "resource": {
             "color": "blue",
-            "is_inflated": False,
+            "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONEXISTENT",
         "context": {},
         "batch": [
             {
                 "resource": {
                     "color": "red",
-                    "is_inflated": True,
-                },
-            },
-        ],
+                    "is_inflated": True
+                }
+            }
+        ]
     }
     config = {
         "get_context_def": {},
         "get_identity_def": {},
-        "get_resource_def": {},
+        "get_resource_def": {}
     }
     result = asyncio.run(
-        seeded_compute.validate_batch_request(batch_request=batch_request, config=config)
-    )
-    assert result["has_failed"] is True
-
-
-def test_in_process_batch_audit_skip_failed_items(storage_dict):
-    """Test batch_audit where the first grant causes a critical error,
-    and the second grant should be skipped for that item."""
-    c = InProcessCompute()
-
-    async def setup_and_run():
-        storage = DictStorage(storage_dict=storage_dict)
-        await storage.construct(config={})
-        await c.start(
-            execute=jmespath_execute,
-            storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
-        )
-        await storage.start(config={})
-        await storage.put_context_def(
-            {
-                "context_type": "NONE",
-                "schema": {
-                    "type": "object",
-                    "additionalProperties": False,
-                },
-            },
-            config={},
-        )
-        await storage.put_identity_def(
-            {
-                "identity_type": "user",
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "username",
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "username": {
-                            "type": "string",
-                        },
-                    },
-                },
-            },
-            config={},
-        )
-        await storage.put_resource_def(
-            {
-                "resource_type": "file",
-                "actions": [
-                    "read",
-                ],
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "path",
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "path": {
-                            "type": "string",
-                        },
-                    },
-                },
-            },
-            config={},
-        )
-        await storage.enact(
-            grant={
-                "grant_uuid": str(uuid4()),
-                "name": "Bad Grant",
-                "description": "",
-                "tags": {},
-                "effect": "allow",
-                "actions": [
-                    "read",
-                ],
-                "query": "bad.[invalid",
-                "evaluation_handler": "critical",
-                "equality": True,
-                "data": {},
-            },
-            config={},
-        )
-        await storage.enact(
-            grant={
-                "grant_uuid": str(uuid4()),
-                "name": "Good Grant",
-                "description": "",
-                "tags": {},
-                "effect": "allow",
-                "actions": [
-                    "read",
-                ],
-                "query": "`true`",
-                "evaluation_handler": "evaluate",
-                "equality": True,
-                "data": {},
-            },
-            config={},
-        )
-
-        batch_request = {
-            "identities": {
-                "user": [
-                    {
-                        "username": "test",
-                    },
-                ],
-            },
-            "action": "read",
-            "resource_type": "file",
-            "resource": {
-                "path": "/tmp",
-            },
-            "evaluation_handler": "grant",
-            "context_type": "NONE",
-            "context": {},
-            "batch": [
-                {
-                    "resource": {
-                        "path": "/other",
-                    },
-                },
-            ],
-        }
-        config_val = {
-            "validate_batch_request": {
-                "get_context_def": {},
-                "get_identity_def": {},
-                "get_resource_def": {},
-            },
-            "list_grants": {
-                "page_size": 100,
-                "use_cache": False,
-            },
-        }
-
-        return await c.batch_audit(
+        seeded_compute.validate_batch_request(
             batch_request=batch_request,
-            page_ref=None,
-            config=config_val,
+            config=config
         )
-
-    result = asyncio.run(setup_and_run())
-    has_failure = any(br["has_failed"] for br in result["batch_results"])
-    assert has_failure is True
-
-
-def test_in_process_batch_authorize_deny_critical_error(storage_dict):
-    """Test batch_authorize where deny grant causes critical error."""
-    c = InProcessCompute()
-
-    async def setup_and_run():
-        storage = DictStorage(storage_dict=storage_dict)
-        await storage.construct(config={})
-        await c.start(
-            execute=jmespath_execute,
-            storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
-        )
-        await storage.start(config={})
-        await storage.put_context_def(
-            {
-                "context_type": "NONE",
-                "schema": {
-                    "type": "object",
-                    "additionalProperties": False,
-                },
-            },
-            config={},
-        )
-        await storage.put_identity_def(
-            {
-                "identity_type": "user",
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "username",
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "username": {
-                            "type": "string",
-                        },
-                    },
-                },
-            },
-            config={},
-        )
-        await storage.put_resource_def(
-            {
-                "resource_type": "file",
-                "actions": [
-                    "read",
-                ],
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "path",
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "path": {
-                            "type": "string",
-                        },
-                    },
-                },
-            },
-            config={},
-        )
-        await storage.enact(
-            grant={
-                "grant_uuid": str(uuid4()),
-                "name": "Bad Deny Grant",
-                "description": "",
-                "tags": {},
-                "effect": "deny",
-                "actions": [
-                    "read",
-                ],
-                "query": "bad.[invalid",
-                "evaluation_handler": "critical",
-                "equality": True,
-                "data": {},
-            },
-            config={},
-        )
-
-        batch_request = {
-            "identities": {
-                "user": [
-                    {
-                        "username": "test",
-                    },
-                ],
-            },
-            "action": "read",
-            "resource_type": "file",
-            "resource": {
-                "path": "/tmp",
-            },
-            "evaluation_handler": "grant",
-            "context_type": "NONE",
-            "context": {},
-            "batch": [
-                {
-                    "resource": {
-                        "path": "/other",
-                    },
-                },
-            ],
-        }
-        config_val = {
-            "validate_batch_request": {
-                "get_context_def": {},
-                "get_identity_def": {},
-                "get_resource_def": {},
-            },
-            "list_grants": {
-                "page_size": 100,
-                "use_cache": False,
-            },
-        }
-
-        return await c.batch_authorize(batch_request=batch_request, config=config_val)
-
-    result = asyncio.run(setup_and_run())
-    has_failure = any(br["has_failed"] for br in result["batch_results"])
-    assert has_failure is True
-
-
-def test_in_process_batch_authorize_allow_critical_error(storage_dict):
-    """Test batch_authorize where allow grant causes critical error."""
-    c = InProcessCompute()
-
-    async def setup_and_run():
-        storage = DictStorage(storage_dict=storage_dict)
-        await storage.construct(config={})
-        await c.start(
-            execute=jmespath_execute,
-            storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
-        )
-        await storage.start(config={})
-        await storage.put_context_def(
-            {
-                "context_type": "NONE",
-                "schema": {
-                    "type": "object",
-                    "additionalProperties": False,
-                },
-            },
-            config={},
-        )
-        await storage.put_identity_def(
-            {
-                "identity_type": "user",
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "username",
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "username": {
-                            "type": "string",
-                        },
-                    },
-                },
-            },
-            config={},
-        )
-        await storage.put_resource_def(
-            {
-                "resource_type": "file",
-                "actions": [
-                    "read",
-                ],
-                "schema": {
-                    "type": "object",
-                    "required": [
-                        "path",
-                    ],
-                    "additionalProperties": False,
-                    "properties": {
-                        "path": {
-                            "type": "string",
-                        },
-                    },
-                },
-            },
-            config={},
-        )
-        await storage.enact(
-            grant={
-                "grant_uuid": str(uuid4()),
-                "name": "Bad Allow Grant",
-                "description": "",
-                "tags": {},
-                "effect": "allow",
-                "actions": [
-                    "read",
-                ],
-                "query": "bad.[invalid",
-                "evaluation_handler": "critical",
-                "equality": True,
-                "data": {},
-            },
-            config={},
-        )
-
-        batch_request = {
-            "identities": {
-                "user": [
-                    {
-                        "username": "test",
-                    },
-                ],
-            },
-            "action": "read",
-            "resource_type": "file",
-            "resource": {
-                "path": "/tmp",
-            },
-            "evaluation_handler": "grant",
-            "context_type": "NONE",
-            "context": {},
-            "batch": [
-                {
-                    "resource": {
-                        "path": "/other",
-                    },
-                },
-            ],
-        }
-        config_val = {
-            "validate_batch_request": {
-                "get_context_def": {},
-                "get_identity_def": {},
-                "get_resource_def": {},
-            },
-            "list_grants": {
-                "page_size": 100,
-                "use_cache": False,
-            },
-        }
-
-        return await c.batch_authorize(batch_request=batch_request, config=config_val)
-
-    result = asyncio.run(setup_and_run())
-    has_failure = any(br["has_failed"] for br in result["batch_results"])
-    assert has_failure is True
+    )
+    assert result['error'] is not None
 
 
 def test_in_process_batch_authorize_deny_applicable_continue(storage_dict):
@@ -2390,8 +1731,12 @@ def test_in_process_batch_authorize_deny_applicable_continue(storage_dict):
         await c.start(
             execute=jmespath_execute,
             storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
+            storage_kwargs={
+                "storage_dict": storage_dict
+            },
+            config={
+                "storage": {}
+            }
         )
         await storage.start(config={})
         await storage.put_context_def(
@@ -2399,10 +1744,10 @@ def test_in_process_batch_authorize_deny_applicable_continue(storage_dict):
                 "context_type": "NONE",
                 "schema": {
                     "type": "object",
-                    "additionalProperties": False,
-                },
+                    "additionalProperties": False
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_identity_def(
             {
@@ -2410,38 +1755,38 @@ def test_in_process_batch_authorize_deny_applicable_continue(storage_dict):
                 "schema": {
                     "type": "object",
                     "required": [
-                        "username",
+                        "username"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "username": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_resource_def(
             {
                 "resource_type": "file",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "schema": {
                     "type": "object",
                     "required": [
-                        "path",
+                        "path"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "path": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         await storage.enact(
             grant={
@@ -2451,14 +1796,14 @@ def test_in_process_batch_authorize_deny_applicable_continue(storage_dict):
                 "tags": {},
                 "effect": "deny",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "query": "`true`",
-                "evaluation_handler": "evaluate",
                 "equality": True,
-                "data": {},
+                "applicable_on_failure": False,
+                "data": {}
             },
-            config={},
+            config={}
         )
         await storage.enact(
             grant={
@@ -2468,57 +1813,59 @@ def test_in_process_batch_authorize_deny_applicable_continue(storage_dict):
                 "tags": {},
                 "effect": "allow",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "query": "`true`",
-                "evaluation_handler": "evaluate",
                 "equality": True,
-                "data": {},
+                "applicable_on_failure": False,
+                "data": {}
             },
-            config={},
+            config={}
         )
 
         batch_request = {
             "identities": {
                 "user": [
                     {
-                        "username": "test",
-                    },
-                ],
+                        "username": "test"
+                    }
+                ]
             },
             "action": "read",
             "resource_type": "file",
             "resource": {
-                "path": "/tmp",
+                "path": "/tmp"
             },
-            "evaluation_handler": "grant",
             "context_type": "NONE",
             "context": {},
             "batch": [
                 {
                     "resource": {
-                        "path": "/other",
-                    },
-                },
-            ],
+                        "path": "/other"
+                    }
+                }
+            ]
         }
         config_val = {
             "validate_batch_request": {
                 "get_context_def": {},
                 "get_identity_def": {},
-                "get_resource_def": {},
+                "get_resource_def": {}
             },
             "list_grants": {
                 "page_size": 100,
-                "use_cache": False,
-            },
+                "use_cache": False
+            }
         }
 
-        return await c.batch_authorize(batch_request=batch_request, config=config_val)
+        return await c.batch_authorize(
+            batch_request=batch_request,
+            config=config_val
+        )
 
     result = asyncio.run(setup_and_run())
-    assert result["batch_results"][0]["is_authorized"] is False
-    assert "deny grant" in result["batch_results"][0]["message"]
+    assert result['batch'][0]['is_authorized'] is False
+    assert "deny grant" in result['batch'][0]['message']
 
 
 def test_in_process_batch_authorize_deny_phase_skip_complete(storage_dict):
@@ -2532,8 +1879,12 @@ def test_in_process_batch_authorize_deny_phase_skip_complete(storage_dict):
         await c.start(
             execute=jmespath_execute,
             storage_type=DictStorage,
-            storage_kwargs={"storage_dict": storage_dict},
-            config={"storage": {}},
+            storage_kwargs={
+                "storage_dict": storage_dict
+            },
+            config={
+                "storage": {}
+            }
         )
         await storage.start(config={})
         await storage.put_context_def(
@@ -2541,10 +1892,10 @@ def test_in_process_batch_authorize_deny_phase_skip_complete(storage_dict):
                 "context_type": "NONE",
                 "schema": {
                     "type": "object",
-                    "additionalProperties": False,
-                },
+                    "additionalProperties": False
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_identity_def(
             {
@@ -2552,38 +1903,38 @@ def test_in_process_batch_authorize_deny_phase_skip_complete(storage_dict):
                 "schema": {
                     "type": "object",
                     "required": [
-                        "username",
+                        "username"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "username": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         await storage.put_resource_def(
             {
                 "resource_type": "file",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "schema": {
                     "type": "object",
                     "required": [
-                        "path",
+                        "path"
                     ],
                     "additionalProperties": False,
                     "properties": {
                         "path": {
-                            "type": "string",
-                        },
-                    },
-                },
+                            "type": "string"
+                        }
+                    }
+                }
             },
-            config={},
+            config={}
         )
         await storage.enact(
             grant={
@@ -2593,14 +1944,14 @@ def test_in_process_batch_authorize_deny_phase_skip_complete(storage_dict):
                 "tags": {},
                 "effect": "deny",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "query": "`true`",
-                "evaluation_handler": "evaluate",
                 "equality": True,
-                "data": {},
+                "applicable_on_failure": False,
+                "data": {}
             },
-            config={},
+            config={}
         )
         await storage.enact(
             grant={
@@ -2610,53 +1961,55 @@ def test_in_process_batch_authorize_deny_phase_skip_complete(storage_dict):
                 "tags": {},
                 "effect": "deny",
                 "actions": [
-                    "read",
+                    "read"
                 ],
                 "query": "`true`",
-                "evaluation_handler": "evaluate",
                 "equality": True,
-                "data": {},
+                "applicable_on_failure": False,
+                "data": {}
             },
-            config={},
+            config={}
         )
 
         batch_request = {
             "identities": {
                 "user": [
                     {
-                        "username": "test",
-                    },
-                ],
+                        "username": "test"
+                    }
+                ]
             },
             "action": "read",
             "resource_type": "file",
             "resource": {
-                "path": "/tmp",
+                "path": "/tmp"
             },
-            "evaluation_handler": "grant",
             "context_type": "NONE",
             "context": {},
             "batch": [
                 {
                     "resource": {
-                        "path": "/other",
-                    },
-                },
-            ],
+                        "path": "/other"
+                    }
+                }
+            ]
         }
         config_val = {
             "validate_batch_request": {
                 "get_context_def": {},
                 "get_identity_def": {},
-                "get_resource_def": {},
+                "get_resource_def": {}
             },
             "list_grants": {
                 "page_size": 100,
-                "use_cache": False,
-            },
+                "use_cache": False
+            }
         }
 
-        return await c.batch_authorize(batch_request=batch_request, config=config_val)
+        return await c.batch_authorize(
+            batch_request=batch_request,
+            config=config_val
+        )
 
     result = asyncio.run(setup_and_run())
-    assert result["batch_results"][0]["is_authorized"] is False
+    assert result['batch'][0]['is_authorized'] is False

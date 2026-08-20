@@ -2,7 +2,7 @@
 <!-- ![authzee-logo](./docs/logo.svg) Documentation(Link TBD) -->
 <img src="https://raw.githubusercontent.com/btemplep/authzee/main/docs/authzee_logo.svg" alt="Authzee Logo" width="500">
 
-<!-- # `authzee` -->
+# Authzee Python SDK
 
 This is the official python SDK for Authzee! It is a general usage SDK that is async, extensible, and scalable. 
 
@@ -76,7 +76,7 @@ authz = Authzee( # for asyncio use AuthzeeAsync
     },
     config={  # optional - AuthzeeConfigOverride | None - All root and nested keys are optional
         "authzee": {
-            "raise_crits": True
+            "raise_errors": True
         }
         # "method_name": {<method config>}
     }
@@ -152,8 +152,8 @@ authz.enact( # Enact grants to create authorization rules
         ],
         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`", # JSON Query for the request. JMESPath is preferred
         # query runs on {"request": <request>, "grant": <grant>}
-        "evaluation_handler": "evaluate", 
         "equality": True, # expected result of the query
+        "applicable_on_failure": False, # if True, grant is applicable even when query fails
         "data": {} # data available to this grant
     }
 )
@@ -173,7 +173,6 @@ result = authz.authorize(
             "color": "inflated",
             "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {}
     }
@@ -195,13 +194,12 @@ Authorization response:
             "balloon:inflate"
         ],
         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-        "evaluation_handler": "evaluate",
         "equality": true,
+        "applicable_on_failure": false,
         "data": {}
     },
     "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
-    "has_failed": false,
-    "critical_errors": {}
+    "error": null
 }
 ```
 
@@ -209,7 +207,7 @@ Authorization response:
 
 The `Authzee` class is the entrypoint to all authzee functionality.  `AuthzeeAsync` is available for asyncio — it has the same interface as `Authzee` except all methods are async.
 
-You can check which version of the authzee specification the SDK implements via `authzee.authzee_specification_version` (currently `"0.3.0"`).
+You can check which version of the authzee specification the SDK implements via `authzee.authzee_specification_version`.
 
 ```python
 from authzee import (
@@ -238,7 +236,7 @@ authz = Authzee( # for asyncio use AuthzeeAsync
     },
     config={  # optional - AuthzeeConfigOverride | None - All keys are optional
         "authzee": {
-            "raise_crits": True
+            "raise_errors": True
         }
         # "method_name": {<method config>}
     }
@@ -377,8 +375,8 @@ authz.enact( # Enact grants to create authorization rules
         ],
         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`", # JSON Query for the request. JMESPath is preferred
         # query runs on {"request": <request>, "grant": <grant>}
-        "evaluation_handler": "evaluate", 
         "equality": True, # expected result of the query
+        "applicable_on_failure": False, # if True, grant is applicable even when query fails
         "data": {} # data available to this grant
     }
 )
@@ -406,7 +404,6 @@ result = authz.authorize(
             "color": "inflated",
             "is_inflated": False
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {}
     }
@@ -428,13 +425,12 @@ Authorization response:
             "balloon:inflate"
         ],
         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-        "evaluation_handler": "evaluate",
         "equality": true,
+        "applicable_on_failure": false,
         "data": {}
     },
     "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
-    "has_failed": false,
-    "critical_errors": {}
+    "error": null
 }
 ```
 
@@ -461,7 +457,6 @@ In the case of the above grant and request it would run on this data:
             "color": "inflated",
             "is_inflated": false
         },
-        "evaluation_handler": "grant",
         "context_type": "NONE",
         "context": {}
     },
@@ -476,8 +471,8 @@ In the case of the above grant and request it would run on this data:
             "balloon:inflate"
         ],
         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-        "evaluation_handler": "evaluate",
         "equality": true,
+        "applicable_on_failure": false,
         "data": {}
     }
 }

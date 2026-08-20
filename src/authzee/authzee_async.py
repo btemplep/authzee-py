@@ -1,23 +1,22 @@
-"""See {py:class}`authzee.authzee_async.AuthzeeAsync`"""
+"""See [](authzee.authzee_async.AuthzeeAsync)"""
+
 __all__ = [
-    "AuthzeeAsync",
+    "AuthzeeAsync"
 ]
 
 from asyncio import gather
 import datetime
 from typing import Any, Callable, Dict, Type
 
+from authzee.compute.compute_module import ComputeModule
 from authzee.config import default_config, override_config
+from authzee.exceptions import *
+from authzee.exceptions import _exception_map
+from authzee.module_locality import locality_compatibility
+from authzee.storage.storage_module import StorageModule
 from authzee.types.authzee import *
 from authzee.types.config import AuthzeeConfig
 from authzee.types.config_override import AuthzeeConfigOverride
-from authzee.exceptions import *
-from authzee.exceptions import _exception_map
-from authzee import core
-from authzee.compute.compute_module import ComputeModule
-from authzee.storage.storage_module import StorageModule
-
-from authzee.module_locality import locality_compatibility
 
 
 class AuthzeeAsync:
@@ -32,14 +31,14 @@ class AuthzeeAsync:
     compute_kwargs : Dict[str, Any]
         Compute module KWArgs used to create instances.
     storage_type : Type[StorageModule]
-        Storage Module Type. 
+        Storage Module Type.
     storage_kwargs : Dict[str, Any]
         Storage module KWArgs used to create instances.
     compute_storage_kwargs : Dict[str, Any], optional
         Override storage module KWArgs that the compute module will use.  May only include KWArgs you want to override.
     config : AuthzeeConfigOverride, optional
         Authzee configuration. May only include config keys you want to override.
-    
+
     Examples
     --------
     Simple full example:
@@ -132,7 +131,6 @@ class AuthzeeAsync:
                     "balloon:inflate"
                 ],
                 "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                "evaluation_handler": "evaluate", 
                 "equality": True,
                 "data": {}
             }
@@ -153,7 +151,6 @@ class AuthzeeAsync:
                     "color": "inflated",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",
                 "context_type": "NONE",
                 "context": {}
             }
@@ -177,26 +174,25 @@ class AuthzeeAsync:
                 "balloon:inflate"
             ],
             "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-            "evaluation_handler": "evaluate",
             "equality": true,
             "data": {}
         },
         "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
-        "has_failed": false,
-        "critical_errors": {}
+        "error": null
     }
     ```
     """
 
+
     def __init__(
-        self, 
+        self,
         execute: Callable[[str, Any], Any],
         compute_type: Type[ComputeModule],
         compute_kwargs: Dict[str, Any],
         storage_type: Type[StorageModule],
         storage_kwargs: Dict[str, Any],
-        compute_storage_kwargs: Dict[str, Any] = None,
-        config: AuthzeeConfigOverride = None
+        compute_storage_kwargs: Dict[str, Any]=None,
+        config: AuthzeeConfigOverride=None
     ):
         self._execute = execute
         self._compute_type = compute_type
@@ -204,44 +200,30 @@ class AuthzeeAsync:
         self._storage_type = storage_type
         self._storage_kwargs = storage_kwargs
         self._compute_storage_kwargs = storage_kwargs if compute_storage_kwargs is None else storage_kwargs | compute_storage_kwargs
-        self._config : AuthzeeConfig = override_config(config, default_config)
+        self._config: AuthzeeConfig = override_config(config, default_config)
         self._compute: ComputeModule = None
         self._storage: StorageModule = None
-    
-
-    def _raise_result(self, result: GenericResult, config: AuthzeeConfigOverride) -> None:
-        if config['authzee']['raise_crits'] is True and result['has_failed'] is True:
-            if "critical_errors" in result:
-                errors = result['critical_errors']
-            else:
-                errors = result['errors']
-
-            for error_type in errors:
-                for err in errors[error_type]:
-                    if err['is_critical']:
-                        raise _exception_map[error_type](
-                            message=err['message'],
-                            result=result
-                        )
 
 
-    def _combine_errors(self, result: GenericResult, *args: dict) ->  None:
-        errors = result['errors']
-        for new_result in args:
-            if new_result['has_failed'] is True:
-                result['has_failed'] = True
+    def _raise_result(
+        self,
+        result: GenericResult,
+        config: AuthzeeConfigOverride
+    ) -> None:
+        if (
+            config['authzee']['raise_errors'] is True
+            and result['error'] is not None
+        ):
+            raise _exception_map[result['error']['error_type']](
+                message=result['error']['message'],
+                result=result
+            )
 
-            new_errors = new_result['errors']
-            for k in errors:
-                if k in new_errors:
-                    errors[k] += new_errors[k]
-                
-            for k in new_errors:
-                if k not in errors:
-                    errors[k] = new_errors[k]
 
-    
-    async def start(self, config: AuthzeeConfigOverride | None = None) -> GenericResult:
+    async def start(
+        self,
+        config: AuthzeeConfigOverride | None=None
+    ) -> GenericResult:
         """Initialize the authzee app. Must be run once for every instance.
 
         Parameters
@@ -254,9 +236,9 @@ class AuthzeeAsync:
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.start(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "start": {
                     "compute_start": {},
@@ -271,22 +253,27 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "start",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        StartError
-            If a critical error occurs during initialization.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         LocalityIncompatibilityError
             If the storage and compute localities are not compatible.
         """
@@ -294,8 +281,7 @@ class AuthzeeAsync:
         self._compute = self._compute_type(**self._compute_kwargs)
         self._storage = self._storage_type(**self._storage_kwargs)
         result = {
-            "has_failed": False,
-            "errors": {}
+            "error": None
         }
         compute_results, storage_result = await gather(
             self._compute.start(
@@ -306,23 +292,28 @@ class AuthzeeAsync:
             ),
             self._storage.start(config['start']['storage_start'])
         )
-        core.combine_errors(result, compute_results, storage_result)
+        if compute_results['error'] is not None:
+            result['error'] = compute_results['error']
+        elif storage_result['error'] is not None:
+            result['error'] = storage_result['error']
+
         self._raise_result(result, config)
 
-        if self._storage.locality not in locality_compatibility[self._compute.locality]:
-            result['errors']['locality_incompatibility'] = [
-                {
-                    "is_critical": False,
-                    "message": f"The '{self._storage.locality}' storage locality is not compatible with the '{self._compute.locality}' compute locality."
-                }
-            ]
+        if (
+            self._storage.locality
+            not in locality_compatibility[self._compute.locality]
+        ):
+            result['error'] = {
+                "error_type": "locality_incompatibility",
+                "message": f"The '{self._storage.locality}' storage locality is not compatible with the '{self._compute.locality}' compute locality."
+            }
 
         return result
 
 
     async def shutdown(
-        self, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Shutdown the authzee app.
 
@@ -338,9 +329,9 @@ class AuthzeeAsync:
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.shutdown(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "shutdown": {
                     "compute_shutdown": {},
@@ -355,41 +346,53 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "shutdown",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        ShutdownError
-            If a critical error occurs during shutdown.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = {
-            "has_failed": False,
-            "errors": {}
+            "error": None
         }
         compute_result, storage_result = await gather(
-            self._compute.shutdown(config['shutdown']['compute_shutdown']),
-            self._storage.shutdown(config['shutdown']['storage_shutdown'])
+            self._compute.shutdown(
+                config['shutdown']['compute_shutdown']
+            ),
+            self._storage.shutdown(
+                config['shutdown']['storage_shutdown']
+            )
         )
-        core.combine_errors(result, compute_result, storage_result)
+        if compute_result['error'] is not None:
+            result['error'] = compute_result['error']
+        elif storage_result['error'] is not None:
+            result['error'] = storage_result['error']
+
         self._raise_result(result, config)
 
         return result
-        
+
 
     async def construct(
-        self, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """One time setup for the life of storage and compute. Creates DB tables, storage setup, etc.
 
@@ -405,9 +408,9 @@ class AuthzeeAsync:
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.construct(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "construct": {
                     "compute_construct": {},
@@ -422,27 +425,31 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "construct",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        ConstructError
-            If a critical error occurs during construction.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = {
-            "has_failed": False,
-            "errors": {}
+            "error": None
         }
         compute = self._compute_type(**self._compute_kwargs)
         storage = self._storage_type(**self._storage_kwargs)
@@ -450,15 +457,19 @@ class AuthzeeAsync:
             compute.construct(config['construct']['compute_construct']),
             storage.construct(config['construct']['storage_construct'])
         )
-        core.combine_errors(result, compute_result, storage_result)
+        if compute_result['error'] is not None:
+            result['error'] = compute_result['error']
+        elif storage_result['error'] is not None:
+            result['error'] = storage_result['error']
+
         self._raise_result(result, config)
 
         return result
 
 
     async def destroy(
-        self, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Tear down everything that construct set up. Deletes DB tables, storage, etc.
 
@@ -474,9 +485,9 @@ class AuthzeeAsync:
         ```python
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.destroy(
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "destroy": {
                     "compute_destroy": {},
@@ -491,33 +502,41 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "destroy",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        DestroyError
-            If a critical error occurs during destruction.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = {
-            "has_failed": False,
-            "errors": {}
+            "error": None
         }
         compute_result, storage_result = await gather(
             self._compute.destroy(config['destroy']['compute_destroy']),
             self._storage.destroy(config['destroy']['storage_destroy'])
         )
-        core.combine_errors(result, compute_result, storage_result)
+        if compute_result['error'] is not None:
+            result['error'] = compute_result['error']
+        elif storage_result['error'] is not None:
+            result['error'] = storage_result['error']
+
         self._raise_result(result, config)
 
         return result
@@ -525,8 +544,8 @@ class AuthzeeAsync:
 
     async def validate_context_def(
         self,
-        context_def: ContextDef, 
-        config: AuthzeeConfigOverride | None = None
+        context_def: ContextDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a context definition without storing it.
 
@@ -549,9 +568,9 @@ class AuthzeeAsync:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_context_def": {}
             }
@@ -563,14 +582,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -578,7 +600,7 @@ class AuthzeeAsync:
         Raises
         ------
         DefinitionError
-            If the context definition is invalid and raise_crits is True.
+            If the context definition is invalid and raise_errors is True.
         """
         config = override_config(config, self._config)
         result = await self._compute.validate_context_def(
@@ -586,14 +608,14 @@ class AuthzeeAsync:
             config=config['validate_context_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_context_defs(
-        self, 
-        page_ref: str | None = None,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> ContextDefsPage:
         """Retrieve a page of context definitions.
 
@@ -610,9 +632,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.list_context_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_context_defs": {
                     "page_size": 100,
@@ -647,38 +669,40 @@ class AuthzeeAsync:
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
-        result =  await self._storage.list_context_defs(
+        result = await self._storage.list_context_defs(
             page_ref=page_ref,
             config=config['list_context_defs']
         )
         self._raise_result(result, config)
-        
+
         return result
-    
 
 
     async def get_context_def(
-        self, 
-        context_type: str, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        context_type: str,
+        config: AuthzeeConfigOverride | None=None
     ) -> ContextDefResult:
         """Retrieve a context definition by its `context_type`.
 
@@ -695,9 +719,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.get_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "get_context_def": {
                     "use_cache": False
@@ -711,21 +735,24 @@ class AuthzeeAsync:
         ContextDefResult
             ```python
             {
-                "context_def": {  # dict | None
+                "context_def": { # dict | None
                     "context_type": "NONE",
                     "schema": {
                         "type": "object",
                         "additionalProperties": False
                     }
                 },
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -741,14 +768,14 @@ class AuthzeeAsync:
             config=config['get_context_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def put_context_def(
-        self, 
-        context_def: ContextDef, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        context_def: ContextDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Create or update a context definition.
 
@@ -771,9 +798,9 @@ class AuthzeeAsync:
                     "additionalProperties": False
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "put_context_def": {}
             }
@@ -785,14 +812,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -800,13 +830,13 @@ class AuthzeeAsync:
         Raises
         ------
         DefinitionError
-            If the context definition is invalid and raise_crits is True.
+            If the context definition is invalid and raise_errors is True.
         """
         valid_result = await self.validate_context_def(
             context_def=context_def,
             config=config
         )
-        if valid_result['has_failed'] is True:
+        if valid_result['error'] is not None:
             return valid_result
 
         config = override_config(config, self._config)
@@ -815,14 +845,14 @@ class AuthzeeAsync:
             config=config['put_context_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def delete_context_def(
-        self, 
-        context_type: str, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        context_type: str,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Deletes the context definition if found.
 
@@ -839,9 +869,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.delete_context_def(
             context_type="NONE",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "delete_context_def": {}
             }
@@ -853,22 +883,25 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        DeleteError
-            If a critical error occurs during deletion.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.delete_context_def(
@@ -876,14 +909,14 @@ class AuthzeeAsync:
             config=config['delete_context_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def validate_identity_def(
         self,
-        identity_def: IdentityDef, 
-        config: AuthzeeConfigOverride | None = None
+        identity_def: IdentityDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate an identity definition without storing it.
 
@@ -913,9 +946,9 @@ class AuthzeeAsync:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_identity_def": {}
             }
@@ -927,14 +960,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -942,7 +978,7 @@ class AuthzeeAsync:
         Raises
         ------
         DefinitionError
-            If the identity definition is invalid and raise_crits is True.
+            If the identity definition is invalid and raise_errors is True.
         """
         config = override_config(config, self._config)
         result = await self._compute.validate_identity_def(
@@ -950,14 +986,14 @@ class AuthzeeAsync:
             config=config['validate_identity_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_identity_defs(
-        self, 
-        page_ref: str | None = None,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> IdentityDefsPage:
         """Retrieve a page of identity definitions.
 
@@ -974,9 +1010,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.list_identity_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_identity_defs": {
                     "page_size": 100,
@@ -1015,22 +1051,25 @@ class AuthzeeAsync:
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.list_identity_defs(
@@ -1038,14 +1077,14 @@ class AuthzeeAsync:
             config=config['list_identity_defs']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def get_identity_def(
-        self, 
+        self,
         identity_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> IdentityDefResult:
         """Retrieve an identity definition by its `identity_type`.
 
@@ -1062,9 +1101,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.get_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "get_identity_def": {
                     "use_cache": False
@@ -1078,7 +1117,7 @@ class AuthzeeAsync:
         IdentityDefResult
             ```python
             {
-                "identity_def": {  # dict | None
+                "identity_def": { # dict | None
                     "identity_type": "user",
                     "schema": {
                         "type": "object",
@@ -1089,14 +1128,17 @@ class AuthzeeAsync:
                         }
                     }
                 },
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1112,14 +1154,14 @@ class AuthzeeAsync:
             config=config['get_identity_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def put_identity_def(
-        self, 
-        identity_def: IdentityDef, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        identity_def: IdentityDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Create or update an identity definition.
 
@@ -1149,9 +1191,9 @@ class AuthzeeAsync:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "put_identity_def": {}
             }
@@ -1163,14 +1205,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1178,13 +1223,13 @@ class AuthzeeAsync:
         Raises
         ------
         DefinitionError
-            If the identity definition is invalid and raise_crits is True.
+            If the identity definition is invalid and raise_errors is True.
         """
         valid_result = await self.validate_identity_def(
             identity_def=identity_def,
             config=config
         )
-        if valid_result['has_failed'] is True:
+        if valid_result['error'] is not None:
             return valid_result
 
         config = override_config(config, self._config)
@@ -1193,14 +1238,14 @@ class AuthzeeAsync:
             config=config['put_identity_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def delete_identity_def(
-        self, 
+        self,
         identity_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Deletes the identity definition if found.
 
@@ -1217,9 +1262,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.delete_identity_def(
             identity_type="user",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "delete_identity_def": {}
             }
@@ -1231,22 +1276,25 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        DeleteError
-            If a critical error occurs during deletion.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.delete_identity_def(
@@ -1254,14 +1302,14 @@ class AuthzeeAsync:
             config=config['delete_identity_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def validate_resource_def(
         self,
-        resource_def: ResourceDef, 
-        config: AuthzeeConfigOverride | None = None
+        resource_def: ResourceDef,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a resource definition without storing it.
 
@@ -1296,9 +1344,9 @@ class AuthzeeAsync:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_resource_def": {}
             }
@@ -1310,14 +1358,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1325,7 +1376,7 @@ class AuthzeeAsync:
         Raises
         ------
         DefinitionError
-            If the resource definition is invalid and raise_crits is True.
+            If the resource definition is invalid and raise_errors is True.
         """
         config = override_config(config, self._config)
         result = await self._compute.validate_resource_def(
@@ -1333,14 +1384,14 @@ class AuthzeeAsync:
             config=config['validate_resource_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_resource_defs(
-        self, 
-        page_ref: str | None = None,
-        config: AuthzeeConfigOverride | None = None
+        self,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> ResourceDefsPage:
         """Retrieve a page of resource definitions.
 
@@ -1357,9 +1408,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.list_resource_defs(
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_resource_defs": {
                     "page_size": 100,
@@ -1402,22 +1453,25 @@ class AuthzeeAsync:
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.list_resource_defs(
@@ -1425,14 +1479,14 @@ class AuthzeeAsync:
             config=config['list_resource_defs']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def get_resource_def(
-        self, 
+        self,
         resource_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> ResourceDefResult:
         """Retrieve a resource definition by its `resource_type`.
 
@@ -1449,9 +1503,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.get_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "get_resource_def": {
                     "use_cache": False
@@ -1465,7 +1519,7 @@ class AuthzeeAsync:
         ResourceDefResult
             ```python
             {
-                "resource_def": {  # dict | None
+                "resource_def": { # dict | None
                     "resource_type": "balloon",
                     "actions": [
                         "balloon:read",
@@ -1480,14 +1534,17 @@ class AuthzeeAsync:
                         }
                     }
                 },
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1503,14 +1560,14 @@ class AuthzeeAsync:
             config=config['get_resource_def']
         )
         self._raise_result(result, config)
-        
+
         return result
-    
-    
+
+
     async def put_resource_def(
-        self, 
+        self,
         resource_def: ResourceDef,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Create or update a resource definition.
 
@@ -1545,9 +1602,9 @@ class AuthzeeAsync:
                     }
                 }
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "put_resource_def": {}
             }
@@ -1559,14 +1616,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "definition": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "definition",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1574,13 +1634,13 @@ class AuthzeeAsync:
         Raises
         ------
         DefinitionError
-            If the resource definition is invalid and raise_crits is True.
+            If the resource definition is invalid and raise_errors is True.
         """
         valid_result = await self.validate_resource_def(
             resource_def=resource_def,
             config=config
         )
-        if valid_result['has_failed'] is True:
+        if valid_result['error'] is not None:
             return valid_result
 
         config = override_config(config, self._config)
@@ -1589,14 +1649,14 @@ class AuthzeeAsync:
             config=config['put_resource_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def delete_resource_def(
-        self, 
+        self,
         resource_type: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Deletes the resource definition if found.
 
@@ -1613,9 +1673,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.delete_resource_def(
             resource_type="balloon",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "delete_resource_def": {}
             }
@@ -1627,22 +1687,25 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        DeleteError
-            If a critical error occurs during deletion.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.delete_resource_def(
@@ -1650,14 +1713,14 @@ class AuthzeeAsync:
             config=config['delete_resource_def']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def validate_grant(
-        self, 
+        self,
         grant: Grant,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a grant without storing it.
 
@@ -1685,13 +1748,12 @@ class AuthzeeAsync:
                     "balloon:inflate"
                 ],
                 "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                "evaluation_handler": "evaluate",  # "evaluate" | "error" | "critical"
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_grant": {}
             }
@@ -1703,14 +1765,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "grant": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "grant",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1718,7 +1783,7 @@ class AuthzeeAsync:
         Raises
         ------
         GrantError
-            If the grant is invalid and raise_crits is True.
+            If the grant is invalid and raise_errors is True.
         """
         config = override_config(config, self._config)
         result = await self._compute.validate_grant(
@@ -1726,14 +1791,14 @@ class AuthzeeAsync:
             config=config['validate_grant']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def enact(
-        self, 
+        self,
         grant: Grant,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Enact (store) a grant to create an authorization rule.
 
@@ -1761,13 +1826,12 @@ class AuthzeeAsync:
                     "balloon:inflate"
                 ],
                 "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                "evaluation_handler": "evaluate",  # "evaluate" | "error" | "critical"
                 "equality": True,  # bool | str | int | float | None | list | dict
                 "data": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "enact": {}
             }
@@ -1779,14 +1843,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "grant": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "grant",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1794,30 +1861,24 @@ class AuthzeeAsync:
         Raises
         ------
         GrantError
-            If the grant is invalid and raise_crits is True.
+            If the grant is invalid and raise_errors is True.
         """
-        valid_result = await self.validate_grant(
-            grant=grant,
-            config=config
-        )
-        if valid_result['has_failed'] is True:
+        valid_result = await self.validate_grant(grant=grant, config=config)
+        if valid_result['error'] is not None:
             return valid_result
 
         config = override_config(config, self._config)
-        result = await self._storage.enact(
-            grant=grant,
-            config=config['enact']
-        )
+        result = await self._storage.enact(grant=grant, config=config['enact'])
         self._raise_result(result, config)
-        
+
         return result
 
-        
+
     async def repeal(
-        self, 
-        grant_uuid: str, 
+        self,
+        grant_uuid: str,
         purge: bool,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Repeal (remove) a grant by its UUID.
 
@@ -1826,7 +1887,7 @@ class AuthzeeAsync:
         grant_uuid : str
             The UUID of the grant to repeal.
         purge : bool
-            If True, all grants and partitions may be scanned to completely remove. 
+            If True, all grants and partitions may be scanned to completely remove.
             Useful if corruption by update is suspected.
         config : AuthzeeConfigOverride | None, optional
             Override configuration for this call. Only include keys to override.
@@ -1838,9 +1899,9 @@ class AuthzeeAsync:
         result = await authz.repeal(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             purge=False,
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "repeal": {}
             }
@@ -1852,14 +1913,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": True,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": True,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1876,14 +1940,14 @@ class AuthzeeAsync:
             config=config['repeal']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def get_grant(
-        self, 
+        self,
         grant_uuid: str,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GrantResult:
         """Retrieve a grant by its UUID.
 
@@ -1900,9 +1964,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.get_grant(
             grant_uuid="0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "get_grant": {
                     "use_cache": False
@@ -1916,7 +1980,7 @@ class AuthzeeAsync:
         GrantResult
             ```python
             {
-                "grant": {  # dict | None
+                "grant": { # dict | None
                     "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
                     "name": "Allow inflate",
                     "description": "Allow balloon inflate for users.",
@@ -1928,18 +1992,20 @@ class AuthzeeAsync:
                         "balloon:inflate"
                     ],
                     "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                    "evaluation_handler": "evaluate",
                     "equality": True,
                     "data": {}
                 },
-                "has_failed": False,
-                "errors": {
-                    "resource_not_found": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "resource_not_found",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -1955,16 +2021,16 @@ class AuthzeeAsync:
             config=config['get_grant']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_grants(
         self,
-        effect: str | None = None, 
-        action: str | None = None, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        effect: str | None=None,
+        action: str | None=None,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> GrantsPage:
         """Retrieve a page of grants with optional filtering.
 
@@ -1987,9 +2053,9 @@ class AuthzeeAsync:
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_grants": {
                     "page_size": 100,
@@ -2027,28 +2093,30 @@ class AuthzeeAsync:
                             "balloon:inflate"
                         ],
                         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                        "evaluation_handler": "evaluate",
                         "equality": True,
                         "data": {}
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.list_grants(
@@ -2058,16 +2126,16 @@ class AuthzeeAsync:
             config=config['list_grants']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def list_grant_refs(
         self,
-        effect: str | None = None, 
-        action: str | None = None, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        effect: str | None=None,
+        action: str | None=None,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> PageRefsPage:
         """Retrieve a page of grant page references for parallel pagination.
 
@@ -2090,9 +2158,9 @@ class AuthzeeAsync:
             effect="allow",  # optional - str | None - "allow" | "deny"
             action="balloon:inflate",  # optional - str | None
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "list_grant_refs": {
                     "page_size": 10,
@@ -2122,22 +2190,25 @@ class AuthzeeAsync:
                     "page_ref_2"
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "page_reference": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "page_reference",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        PageReferenceError
-            If the page reference is invalid.
+        StorageError
+            An error occurred in the Storage Module.
         ParallelPaginationNotSupported
             If the storage backend does not support parallel pagination.
         """
@@ -2149,14 +2220,14 @@ class AuthzeeAsync:
             config=config['list_grant_refs']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def cleanup_latches(
-        self, 
-        before: datetime.datetime, 
-        config: AuthzeeConfigOverride | None = None
+        self,
+        before: datetime.datetime,
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Clean up storage latches created before the given datetime.
 
@@ -2178,9 +2249,9 @@ class AuthzeeAsync:
         # Assumes authz is an AuthzeeAsync instance and this is in a running event loop
         result = await authz.cleanup_latches(
             before=datetime.datetime(2026, 1, 1),
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "cleanup_latches": {}
             }
@@ -2192,22 +2263,27 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "start": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "start",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
 
         Raises
         ------
-        StartError
-            If a critical error occurs during cleanup.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         result = await self._storage.cleanup_latches(
@@ -2215,14 +2291,14 @@ class AuthzeeAsync:
             config=config['cleanup_latches']
         )
         self._raise_result(result, config)
-        
+
         return result
-        
-    
+
+
     async def validate_request(
         self,
         request: AuthzeeRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate an authorization request without evaluating it.
 
@@ -2253,13 +2329,12 @@ class AuthzeeAsync:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",
                 "context_type": "NONE",
                 "context": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_request": {
                     "get_context_def": {
@@ -2296,14 +2371,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "request": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "request",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2311,7 +2389,7 @@ class AuthzeeAsync:
         Raises
         ------
         RequestError
-            If the request is invalid and raise_crits is True.
+            If the request is invalid and raise_errors is True.
         """
         config = override_config(config, self._config)
         result = await self._compute.validate_request(
@@ -2319,15 +2397,15 @@ class AuthzeeAsync:
             config=config['validate_request']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def audit(
         self,
-        request: AuthzeeRequest, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        request: AuthzeeRequest,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> AuditResultPage:
         """Retrieve a page of audit results showing how each grant evaluated against the request.
 
@@ -2360,14 +2438,13 @@ class AuthzeeAsync:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",  # "grant" | "evaluate" | "error" | "critical"
                 "context_type": "NONE",
                 "context": {}
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "audit": {
                     "validate_request": {
@@ -2427,13 +2504,12 @@ class AuthzeeAsync:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",
                 "context_type": "NONE",
                 "context": {}
             }
         ):
-            for grant, result in zip(page['grants'], page['results']):
-                print(grant['grant_uuid'], result['is_applicable'])
+            for result_item in page['results']:
+                print(result_item['grant']['grant_uuid'], result_item['is_applicable'])
         ```
 
         Returns
@@ -2441,38 +2517,38 @@ class AuthzeeAsync:
         AuditResultPage
             ```python
             {
-                "grants": [
-                    {
-                        "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-                        "name": "Allow inflate",
-                        "description": "Allow balloon inflate for users.",
-                        "tags": {},
-                        "effect": "allow",
-                        "actions": [
-                            "balloon:inflate"
-                        ],
-                        "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                        "evaluation_handler": "evaluate",
-                        "equality": True,
-                        "data": {}
-                    }
-                ],
                 "results": [
                     {
+                        "grant": {
+                            "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
+                            "name": "Allow inflate",
+                            "description": "Allow balloon inflate for users.",
+                            "tags": {},
+                            "effect": "allow",
+                            "actions": [
+                                "balloon:inflate"
+                            ],
+                            "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
+                            "equality": True,
+                            "data": {}
+                        },
                         "is_applicable": True,
                         "query_result": True,
-                        "errors": {}
+                        "error": None
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "request": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "request",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2480,27 +2556,23 @@ class AuthzeeAsync:
         Raises
         ------
         RequestError
-            If the request is invalid and raise_crits is True.
-        EvaluationError
-            If a critical evaluation error occurs and raise_crits is True.
-        PageReferenceError
-            If the page reference is invalid.
+            If the request is invalid and raise_errors is True.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         valid_result = await self._compute.validate_request(
             request=request,
             config=config['audit']['validate_request']
         )
-        if valid_result['has_failed'] is True:
+        if valid_result['error'] is not None:
             result = {
-                "grants": [],
                 "results": [],
                 "next_page_ref": None,
-                "has_failed": True,
-                "errors": valid_result['errors']
+                "error": valid_result['error']
             }
             self._raise_result(result, config)
-            
+
             return result
 
         result = await self._compute.audit(
@@ -2509,27 +2581,14 @@ class AuthzeeAsync:
             config=config['audit']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
-    def _get_critical_errors(self, errors: ResultErrors) -> ResultErrors:
-        critical_errors = {}
-        for et in errors:
-            for error in errors[et]:
-                if error['is_critical']:
-                    if et not in critical_errors:
-                        critical_errors[et] = []
-                    
-                    critical_errors[et].append(error)
-        
-        return critical_errors
-
-
     async def authorize(
-        self, 
+        self,
         request: AuthzeeRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> AuthorizeResult:
         """Determine if the request is authorized.
 
@@ -2560,13 +2619,12 @@ class AuthzeeAsync:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",  # "grant" | "evaluate" | "error" | "critical"
                 "context_type": "NONE",
                 "context": {}
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "authorize": {
                     "validate_request": {
@@ -2615,7 +2673,7 @@ class AuthzeeAsync:
             ```python
             {
                 "is_authorized": True,
-                "grant": {  # dict | None
+                "grant": { # dict | None
                     "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
                     "name": "Allow inflate",
                     "description": "Allow balloon inflate for users.",
@@ -2625,19 +2683,21 @@ class AuthzeeAsync:
                         "balloon:inflate"
                     ],
                     "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                    "evaluation_handler": "evaluate",
                     "equality": True,
                     "data": {}
                 },
                 "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
-                "has_failed": False,
-                "critical_errors": {
-                    "evaluation": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "evaluation",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2645,26 +2705,27 @@ class AuthzeeAsync:
         Raises
         ------
         RequestError
-            If the request is invalid and raise_crits is True.
-        EvaluationError
-            If a critical evaluation error occurs and raise_crits is True.
+            If the request is invalid and raise_errors is True.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         valid_result = await self._compute.validate_request(
             request=request,
             config=config['authorize']['validate_request']
         )
-        
-        if valid_result['has_failed'] is True:
+
+        if valid_result['error'] is not None:
             result = {
                 "is_authorized": False,
                 "grant": None,
-                "message": "A critical error has occurred. Therefore, the request is not authorized.",
-                "has_failed": valid_result['has_failed'],
-                "critical_errors": self._get_critical_errors(valid_result['errors'])
+                "message": "An error has occurred. Therefore, the request is not authorized.",
+                "error": valid_result['error']
             }
             self._raise_result(valid_result, config)
-            
+
             return result
 
         result = await self._compute.authorize(
@@ -2672,14 +2733,14 @@ class AuthzeeAsync:
             config=config['authorize']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def validate_batch_request(
         self,
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> GenericResult:
         """Validate a batch authorization request without evaluating it.
 
@@ -2710,7 +2771,6 @@ class AuthzeeAsync:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",
                 "context_type": "NONE",
                 "context": {},
                 "batch": [
@@ -2722,9 +2782,9 @@ class AuthzeeAsync:
                     }
                 ]
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "validate_batch_request": {
                     "get_context_def": {
@@ -2761,14 +2821,17 @@ class AuthzeeAsync:
         GenericResult
             ```python
             {
-                "has_failed": False,
-                "errors": {
-                    "request": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "request",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2776,7 +2839,7 @@ class AuthzeeAsync:
         Raises
         ------
         RequestError
-            If the batch request is invalid and raise_crits is True.
+            If the batch request is invalid and raise_errors is True.
         """
         config = override_config(config, self._config)
         result = await self._compute.validate_batch_request(
@@ -2784,15 +2847,15 @@ class AuthzeeAsync:
             config=config['validate_batch_request']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def batch_audit(
         self,
-        batch_request: AuthzeeBatchRequest, 
-        page_ref: str | None = None, 
-        config: AuthzeeConfigOverride | None = None
+        batch_request: AuthzeeBatchRequest,
+        page_ref: str | None=None,
+        config: AuthzeeConfigOverride | None=None
     ) -> BatchAuditResultPage:
         """Retrieve a page of batch audit results showing how each grant evaluated against the batch request.
 
@@ -2825,12 +2888,11 @@ class AuthzeeAsync:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",  # "grant" | "evaluate" | "error" | "critical"
                 "context_type": "NONE",
                 "context": {},
                 "batch": [
                     {
-                        "resource": {  # optional - dict | None
+                        "resource": { # optional - dict | None
                             "color": "red",
                             "is_inflated": True
                         }
@@ -2838,9 +2900,9 @@ class AuthzeeAsync:
                 ]
             },
             page_ref="abc123",  # optional - str | None
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "batch_audit": {
                     "validate_batch_request": {
@@ -2900,7 +2962,6 @@ class AuthzeeAsync:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",
                 "context_type": "NONE",
                 "context": {},
                 "batch": [
@@ -2913,8 +2974,8 @@ class AuthzeeAsync:
                 ]
             }
         ):
-            for batch_result in page['batch_results']:
-                for result_item in batch_result['results']:
+            for batch_item in page['batch']:
+                for result_item in batch_item['results']:
                     print(result_item['is_applicable'])
         ```
 
@@ -2934,33 +2995,34 @@ class AuthzeeAsync:
                             "balloon:inflate"
                         ],
                         "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                        "evaluation_handler": "evaluate",
                         "equality": True,
                         "data": {}
                     }
                 ],
-                "batch_results": [
+                "batch": [
                     {
                         "results": [
                             {
                                 "is_applicable": True,
                                 "query_result": True,
-                                "errors": {}
+                                "error": None
                             }
                         ],
-                        "has_failed": False,
-                        "errors": {}
+                        "error": None
                     }
                 ],
                 "next_page_ref": None,  # str | None - None means pagination is complete
-                "has_failed": False,
-                "errors": {
-                    "request": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "request",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -2968,43 +3030,40 @@ class AuthzeeAsync:
         Raises
         ------
         RequestError
-            If the batch request is invalid and raise_crits is True.
-        EvaluationError
-            If a critical evaluation error occurs and raise_crits is True.
-        PageReferenceError
-            If the page reference is invalid.
+            If the batch request is invalid and raise_errors is True.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         valid_result = await self._compute.validate_batch_request(
             batch_request=batch_request,
             config=config['batch_audit']['validate_batch_request']
         )
-        if valid_result['has_failed'] is True:
+        if valid_result['error'] is not None:
             result = {
                 "grants": [],
-                "batch_results": [],
+                "batch": [],
                 "next_page_ref": None,
-                "has_failed": True,
-                "errors": valid_result['errors']
+                "error": valid_result['error']
             }
             self._raise_result(result, config)
-            
+
             return result
-    
+
         result = await self._compute.batch_audit(
             batch_request=batch_request,
             page_ref=page_ref,
             config=config['batch_audit']
         )
         self._raise_result(result, config)
-        
+
         return result
 
 
     async def batch_authorize(
-        self, 
+        self,
         batch_request: AuthzeeBatchRequest,
-        config: AuthzeeConfigOverride | None = None
+        config: AuthzeeConfigOverride | None=None
     ) -> BatchAuthorizeResult:
         """Determine if each item in the batch request is authorized.
 
@@ -3035,21 +3094,20 @@ class AuthzeeAsync:
                     "color": "blue",
                     "is_inflated": False
                 },
-                "evaluation_handler": "grant",  # "grant" | "evaluate" | "error" | "critical"
                 "context_type": "NONE",
                 "context": {},
                 "batch": [
                     {
-                        "resource": {  # optional - dict | None
+                        "resource": { # optional - dict | None
                             "color": "red",
                             "is_inflated": True
                         }
                     }
                 ]
             },
-            config={  # optional - AuthzeeConfigOverride | None - All keys are optional
+            config={ # optional - AuthzeeConfigOverride | None - All keys are optional
                 "authzee": {
-                    "raise_crits": True
+                    "raise_errors": True
                 },
                 "batch_authorize": {
                     "validate_batch_request": {
@@ -3123,7 +3181,7 @@ class AuthzeeAsync:
         BatchAuthorizeResult
             ```python
             {
-                "batch_results": [
+                "batch": [
                     {
                         "is_authorized": True,
                         "grant": {
@@ -3136,30 +3194,30 @@ class AuthzeeAsync:
                                 "balloon:inflate"
                             ],
                             "query": "length(request.identities.user[?department == 'Balloon Dept']) > `0`",
-                            "evaluation_handler": "evaluate",
                             "equality": True,
                             "data": {}
                         },
                         "message": "Authorized by grant.",
-                        "has_failed": False,
-                        "critical_errors": {}
+                        "error": None
                     },
                     {
                         "is_authorized": False,
                         "grant": None,
                         "message": "No matching allow grants.",
-                        "has_failed": False,
-                        "critical_errors": {}
+                        "error": None
                     }
                 ],
-                "has_failed": False,
-                "critical_errors": {
-                    "evaluation": [
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": None
+            }
+            ```
+
+            Or on error:
+
+            ```python
+            {
+                "error": {
+                    "error_type": "evaluation",
+                    "message": "Description of what went wrong."
                 }
             }
             ```
@@ -3167,23 +3225,24 @@ class AuthzeeAsync:
         Raises
         ------
         RequestError
-            If the batch request is invalid and raise_crits is True.
-        EvaluationError
-            If a critical evaluation error occurs and raise_crits is True.
+            If the batch request is invalid and raise_errors is True.
+        ComputeError
+            An error occurred in the Compute Module.
+        StorageError
+            An error occurred in the Storage Module.
         """
         config = override_config(config, self._config)
         valid_result = await self._compute.validate_batch_request(
             batch_request=batch_request,
             config=config['batch_authorize']['validate_batch_request']
         )
-        if valid_result['has_failed'] is True:
+        if valid_result['error'] is not None:
             result = {
-                "batch_results": [],
-                "has_failed": True,
-                "critical": self._get_critical_errors(valid_result['errors'])
+                "batch": [],
+                "error": valid_result['error']
             }
             self._raise_result(result, config)
-            
+
             return result
 
         result = await self._compute.batch_authorize(
@@ -3191,6 +3250,5 @@ class AuthzeeAsync:
             config=config['batch_authorize']
         )
         self._raise_result(result, config)
-        
+
         return result
-        

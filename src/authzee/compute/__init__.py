@@ -1,6 +1,8 @@
+"""Authzee compute modules."""
+
 __all__ = [
     "ComputeModule",
-    "InProcessCompute",
+    "InProcessCompute"
 ]
 
 from authzee.compute.compute_module import ComputeModule

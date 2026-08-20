@@ -1,100 +1,69 @@
 """Authzee core types."""
 
-from typing import Any, Dict, List, Literal, TypedDict
-
-
 __all__ = [
     "AnyJSON",
-    "GenericError",
-    "ResultErrors",
-    "GenericResult",
-    "ContextDef",
-    "ContextDefResult",
-    "ContextDefsPage",
-    "IdentityDef",
-    "IdentityDefResult",
-    "IdentityDefsPage",
-    "ResourceDef",
-    "ResourceDefResult",
-    "ResourceDefsPage",
-    "Grant",
-    "GrantResult",
-    "GrantsPage",
-    "PageRefsPage",
-    "StorageLatch",
-    "StorageLatchResult",
-    "AuthzeeRequest",
-    "BatchItem",
-    "AuthzeeBatchRequest",
-    "ExecuteResult",
-    "EvaluateResult",
     "AuditResultItem",
     "AuditResultPage",
     "AuthorizeResult",
+    "AuthzeeBatchRequest",
+    "AuthzeeError",
+    "AuthzeeRequest",
     "BatchAuditResultItem",
     "BatchAuditResultPage",
     "BatchAuthorizeResult",
+    "BatchItem",
+    "ContextDef",
+    "ContextDefResult",
+    "ContextDefsPage",
+    "EvaluateResult",
+    "ExecuteResult",
+    "GenericResult",
+    "Grant",
+    "GrantResult",
+    "GrantsPage",
+    "IdentityDef",
+    "IdentityDefResult",
+    "IdentityDefsPage",
+    "PageRefsPage",
+    "ResourceDef",
+    "ResourceDefResult",
+    "ResourceDefsPage",
+    "StorageLatch",
+    "StorageLatchResult"
 ]
 
+from typing import Any, Dict, List, Literal, TypedDict
 
-AnyJSON = bool | str | int | float | None | list | dict
+
+AnyJSON = (
+    bool
+    | str
+    | int
+    | float
+    | None
+    | list
+    | dict
+)
 
 
-class GenericError(TypedDict):
+class AuthzeeError(TypedDict):
     """```python
     Dict[str, Any]
     ```
-    Generic Error Type
+    Error from an Authzee operation.
 
     Examples
     --------
     ```python
     {
-        "is_critical": False,
-        "message": "Error message here"
+        "error_type": "evaluation",
+        "message": "A JSON Query error has occurred."
     }
     ```
     """
-    is_critical: bool
+    error_type: str
     message: str
 
-
-ResultErrors = Dict[
-    Literal[
-        "definition",
-        "grant",
-        "request",
-        "evaluation",
-        "locality_incompatibility",
-        "not_implemented",
-        "parallel_pagination_not_supported",
-        "page_reference",
-        "resource_not_found",
-        "start"
-    ],
-    List[GenericError]
-]
-"""Result errors for all responses
-
-    Examples
-    --------
-    ```python
-    {
-        "<error_type>": [ 
-            {
-                "is_critical": False,
-                "message": "Error message."
-            }
-        ],
-        "<other_error_type>": [
-            {
-                "is_critical": False,
-                "message": "Error message."
-            }
-        ]
-    }
-    ```
-    """
 
 class GenericResult(TypedDict):
     """```python
@@ -105,20 +74,14 @@ class GenericResult(TypedDict):
     --------
     ```python
     {
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class ContextDef(TypedDict):
@@ -132,7 +95,7 @@ class ContextDef(TypedDict):
     {
         "context_type": "MyContext",
         "schema": {
-            "type": "object"    ,
+            "type": "object",
             "properties": {
                 "my_prop": {
                     "type": "string"
@@ -151,16 +114,14 @@ class ContextDefResult(TypedDict):
     Dict[str, Any]
     ```
 
-    Result of 
-
     Examples
     --------
     ```python
     {
-        "context_def": { # dict | None
+        "context_def": { # Or None
             "context_type": "MyContext",
             "schema": {
-                "type": "object"    ,
+                "type": "object",
                 "properties": {
                     "my_prop": {
                         "type": "string"
@@ -168,21 +129,15 @@ class ContextDefResult(TypedDict):
                 }
             }
         },
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
     context_def: ContextDef | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class ContextDefsPage(TypedDict):
@@ -198,7 +153,7 @@ class ContextDefsPage(TypedDict):
             {
                 "context_type": "MyContext",
                 "schema": {
-                    "type": "object"    ,
+                    "type": "object",
                     "properties": {
                         "my_prop": {
                             "type": "string"
@@ -207,23 +162,17 @@ class ContextDefsPage(TypedDict):
                 }
             }
         ],
-        "next_page_ref": "abc12": # str | None
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "next_page_ref": "abc123",
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
     context_defs: List[ContextDef]
     next_page_ref: str | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class IdentityDef(TypedDict):
@@ -237,7 +186,7 @@ class IdentityDef(TypedDict):
     {
         "identity_type": "MyIdentity",
         "schema": {
-            "type": "object"    ,
+            "type": "object",
             "properties": {
                 "my_prop": {
                     "type": "string"
@@ -260,10 +209,10 @@ class IdentityDefResult(TypedDict):
     --------
     ```python
     {
-        "identity_def": { # dict | None
+        "identity_def": {
             "identity_type": "MyIdentity",
             "schema": {
-                "type": "object"    ,
+                "type": "object",
                 "properties": {
                     "my_prop": {
                         "type": "string"
@@ -271,21 +220,15 @@ class IdentityDefResult(TypedDict):
                 }
             }
         },
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
-    identity_def: IdentityDef| None
-    has_failed: bool
-    errors: ResultErrors
+    identity_def: IdentityDef | None
+    error: AuthzeeError | None
 
 
 class IdentityDefsPage(TypedDict):
@@ -301,7 +244,7 @@ class IdentityDefsPage(TypedDict):
             {
                 "identity_type": "MyIdentity",
                 "schema": {
-                    "type": "object"    ,
+                    "type": "object",
                     "properties": {
                         "my_prop": {
                             "type": "string"
@@ -310,23 +253,17 @@ class IdentityDefsPage(TypedDict):
                 }
             }
         ],
-        "next_page_ref": "abc12": # str | None
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "next_page_ref": "abc123",
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
     identity_defs: List[IdentityDef]
     next_page_ref: str | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class ResourceDef(TypedDict):
@@ -338,12 +275,12 @@ class ResourceDef(TypedDict):
     --------
     ```python
     {
-        "resource_type": "MyResource",
+        "resource_type": "Balloon",
         "actions": [
-            "MyResource.MyAction"
+            "balloon:inflate"
         ],
         "schema": {
-            "type": "object"    ,
+            "type": "object",
             "properties": {
                 "my_prop": {
                     "type": "string"
@@ -367,13 +304,13 @@ class ResourceDefResult(TypedDict):
     --------
     ```python
     {
-        "resource_def": { # dict | None
-            "resource_type": "MyResource",
+        "resource_def": {
+            "resource_type": "Balloon",
             "actions": [
-                "MyResource.MyAction"
+                "balloon:inflate"
             ],
             "schema": {
-                "type": "object"    ,
+                "type": "object",
                 "properties": {
                     "my_prop": {
                         "type": "string"
@@ -381,21 +318,15 @@ class ResourceDefResult(TypedDict):
                 }
             }
         },
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
-    resource_def: ResourceDef| None
-    has_failed: bool
-    errors: ResultErrors
+    resource_def: ResourceDef | None
+    error: AuthzeeError | None
 
 
 class ResourceDefsPage(TypedDict):
@@ -409,12 +340,12 @@ class ResourceDefsPage(TypedDict):
     {
         "resource_defs": [
             {
-                "resource_type": "MyResource",
+                "resource_type": "Balloon",
                 "actions": [
-                    "MyResource.MyAction"
+                    "balloon:inflate"
                 ],
                 "schema": {
-                    "type": "object"    ,
+                    "type": "object",
                     "properties": {
                         "my_prop": {
                             "type": "string"
@@ -423,23 +354,17 @@ class ResourceDefsPage(TypedDict):
                 }
             }
         ],
-        "next_page_ref": "abc12": # str | None
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "next_page_ref": "abc123",
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
     resource_defs: List[ResourceDef]
     next_page_ref: str | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class Grant(TypedDict):
@@ -455,18 +380,18 @@ class Grant(TypedDict):
         "name": "People friendly name",
         "description": "Long description",
         "tags": {
-            "my tag key": "my tag value"
+            "my_tag_key": "my tag value"
         },
-        "effect": "allow", # allow | deny 
+        "effect": "allow",
         "actions": [
-            "MyResource.MyAction"
+            "balloon:inflate"
         ],
         "query": "contains(request.identities, 'User')",
-        "evaluation_handler": "evaluate", # evaluate | error | critical
-        equality: True # AnyJSON
-        data: { # top level dictionary with str keys, everything else is free form
-            "str here": "anything else here
-        }  
+        "equality": True,
+        "applicable_on_failure": False,
+        "data": {
+            "str_here": "anything else here"
+        }
     }
     ```
     """
@@ -477,12 +402,8 @@ class Grant(TypedDict):
     effect: Literal["allow", "deny"]
     actions: List[str]
     query: str
-    evaluation_handler: Literal[
-        "evaluate",
-        "error",
-        "critical"
-    ]
     equality: AnyJSON
+    applicable_on_failure: bool
     data: Dict[str, Any]
 
 
@@ -495,39 +416,30 @@ class GrantResult(TypedDict):
     --------
     ```python
     {
-        "grant": { # dict | None
+        "grant": {
             "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             "name": "People friendly name",
             "description": "Long description",
             "tags": {
-                "my tag key": "my tag value"
+                "my_tag_key": "my tag value"
             },
-            "effect": "allow", # allow | deny 
+            "effect": "allow",
             "actions": [
-                "MyResource.MyAction"
+                "balloon:inflate"
             ],
             "query": "contains(request.identities, 'User')",
-            "evaluation_handler": "evaluate", # evaluate | error | critical
-            equality: True # AnyJSON
-            data: { # top level dictionary with str keys, everything else is free form
-                "str here": "anything else here
-            }  
+            "equality": True,
+            "data": {}
         },
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
     grant: Grant | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class GrantsPage(TypedDict):
@@ -540,42 +452,33 @@ class GrantsPage(TypedDict):
     ```python
     {
         "grants": [
-            { 
+            {
                 "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
                 "name": "People friendly name",
                 "description": "Long description",
                 "tags": {
-                    "my tag key": "my tag value"
+                    "my_tag_key": "my tag value"
                 },
-                "effect": "allow", # allow | deny 
+                "effect": "allow",
                 "actions": [
-                    "MyResource.MyAction"
+                    "balloon:inflate"
                 ],
                 "query": "contains(request.identities, 'User')",
-                "evaluation_handler": "evaluate", # evaluate | error | critical
-                equality: True # AnyJSON
-                data: { # top level dictionary with str keys, everything else is free form
-                    "str here": "anything else here
-                }  
+                "equality": True,
+                "data": {}
             }
         ],
-        "next_page_ref": "abc123", # str | None
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "next_page_ref": "abc123",
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
     grants: List[Grant]
     next_page_ref: str | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class PageRefsPage(TypedDict):
@@ -588,25 +491,19 @@ class PageRefsPage(TypedDict):
     ```python
     {
         "page_refs": [
-            abc123"
+            "abc123"
         ],
-        "next_page_ref": "abc123", # str | None
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "next_page_ref": "abc123",
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
     page_refs: List[str]
     next_page_ref: str | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class StorageLatch(TypedDict):
@@ -620,12 +517,12 @@ class StorageLatch(TypedDict):
     {
         "storage_latch_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
         "is_set": False,
-        "created": "2026-04-26T16:21:10.521220"
+        "created_at": "2026-04-26T16:21:10.521220"
     }
     ```
     """
     storage_latch_uuid: str
-    is_set: bool = False
+    is_set: bool
     created_at: str
 
 
@@ -638,25 +535,20 @@ class StorageLatchResult(TypedDict):
     --------
     ```python
     {
-        "storage_latch": { # dict | None
+        "storage_latch": {
             "storage_latch_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             "is_set": False,
-            "created": "2026-04-26T16:21:10.521220"
+            "created_at": "2026-04-26T16:21:10.521220"
         },
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
+    }
     ```
     """
     storage_latch: StorageLatch | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class AuthzeeRequest(TypedDict):
@@ -681,7 +573,6 @@ class AuthzeeRequest(TypedDict):
             "color": "blue",
             "size": 27.0
         },
-        "evaluation_handler": "evaluate", # grant | evaluate | error | critical
         "context_type": "MyContext",
         "context": {
             "allowed_sizes": [20.0, 27.0]
@@ -689,59 +580,52 @@ class AuthzeeRequest(TypedDict):
     }
     ```
     """
-    identities: Dict[str, List[Dict[str, AnyJSON]]]
+    identities: Dict[
+        str,
+        List[Dict[str, AnyJSON]]
+    ]
     action: str
     resource_type: str
     resource: Dict[str, AnyJSON]
-    evaluation_handler: Literal[
-        "grant",
-        "evaluate",
-        "error",
-        "critical"
-    ]
     context_type: str
     context: Dict[str, AnyJSON]
 
 
-class BatchItem(TypedDict):
+class BatchItem(TypedDict, total=False):
     """```python
     Dict[str, Any]
     ```
 
     Examples
     --------
-    **All base fields are not required.**
+    **All fields are optional.**
     ```python
     {
-        "identities": { # dict | None
+        "identities": {
             "ADUser": [
                 {"cn": "authzee_user_1"}
             ]
         },
-        "resource_type": "Balloon", # str | None
-        "resource": { # dict | None
+        "resource_type": "Balloon",
+        "resource": {
             "color": "blue",
             "size": 27.0
         },
-        "evaluation_handler": "evaluate", # evaluate | error | critical | None
-        "context_type": "MyContext", # str | None
-        "context": { # dict | None
+        "context_type": "MyContext",
+        "context": {
             "allowed_sizes": [20.0, 27.0]
         }
     }
     ```
     """
-    identities: Dict[str, List[Dict[str, AnyJSON]]] | None = None
-    resource_type: str | None = None
-    resource: Dict[str, AnyJSON] | None = None
-    evaluation_handler: Literal[
-        "grant",
-        "evaluate",
-        "error",
-        "critical"
-    ] | None = None
-    context_type: str | None = None
-    context: Dict[str, AnyJSON] | None = None
+    identities: Dict[
+        str,
+        List[Dict[str, AnyJSON]]
+    ] | None
+    resource_type: str | None
+    resource: Dict[str, AnyJSON] | None
+    context_type: str | None
+    context: Dict[str, AnyJSON] | None
 
 
 class AuthzeeBatchRequest(TypedDict):
@@ -766,7 +650,6 @@ class AuthzeeBatchRequest(TypedDict):
             "color": "blue",
             "size": 27.0
         },
-        "evaluation_handler": "evaluate", # grant | evaluate | error | critical
         "context_type": "MyContext",
         "context": {
             "allowed_sizes": [20.0, 27.0]
@@ -782,19 +665,17 @@ class AuthzeeBatchRequest(TypedDict):
     }
     ```
     """
-    identities: Dict[str, List[Dict[str, AnyJSON]]]
+    identities: Dict[
+        str,
+        List[Dict[str, AnyJSON]]
+    ]
     action: str
     resource_type: str
     resource: Dict[str, AnyJSON]
-    evaluation_handler: Literal[
-        "grant",
-        "evaluate",
-        "error",
-        "critical"
-    ]
     context_type: str
     context: Dict[str, AnyJSON]
     batch: List[BatchItem]
+
 
 class ExecuteResult(TypedDict):
     """```python
@@ -806,14 +687,12 @@ class ExecuteResult(TypedDict):
     ```python
     {
         "result": True,
-        "has_failed": False,
-        "error_message": None # str | None
+        "failure": "A JMESPath Query error has occurred: ..." # or None
     }
     ```
     """
     result: Any
-    has_failed: bool
-    error_message: str | None
+    failure: str | None
 
 
 class EvaluateResult(TypedDict):
@@ -827,22 +706,13 @@ class EvaluateResult(TypedDict):
     {
         "is_applicable": True,
         "query_result": True,
-        "has_failed": False,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
-        }
+        "failure": "A JSON Query error has occurred: ..." # or None
     }
     ```
     """
     is_applicable: bool
     query_result: Any
-    has_failed: bool
-    errors: ResultErrors
+    failure: str | None
 
 
 class AuditResultItem(TypedDict):
@@ -854,22 +724,27 @@ class AuditResultItem(TypedDict):
     --------
     ```python
     {
+        "grant": {
+            "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
+            "name": "People friendly name",
+            "description": "Long description",
+            "tags": {},
+            "effect": "allow",
+            "actions": ["balloon:inflate"],
+            "query": "contains(request.identities, 'User')",
+            "equality": True,
+            "data": {}
+        },
         "is_applicable": True,
         "query_result": True,
-        "errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
-        }
+        "failure": "A JSON Query error has occurred: ..." # Or None
     }
     ```
     """
+    grant: Grant
     is_applicable: bool
     query_result: AnyJSON
-    errors: ResultErrors
+    failure: str | None
 
 
 class AuditResultPage(TypedDict):
@@ -881,52 +756,35 @@ class AuditResultPage(TypedDict):
     --------
     ```python
     {
-        "grants": [
-            {
-                "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
-                "name": "People friendly name",
-                "description": "Long description",
-                "tags": {"my tag key": "my tag value"},
-                "effect": "allow",
-                "actions": ["MyResource.MyAction"],
-                "query": "contains(request.identities, 'User')",
-                "evaluation_handler": "evaluate",
-                "equality": True,
-                "data": {}
-            }
-        ],
         "results": [
             {
+                "grant": {
+                    "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
+                    "name": "People friendly name",
+                    "description": "Long description",
+                    "tags": {},
+                    "effect": "allow",
+                    "actions": ["balloon:inflate"],
+                    "query": "contains(request.identities, 'User')",
+                    "equality": True,
+                    "data": {}
+                },
                 "is_applicable": True,
                 "query_result": True,
-                "errors": { # result errors
-                    "<error_type>": [ 
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
-                }
+                "failure": "A JSON Query error has occurred: ..." # Or None
             }
         ],
-        "next_page_ref": "abc123", # str | None
-        "has_failed": False,
-        "errors": { # request errors and propagated result errors
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "next_page_ref": "abc123",
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
-    grants: List[Grant]
     results: List[AuditResultItem]
     next_page_ref: str | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class AuthorizeResult(TypedDict):
@@ -939,7 +797,7 @@ class AuthorizeResult(TypedDict):
     ```python
     {
         "is_authorized": True,
-        "grant": { # dict | None
+        "grant": {
             "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             "name": "People friendly name",
             "description": "Long description",
@@ -947,21 +805,15 @@ class AuthorizeResult(TypedDict):
                 "my tag key": "my tag value"
             },
             "effect": "allow",
-            "actions": ["MyResource.MyAction"],
+            "actions": ["balloon:inflate"],
             "query": "contains(request.identities, 'User')",
-            "evaluation_handler": "evaluate",
             "equality": True,
             "data": {}
         },
-        "message": "Authorized by grant.",
-        "has_failed": False,
-        "critical_errors": {
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
@@ -969,8 +821,7 @@ class AuthorizeResult(TypedDict):
     is_authorized: bool
     grant: Grant | None
     message: str
-    has_failed: bool
-    critical_errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class BatchAuditResultItem(TypedDict):
@@ -986,31 +837,18 @@ class BatchAuditResultItem(TypedDict):
             {
                 "is_applicable": True,
                 "query_result": True,
-                "errors": { # result errors
-                    "<error_type>": [ 
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
-                }
+                "failure": "A JSON Query error has occurred: ..." # Or None
             }
         ],
-        "has_failed": False,
-        "errors": { # request errors and propagated result errors
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
-    results: List[AuditResultItem]
-    has_failed: bool
-    errors: ResultErrors
+    results: List[EvaluateResult]
+    error: AuthzeeError | None
 
 
 class BatchAuditResultPage(TypedDict):
@@ -1027,60 +865,41 @@ class BatchAuditResultPage(TypedDict):
                 "grant_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
                 "name": "People friendly name",
                 "description": "Long description",
-                "tags": {"my tag key": "my tag value"},
+                "tags": {},
                 "effect": "allow",
-                "actions": ["MyResource.MyAction"],
+                "actions": ["balloon:inflate"],
                 "query": "contains(request.identities, 'User')",
-                "evaluation_handler": "evaluate",
                 "equality": True,
                 "data": {}
             }
         ],
-        "batch_results": [
+        "batch": [
             {
                 "results": [
                     {
                         "is_applicable": True,
                         "query_result": True,
-                        "errors": { # result errors
-                            "<error_type>": [ 
-                                {
-                                    "is_critical": False,
-                                    "message": "Error message."
-                                }
-                            ]
-                        }
+                        "failure": "A JSON Query error has occurred: ..." # Or None
                     }
                 ],
-                "has_failed": False,
-                "errors": { # request errors and propagated result errors
-                    "<error_type>": [ 
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "error": { # or None
+                    "error_type": "<type>",
+                    "message": "<description>"
                 }
             }
         ],
-        "next_page_ref": "abc123", # str | None
-        "has_failed": False,
-        "errors": { # Batch request errors and propagated request errors
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "next_page_ref": "abc123",
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
     grants: List[Grant]
-    batch_results: List[BatchAuditResultItem]
+    batch: List[BatchAuditResultItem]
     next_page_ref: str | None
-    has_failed: bool
-    errors: ResultErrors
+    error: AuthzeeError | None
 
 
 class BatchAuthorizeResult(TypedDict):
@@ -1092,7 +911,7 @@ class BatchAuthorizeResult(TypedDict):
     --------
     ```python
     {
-        "batch_results": [
+        "batch": [
             {
                 "is_authorized": True,
                 "grant": {
@@ -1101,36 +920,24 @@ class BatchAuthorizeResult(TypedDict):
                     "description": "Long description",
                     "tags": {},
                     "effect": "allow",
-                    "actions": ["MyResource.MyAction"],
+                    "actions": ["balloon:inflate"],
                     "query": "contains(request.identities, 'User')",
-                    "evaluation_handler": "evaluate",
                     "equality": True,
                     "data": {}
                 },
-                "message": "Authorized by grant.",
-                "has_failed": False,
-                "critical_errors": { # request errors
-                    "<error_type>": [ 
-                        {
-                            "is_critical": False,
-                            "message": "Error message."
-                        }
-                    ]
+                "message": "An allow grant is applicable to the request, and there are no deny grants that are applicable to the request. Therefore, the request is authorized.",
+                "error": { # or None
+                    "error_type": "<type>",
+                    "message": "<description>"
                 }
             }
         ],
-        "has_failed": False,
-        "critical_errors": { # batch errors and propagated request errors
-            "<error_type>": [ 
-                {
-                    "is_critical": False,
-                    "message": "Error message."
-                }
-            ]
+        "error": { # or None
+            "error_type": "<type>",
+            "message": "<description>"
         }
     }
     ```
     """
-    batch_results: List[AuthorizeResult]
-    has_failed: bool
-    critical_errors: ResultErrors
+    batch: List[AuthorizeResult]
+    error: AuthzeeError | None

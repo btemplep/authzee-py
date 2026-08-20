@@ -1,52 +1,60 @@
-"""Core functionality for the Authzee SDK. 
+"""Core functionality for the Authzee SDK.
 
 The functionality of this module is optimized for SDK use.  It conforms to the Authzee Specification but is not a one to one copy of the reference implementation.
 
-For reference implementation see {py:mod}`authzee.reference`
+For reference implementation see [](authzee.reference)
 """
 
 __all__ = [
-    "context_def_schema",
-    "identity_def_schema",
-    "resource_def_schema",
-    "grant_schema",
-    "context_def_validator",
-    "identity_def_validator",
-    "resource_def_validator",
-    "grant_validator",
-    "request_validator",
     "batch_request_validator",
-    "validate_context_def",
-    "validate_identity_def",
-    "validate_resource_def",
-    "validate_grant",
-    "validate_request_schema",
-    "validate_batch_request_schema",
+    "context_def_schema",
+    "context_def_validator",
     "evaluate",
-    "combine_errors"
+    "grant_schema",
+    "grant_validator",
+    "identity_def_schema",
+    "identity_def_validator",
+    "request_validator",
+    "resource_def_schema",
+    "resource_def_validator",
+    "validate_batch_request_schema",
+    "validate_context_def",
+    "validate_grant",
+    "validate_identity_def",
+    "validate_request_schema",
+    "validate_resource_def"
 ]
 
 import copy
 from typing import Callable
 
-import jsonschema_rs 
+import jsonschema_rs
 
-from authzee.types import *
 from authzee import reference
+from authzee.types import *
 
 
-context_def_schema = copy.deepcopy(reference.context_definition_schema) | {
-    "title": "SDK Context Definition",
-    "additionalProperties": False
-}
-identity_def_schema = copy.deepcopy(reference.identity_definition_schema) | {
-    "title": "SDK Identity Definition",
-    "additionalProperties": False
-}
-resource_def_schema = copy.deepcopy(reference.resource_definition_schema) | {
-    "title": "SDK Resource Definition",
-    "additionalProperties": False
-}
+context_def_schema = (
+    copy.deepcopy(reference.context_definition_schema)
+    | {
+        "title": "SDK Context Definition",
+        "additionalProperties": False
+    }
+)
+identity_def_schema = (
+    copy.deepcopy(reference.identity_definition_schema)
+    | {
+        "title": "SDK Identity Definition",
+        "additionalProperties": False
+    }
+)
+resource_def_schema = (
+    copy.deepcopy(reference.resource_definition_schema)
+    | {
+        "title": "SDK Resource Definition",
+        "additionalProperties": False
+    }
+)
 grant_schema = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "SDK Grant",
@@ -62,8 +70,8 @@ grant_schema = {
         "actions",
         "data",
         "query",
-        "evaluation_handler",
-        "equality"
+        "equality",
+        "applicable_on_failure"
     ],
     "properties": {
         "grant_uuid": {
@@ -115,9 +123,12 @@ grant_schema = {
             "type": "string",
             "description": "JSON query to run on the authorization data. {\"grant\": <grant>, \"request\": <request>}"
         },
-        "evaluation_handler": reference._evaluation_handler_schema,
         "equality": {
             "description": "Expected value for the query to return.  If the query result matches this value the grant is a considered applicable to the request."
+        },
+        "applicable_on_failure": {
+            "type": "boolean",
+            "description": "If true, the grant is considered applicable even when the query execution produces a failure."
         }
     }
 }
@@ -134,122 +145,92 @@ def validate_context_def(context_def: ContextDef) -> GenericResult:
     is_valid = context_def_validator.is_valid(context_def)
     if not is_valid:
         return {
-            "has_failed": True,
-            "errors": {
-                "definition": [
-                    {
-                        "is_critical": True,
-                        "message": "The given context definition is not valid against the context definition JSON Schema."
-                    }
-                ]
+            "error": {
+                "error_type": "definition",
+                "message": "The given context definition is not valid against the context definition JSON Schema."
             }
         }
-    
+
     if not(
         "type" in context_def['schema']
         and context_def['schema']['type'] == "object"
     ):
         return {
-            "has_failed": True,
-            "errors": {
-                "definition": [
-                    {
-                        "is_critical": True,
-                        "message": "Context Definition schemas must have a root type of object."
-                    }
-                ]
+            "error": {
+                "error_type": "definition",
+                "message": "Context Definition schemas must have a root type of object."
             }
         }
 
-    return {"has_failed": False, "errors": {}}
+    return {
+        "error": None
+    }
 
-        
+
 def validate_identity_def(identity_def: IdentityDef) -> GenericResult:
     is_valid = identity_def_validator.is_valid(identity_def)
     if not is_valid:
         return {
-            "has_failed": True,
-            "errors": {
-                "definition": [
-                    {
-                        "is_critical": True,
-                        "message": "The given identity definition is not valid against the identity definition JSON Schema."
-                    }
-                ]
+            "error": {
+                "error_type": "definition",
+                "message": "The given identity definition is not valid against the identity definition JSON Schema."
             }
         }
-    
+
     if not(
         "type" in identity_def['schema']
         and identity_def['schema']['type'] == "object"
     ):
         return {
-            "has_failed": True,
-            "errors": {
-                "definition": [
-                    {
-                        "is_critical": True,
-                        "message": "Identity Definition schemas must have a root type of object."
-                    }
-                ]
+            "error": {
+                "error_type": "definition",
+                "message": "Identity Definition schemas must have a root type of object."
             }
         }
 
-    return {"has_failed": False, "errors": {}}
+    return {
+        "error": None
+    }
 
 
 def validate_resource_def(resource_def: ResourceDef) -> GenericResult:
     is_valid = resource_def_validator.is_valid(resource_def)
     if not is_valid:
         return {
-            "has_failed": True,
-            "errors": {
-                "definition": [
-                    {
-                        "is_critical": True,
-                        "message": "The given resource definition is not valid against the resource definition JSON Schema."
-                    }
-                ]
+            "error": {
+                "error_type": "definition",
+                "message": "The given resource definition is not valid against the resource definition JSON Schema."
             }
         }
-    
+
     if not(
         "type" in resource_def['schema']
         and resource_def['schema']['type'] == "object"
     ):
         return {
-            "has_failed": True,
-            "errors": {
-                "definition": [
-                    {
-                        "is_critical": True,
-                        "message": "Resource Definition schemas must have a root type of object."
-                    }
-                ]
+            "error": {
+                "error_type": "definition",
+                "message": "Resource Definition schemas must have a root type of object."
             }
         }
 
-    return {"has_failed": False, "errors": {}}
+    return {
+        "error": None
+    }
 
 
 def validate_grant(grant: Grant) -> GenericResult:
     is_valid = grant_validator.is_valid(grant)
     if not is_valid:
         return {
-            "has_failed": True,
-            "errors": {
-                "grant": [
-                    {
-                        "is_critical": True,
-                        "message": "The grant is not valid against the Grant Schema." 
-                    }
-                ]
+            "error": {
+                "error_type": "grant",
+                "message": "The grant is not valid against the Grant Schema."
             }
         }
 
     return {
-        "has_failed": False, 
-        "errors": {}
+        "error": None
     }
 
 
@@ -257,100 +238,59 @@ def validate_request_schema(request: AuthzeeRequest) -> GenericResult:
     is_valid = request_validator.is_valid(request)
     if not is_valid:
         return {
-            "has_failed": True,
-            "errors": {
-                "definition": [
-                    {
-                        "is_critical": True,
-                        "message": "The given request is not valid against the request JSON Schema."
-                    }
-                ]
+            "error": {
+                "error_type": "request",
+                "message": "The given request is not valid against the request JSON Schema."
             }
         }
 
     return {
-        "has_failed": False, 
-        "errors": {}
+        "error": None
     }
 
 
-def validate_batch_request_schema(batch_request: AuthzeeBatchRequest) -> GenericResult:
+def validate_batch_request_schema(
+    batch_request: AuthzeeBatchRequest
+) -> GenericResult:
     is_valid = batch_request_validator.is_valid(batch_request)
     if not is_valid:
         return {
-            "has_failed": True,
-            "errors": {
-                "definition": [
-                    {
-                        "is_critical": True,
-                        "message": "The given batch request is not valid against the batch request JSON Schema."
-                    }
-                ]
+            "error": {
+                "error_type": "request",
+                "message": "The given batch request is not valid against the batch request JSON Schema."
             }
         }
 
     return {
-        "has_failed": False, 
-        "errors": {}
+        "error": None
     }
 
 
 def evaluate(
-    request: AuthzeeRequest, 
-    grant: Grant, 
-    execute: Callable[[str, AnyJSON], ExecuteResult],
-    only_crits: bool
+    request: AuthzeeRequest,
+    grant: Grant,
+    execute: Callable[[str, AnyJSON], ExecuteResult]
 ) -> EvaluateResult:
     result = {
         "is_applicable": False,
         "query_result": None,
-        "has_failed": False,
-        "errors": {}
+        "failure": None
     }
     query_result = execute(
-        grant['query'], 
+        grant['query'],
         {
             "request": request,
             "grant": grant
         }
     )
-    if query_result['has_failed'] is False:
+    if query_result['failure'] is None:
         result['query_result'] = query_result['result']
         if query_result['result'] == grant['equality']:
             result['is_applicable'] = True
+
     else:
-        q_val = grant['evaluation_handler'] if request['evaluation_handler'] == "grant" else request['evaluation_handler']
-        is_q_val_crit = q_val == "critical"
-        if (
-            (
-                q_val == "error"
-                and only_crits is False
-            )
-            or is_q_val_crit is True
-        ):
-            result['errors']['evaluation'] = [
-                {
-                    "is_critical": is_q_val_crit,
-                    "message": f"A JSON Query error has occurred: {query_result['error_message']}."
-                }
-            ]
-            if is_q_val_crit is True:
-                result['has_failed'] = True
+        result['failure'] = query_result['failure']
+        if grant['applicable_on_failure'] is True:
+            result['is_applicable'] = True
 
     return result
-
-
-def combine_errors(result: GenericResult, *args: dict) ->  None:
-    errors = result['errors']
-    for new_result in args:
-        if new_result['has_failed'] is True:
-            result['has_failed'] = True
-
-        new_errors = new_result['errors']
-        for k in errors:
-            if k in new_errors:
-                errors[k] += new_errors[k]
-            
-        for k in new_errors:
-            if k not in errors:
-                errors[k] = new_errors[k]

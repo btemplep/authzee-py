@@ -1,7 +1,5 @@
 """Unit tests for authzee.compute.shared_mem_latch module."""
 
-import pytest
-
 from multiprocessing.managers import SharedMemoryManager
 
 from authzee.compute.shared_mem_latch import SharedMemLatch

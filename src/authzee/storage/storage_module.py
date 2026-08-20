@@ -1,51 +1,51 @@
-
 """Base storage module for Authzee.
 
-See {py:class}`authzee.storage.storage_module.StorageModule`
+See [](authzee.storage.storage_module.StorageModule)
 """
 
 __all__ = [
-    "StorageModule",
+    "StorageModule"
 ]
 
 import datetime
 
-from authzee.types.authzee import *
-from authzee.types.config import (
-    StorageStartConfig,
-    StorageShutdownConfig,
-    StorageConstructConfig,
-    StorageDestroyConfig,
-    ListContextDefsConfig,
-    GetContextDefConfig,
-    PutContextDefConfig,
-    DeleteContextDefConfig,
-    ListIdentityDefsConfig,
-    GetIdentityDefConfig,
-    PutIdentityDefConfig,
-    DeleteIdentityDefConfig,
-    ListResourceDefsConfig,
-    GetResourceDefConfig,
-    PutResourceDefConfig,
-    DeleteResourceDefConfig,
-    EnactConfig,
-    RepealConfig,
-    GetGrantConfig,
-    ListGrantsConfig,
-    ListGrantRefsConfig,
-    CreateLatchConfig,
-    GetLatchConfig,
-    SetLatchConfig,
-    DeleteLatchConfig,
-    CleanupLatchesConfig
-)
 from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
+from authzee.types.authzee import *
+from authzee.types.config import (
+    CleanupLatchesConfig,
+    CreateLatchConfig,
+    DeleteContextDefConfig,
+    DeleteIdentityDefConfig,
+    DeleteLatchConfig,
+    DeleteResourceDefConfig,
+    EnactConfig,
+    GetContextDefConfig,
+    GetGrantConfig,
+    GetIdentityDefConfig,
+    GetLatchConfig,
+    GetResourceDefConfig,
+    ListContextDefsConfig,
+    ListGrantRefsConfig,
+    ListGrantsConfig,
+    ListIdentityDefsConfig,
+    ListResourceDefsConfig,
+    PutContextDefConfig,
+    PutIdentityDefConfig,
+    PutResourceDefConfig,
+    RepealConfig,
+    SetLatchConfig,
+    StorageConstructConfig,
+    StorageDestroyConfig,
+    StorageShutdownConfig,
+    StorageStartConfig
+)
 
 
 class StorageModule:
 
-    def __init__(self): 
+
+    def __init__(self):
         pass
 
 
@@ -59,8 +59,10 @@ class StorageModule:
         """
         self.locality = ModuleLocality.PROCESS
         self.has_parallel_paging = False
-   
-        return GenericResult(has_failed=False)
+
+        return {
+            "error": None
+        }
 
 
     async def shutdown(self, config: StorageShutdownConfig) -> GenericResult:
@@ -100,7 +102,7 @@ class StorageModule:
 
 
     async def get_context_def(
-        self, 
+        self,
         context_type: str,
         config: GetContextDefConfig
     ) -> ContextDefResult:
@@ -110,7 +112,7 @@ class StorageModule:
 
 
     async def put_context_def(
-        self, 
+        self,
         context_def: ContextDef,
         config: PutContextDefConfig
     ) -> GenericResult:
@@ -120,7 +122,7 @@ class StorageModule:
 
 
     async def delete_context_def(
-        self, 
+        self,
         context_type: str,
         config: DeleteContextDefConfig
     ) -> GenericResult:
@@ -142,7 +144,7 @@ class StorageModule:
 
 
     async def get_identity_def(
-        self, 
+        self,
         identity_type: str,
         config: GetIdentityDefConfig
     ) -> IdentityDefResult:
@@ -152,7 +154,7 @@ class StorageModule:
 
 
     async def put_identity_def(
-        self, 
+        self,
         identity_def: IdentityDef,
         config: PutIdentityDefConfig
     ) -> GenericResult:
@@ -162,7 +164,7 @@ class StorageModule:
 
 
     async def delete_identity_def(
-        self, 
+        self,
         identity_type: str,
         config: DeleteIdentityDefConfig
     ) -> GenericResult:
@@ -184,7 +186,7 @@ class StorageModule:
 
 
     async def get_resource_def(
-        self, 
+        self,
         resource_type: str,
         config: GetResourceDefConfig
     ) -> ResourceDefResult:
@@ -194,7 +196,7 @@ class StorageModule:
 
 
     async def put_resource_def(
-        self, 
+        self,
         resource_def: ResourceDef,
         config: PutResourceDefConfig
     ) -> GenericResult:
@@ -204,7 +206,7 @@ class StorageModule:
 
 
     async def delete_resource_def(
-        self, 
+        self,
         resource_type: str,
         config: DeleteResourceDefConfig
     ) -> GenericResult:
@@ -213,19 +215,15 @@ class StorageModule:
         raise NotImplementedError()
 
 
-    async def enact(
-        self, 
-        grant: Grant,
-        config: EnactConfig
-    ) -> GenericResult:
+    async def enact(self, grant: Grant, config: EnactConfig) -> GenericResult:
         """Add a new grant.
         """
         raise NotImplementedError()
 
 
     async def repeal(
-        self, 
-        grant_uuid: str, 
+        self,
+        grant_uuid: str,
         purge: bool,
         config: RepealConfig
     ) -> GenericResult:
@@ -235,7 +233,7 @@ class StorageModule:
 
 
     async def get_grant(
-        self, 
+        self,
         grant_uuid: str,
         config: GetGrantConfig
     ) -> GrantResult:
@@ -282,7 +280,7 @@ class StorageModule:
 
 
     async def get_latch(
-        self, 
+        self,
         storage_latch_uuid: str,
         config: GetLatchConfig
     ) -> StorageLatchResult:
@@ -292,7 +290,7 @@ class StorageModule:
 
 
     async def set_latch(
-        self, 
+        self,
         storage_latch_uuid: str,
         config: SetLatchConfig
     ) -> StorageLatchResult:
@@ -302,7 +300,7 @@ class StorageModule:
 
 
     async def delete_latch(
-        self, 
+        self,
         storage_latch_uuid: str,
         config: DeleteLatchConfig
     ) -> GenericResult:
@@ -312,7 +310,7 @@ class StorageModule:
 
 
     async def cleanup_latches(
-        self, 
+        self,
         before: datetime.datetime,
         config: CleanupLatchesConfig
     ) -> GenericResult:

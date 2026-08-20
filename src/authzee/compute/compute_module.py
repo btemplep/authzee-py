@@ -1,35 +1,35 @@
-
 """Base compute module for Authzee.
 
-See {py:class}`authzee.compute.compute_module.ComputeModule`
+See [](authzee.compute.compute_module.ComputeModule)
 """
 
 __all__ = [
-    "ComputeModule",
+    "ComputeModule"
 ]
 
 from typing import Any, Callable, Dict, Type
 
-from authzee.types.authzee import *
-from authzee.types.config import (
-    ComputeStartConfig,
-    ComputeShutdownConfig,
-    ComputeConstructConfig,
-    ComputeDestroyConfig,
-    ValidateContextDefConfig,
-    ValidateIdentityDefConfig,
-    ValidateResourceDefConfig,
-    ValidateGrantConfig,
-    ValidateRequestConfig,
-    ValidateBatchRequestConfig,
-    AuditConfig,
-    AuthorizeConfig,
-    BatchAuditConfig,
-    BatchAuthorizeConfig
-)
 from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
 from authzee.storage.storage_module import StorageModule
+from authzee.types.authzee import *
+from authzee.types.config import (
+    AuditConfig,
+    AuthorizeConfig,
+    BatchAuditConfig,
+    BatchAuthorizeConfig,
+    ComputeConstructConfig,
+    ComputeDestroyConfig,
+    ComputeShutdownConfig,
+    ComputeStartConfig,
+    ValidateBatchRequestConfig,
+    ValidateContextDefConfig,
+    ValidateGrantConfig,
+    ValidateIdentityDefConfig,
+    ValidateRequestConfig,
+    ValidateResourceDefConfig
+)
+
 
 class ComputeModule:
 
@@ -87,7 +87,6 @@ class ComputeModule:
         raise NotImplementedError()
 
 
-
     async def validate_identity_def(
         self,
         identity_def: IdentityDef,
@@ -110,7 +109,7 @@ class ComputeModule:
         config: ValidateGrantConfig
     ) -> GenericResult:
         raise NotImplementedError()
-    
+
 
     async def validate_request(
         self,
