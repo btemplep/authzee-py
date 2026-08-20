@@ -2,7 +2,7 @@
 <!-- ![authzee-logo](./docs/logo.svg) Documentation(Link TBD) -->
 <img src="https://raw.githubusercontent.com/btemplep/authzee/main/docs/authzee_logo.svg" alt="Authzee Logo" width="500">
 
-<!-- # `authzee` -->
+# Authzee Python SDK
 
 This is the official python SDK for Authzee! It is a general usage SDK that is async, extensible, and scalable. 
 
