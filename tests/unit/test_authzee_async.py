@@ -474,7 +474,8 @@ def test_delete_context_def_not_found(authz):
 def test_validate_context_def_with_config(authz, context_def):
     result = asyncio.run(
         authz.validate_context_def(
-            context_def, config={
+            context_def,
+            config={
                 "authzee": {
                     "raise_errors": True
                 }
@@ -606,7 +607,8 @@ def test_delete_identity_def_not_found(authz):
 def test_validate_identity_def_with_config(authz, identity_def):
     result = asyncio.run(
         authz.validate_identity_def(
-            identity_def, config={
+            identity_def,
+            config={
                 "authzee": {
                     "raise_errors": True
                 }
@@ -729,7 +731,8 @@ def test_delete_resource_def_not_found(authz):
 def test_validate_resource_def_with_config(authz, resource_def):
     result = asyncio.run(
         authz.validate_resource_def(
-            resource_def, config={
+            resource_def,
+            config={
                 "authzee": {
                     "raise_errors": True
                 }
@@ -745,7 +748,13 @@ def test_validate_grant_valid(authz, grant):
 
 
 def test_validate_grant_invalid(authz):
-    result = asyncio.run(authz.validate_grant({"effect": "bad"}))
+    result = asyncio.run(
+        authz.validate_grant(
+            {
+                "effect": "bad"
+            }
+        )
+    )
     assert result['error'] is not None
 
 
@@ -755,7 +764,13 @@ def test_enact_grant(authz, grant):
 
 
 def test_enact_invalid_grant(authz):
-    result = asyncio.run(authz.enact({"effect": "bad"}))
+    result = asyncio.run(
+        authz.enact(
+            {
+                "effect": "bad"
+            }
+        )
+    )
     assert result['error'] is not None
 
 
@@ -962,7 +977,8 @@ def test_authorize_denied_by_deny_grant(seeded_authz, deny_grant):
 def test_authorize_with_config(seeded_authz, auth_request):
     result = asyncio.run(
         seeded_authz.authorize(
-            request=auth_request, config={
+            request=auth_request,
+            config={
                 "authzee": {
                     "raise_errors": True
                 }
@@ -1002,7 +1018,8 @@ def test_audit_paginator_async(seeded_authz, auth_request):
 def test_audit_with_config(seeded_authz, auth_request):
     result = asyncio.run(
         seeded_authz.audit(
-            request=auth_request, config={
+            request=auth_request,
+            config={
                 "authzee": {
                     "raise_errors": True
                 }
@@ -1032,7 +1049,8 @@ def test_batch_authorize_all_authorized(seeded_authz, batch_request):
 def test_batch_authorize_with_config(seeded_authz, batch_request):
     result = asyncio.run(
         seeded_authz.batch_authorize(
-            batch_request=batch_request, config={
+            batch_request=batch_request,
+            config={
                 "authzee": {
                     "raise_errors": True
                 }
@@ -1072,7 +1090,8 @@ def test_batch_audit_paginator_async(seeded_authz, batch_request):
 def test_batch_audit_with_config(seeded_authz, batch_request):
     result = asyncio.run(
         seeded_authz.batch_audit(
-            batch_request=batch_request, config={
+            batch_request=batch_request,
+            config={
                 "authzee": {
                     "raise_errors": True
                 }
@@ -1191,7 +1210,13 @@ def test_raise_errors_grant_error():
     asyncio.run(authz.construct())
     asyncio.run(authz.start())
     with pytest.raises(exceptions.GrantError):
-        asyncio.run(authz.validate_grant({"effect": "bad"}))
+        asyncio.run(
+            authz.validate_grant(
+                {
+                    "effect": "bad"
+                }
+            )
+        )
 
 
 def test_compute_storage_kwargs_override():
@@ -1367,7 +1392,13 @@ def test_raise_result_raises_on_critical_definition_error(storage_dict):
     asyncio.run(a.start())
     # Try to put an invalid context def - should raise
     with pytest.raises(exceptions.DefinitionError):
-        asyncio.run(a.put_context_def({"bad": "data"}))
+        asyncio.run(
+            a.put_context_def(
+                {
+                    "bad": "data"
+                }
+            )
+        )
 
 
 def test_raise_result_raises_on_critical_resource_not_found(storage_dict):
@@ -1410,7 +1441,13 @@ def test_combine_errors_called_during_start(storage_dict):
 
 def test_authorize_validation_failure(seeded_authz):
     """authorize with an invalid request returns failure without raising."""
-    result = asyncio.run(seeded_authz.authorize({"bad": "request"}))
+    result = asyncio.run(
+        seeded_authz.authorize(
+            {
+                "bad": "request"
+            }
+        )
+    )
     assert result['error'] is not None
     assert result['is_authorized'] is False
     assert result['error'] is not None
@@ -1435,12 +1472,24 @@ def test_authorize_validation_failure_raises(storage_dict):
     asyncio.run(a.construct())
     asyncio.run(a.start())
     with pytest.raises(Exception):
-        asyncio.run(a.authorize({"bad": "request"}))
+        asyncio.run(
+            a.authorize(
+                {
+                    "bad": "request"
+                }
+            )
+        )
 
 
 def test_audit_validation_failure(seeded_authz):
     """audit with an invalid request returns failure."""
-    result = asyncio.run(seeded_authz.audit({"bad": "request"}))
+    result = asyncio.run(
+        seeded_authz.audit(
+            {
+                "bad": "request"
+            }
+        )
+    )
     assert result['error'] is not None
     assert result['results'] == []
     assert result['results'] == []
@@ -1465,12 +1514,24 @@ def test_audit_validation_failure_raises(storage_dict):
     asyncio.run(a.construct())
     asyncio.run(a.start())
     with pytest.raises(Exception):
-        asyncio.run(a.audit({"bad": "request"}))
+        asyncio.run(
+            a.audit(
+                {
+                    "bad": "request"
+                }
+            )
+        )
 
 
 def test_batch_audit_validation_failure(seeded_authz):
     """batch_audit with an invalid request returns failure."""
-    result = asyncio.run(seeded_authz.batch_audit({"bad": "request"}))
+    result = asyncio.run(
+        seeded_authz.batch_audit(
+            {
+                "bad": "request"
+            }
+        )
+    )
     assert result['error'] is not None
     assert result['grants'] == []
     assert result['batch'] == []
@@ -1495,7 +1556,13 @@ def test_batch_audit_validation_failure_raises(storage_dict):
     asyncio.run(a.construct())
     asyncio.run(a.start())
     with pytest.raises(Exception):
-        asyncio.run(a.batch_audit({"bad": "request"}))
+        asyncio.run(
+            a.batch_audit(
+                {
+                    "bad": "request"
+                }
+            )
+        )
 
 
 def test_batch_authorize_validation_failure(seeded_authz):
@@ -1530,7 +1597,13 @@ def test_batch_authorize_validation_failure_raises(storage_dict):
     asyncio.run(a.construct())
     asyncio.run(a.start())
     with pytest.raises(Exception):
-        asyncio.run(a.batch_authorize({"bad": "request"}))
+        asyncio.run(
+            a.batch_authorize(
+                {
+                    "bad": "request"
+                }
+            )
+        )
 
 
 def test_compute_storage_kwargs_override(storage_dict):
@@ -1620,7 +1693,13 @@ def test_validate_request_valid(seeded_authz):
 
 
 def test_validate_request_invalid(seeded_authz):
-    result = asyncio.run(seeded_authz.validate_request({"bad": "data"}))
+    result = asyncio.run(
+        seeded_authz.validate_request(
+            {
+                "bad": "data"
+            }
+        )
+    )
     assert result['error'] is not None
 
 

@@ -277,7 +277,13 @@ def test_in_process_compute_start(storage_dict):
 
 
 def test_in_process_compute_shutdown(compute):
-    result = asyncio.run(compute.shutdown(config={"storage": {}}))
+    result = asyncio.run(
+        compute.shutdown(
+            config={
+                "storage": {}
+            }
+        )
+    )
     assert result['error'] is None
 
 
