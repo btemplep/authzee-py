@@ -125,7 +125,7 @@ class ComputeModule:
         self,
         batch_request: AuthzeeBatchRequest,
         config: ValidateBatchRequestConfig
-    ) -> GenericResult:
+    ) -> ValidateBatchRequestResult:
         """Validate a batch request.
         """
         raise NotImplementedError()

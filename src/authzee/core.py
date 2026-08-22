@@ -151,7 +151,7 @@ def validate_context_def(context_def: ContextDef) -> GenericResult:
             }
         }
 
-    if not(
+    if not (
         "type" in context_def['schema']
         and context_def['schema']['type'] == "object"
     ):
@@ -177,7 +177,7 @@ def validate_identity_def(identity_def: IdentityDef) -> GenericResult:
             }
         }
 
-    if not(
+    if not (
         "type" in identity_def['schema']
         and identity_def['schema']['type'] == "object"
     ):
@@ -203,7 +203,7 @@ def validate_resource_def(resource_def: ResourceDef) -> GenericResult:
             }
         }
 
-    if not(
+    if not (
         "type" in resource_def['schema']
         and resource_def['schema']['type'] == "object"
     ):

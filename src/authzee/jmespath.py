@@ -99,14 +99,17 @@ class CustomJMESPathFunctions(functions.Functions):
         for l in lhs:
             for r in rhs:
                 # expref.visit(expref.expression, element) # this is how they do it internal to jmespath python??
-                if search(
-                    expr,
-                    {
-                        "lhs": l,
-                        "rhs": r
-                    },
-                    options=self._custom_options
-                ) is True:
+                if (
+                    search(
+                        expr,
+                        {
+                            "lhs": l,
+                            "rhs": r
+                        },
+                        options=self._custom_options
+                    )
+                    is True
+                ):
                     result.append(
                         {
                             "lhs": l,
@@ -273,7 +276,11 @@ class CustomJMESPathFunctions(functions.Functions):
     def _func_regex_find(
         pattern: str,
         subject: Union[str, List[str]]
-    ) -> Union[None, str, List[Union[None, str]]]:
+    ) -> Union[
+        None,
+        str,
+        List[Union[None, str]]
+    ]:
         if type(subject) is str:
             match = re.search(pattern, subject)
             if match is not None:
@@ -310,7 +317,10 @@ class CustomJMESPathFunctions(functions.Functions):
     def _func_regex_find_all(
         pattern: str,
         subject: Union[str, List[str]]
-    ) -> Union[List[str], List[List[str]]]:
+    ) -> Union[
+        List[str],
+        List[List[str]]
+    ]:
         if type(subject) is str:
             return re.findall(pattern, subject)
 
@@ -338,7 +348,16 @@ class CustomJMESPathFunctions(functions.Functions):
     def _func_regex_groups(
         pattern: str,
         subject: Union[str, List[str]]
-    ) -> Union[None, List[Union[None, str]], List[Union[None, List[Union[None, str]]]]]:
+    ) -> Union[
+        None,
+        List[Union[None, str]],
+        List[
+            Union[
+                None,
+                List[Union[None, str]]
+            ]
+        ]
+    ]:
         if type(subject) is str:
             match = re.search(pattern, subject)
             if match is not None:
@@ -375,7 +394,10 @@ class CustomJMESPathFunctions(functions.Functions):
     def _func_regex_groups_all(
         pattern: str,
         subject: Union[str, List[str]]
-    ) -> Union[List[str], List[List[str]]]:
+    ) -> Union[
+        List[str],
+        List[List[str]]
+    ]:
         if type(subject) is str:
             return [list(m.groups()) if m is not None else None for m in re.finditer(pattern, subject)]
 

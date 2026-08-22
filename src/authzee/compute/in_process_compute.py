@@ -7,7 +7,7 @@ __all__ = [
     "InProcessCompute"
 ]
 
-from asyncio import Task, as_completed, create_task
+from asyncio import Task, create_task, gather
 from typing import Any, Callable, Dict, List, Type
 
 import jsonschema_rs
@@ -232,16 +232,22 @@ class InProcessCompute(ComputeModule):
         self,
         batch_request: AuthzeeBatchRequest,
         config: ValidateBatchRequestConfig
-    ) -> GenericResult:
+    ) -> ValidateBatchRequestResult:
         result = validate_batch_request_schema(batch_request)
         if result['error'] is not None:
-            return result
+            return {
+                "error": result['error'],
+                "batch": []
+            }
 
         base_request: AuthzeeBatchRequest = batch_request.copy()
         base_request.pop("batch")
         base_result = await self.validate_request(request=base_request, config=config)
         if base_result['error'] is not None:
-            return base_result
+            return {
+                "error": base_result['error'],
+                "batch": []
+            }
 
         batch_tasks: List[Task] = []
         for item in batch_request['batch']:
@@ -254,13 +260,17 @@ class InProcessCompute(ComputeModule):
                 )
             )
 
-        for bt in as_completed(batch_tasks):
-            bt_result: GenericResult = await bt
+        batch_results: List[GenericResult] = await gather(*batch_tasks)
+        batch: list = []
+        for bt_result in batch_results:
             if bt_result['error'] is not None:
-                return bt_result
+                batch.append(bt_result['error'])
+            else:
+                batch.append(None)
 
         return {
-            "error": None
+            "error": None,
+            "batch": batch
         }
 
 

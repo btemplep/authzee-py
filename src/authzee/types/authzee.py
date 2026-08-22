@@ -29,7 +29,8 @@ __all__ = [
     "ResourceDefResult",
     "ResourceDefsPage",
     "StorageLatch",
-    "StorageLatchResult"
+    "StorageLatchResult",
+    "ValidateBatchRequestResult"
 ]
 
 from typing import Any, Dict, List, Literal, TypedDict
@@ -675,6 +676,30 @@ class AuthzeeBatchRequest(TypedDict):
     context_type: str
     context: Dict[str, AnyJSON]
     batch: List[BatchItem]
+
+
+class ValidateBatchRequestResult(TypedDict):
+    """Result for validating a batch request.
+
+    Examples
+    --------
+    ```python
+    {
+        "error": { # OR None
+            "error_type": "request",
+            "message": "This is a batch level error, and the whole think fails,
+        },
+        "batch": [
+            None,
+            { # OR None
+                "error_type": "request",
+                "message": "This is an error for the batch item."
+            }
+        ]
+    }
+    """
+    error: AuthzeeError | None
+    batch: List[GenericResult]
 
 
 class ExecuteResult(TypedDict):

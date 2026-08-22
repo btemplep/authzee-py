@@ -22,6 +22,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
+## [0.1.0a6] - 2026-08-22
+
+Support for Authzee spec 0.5.0.
+
+### Added
+
+- `ValidateBatchRequestResult` TypedDict type
+- `validate_request_result_schema` - Return value schema for the `validate_request` function
+
+### Changed
+
+- `validate_batch_request` now returns `ValidateBatchRequestResult` with `{error, batch}` instead of `GenericResult`
+    - `batch` contains per-item validation errors (or None for valid items)
+- `validate_batch_request_result_schema` renamed `batch_errors` field to `batch`
+
+
 ## [0.1.0a5] - 2026-08-19
 
 New revamp to support Authzee spec 0.4.0. 

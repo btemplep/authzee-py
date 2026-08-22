@@ -558,7 +558,7 @@ def test_validate_batch_request_item_invalid_identity(
         identity_defs,
         resource_defs
     )
-    assert r['batch_errors'][0] is not None
+    assert r['batch'][0] is not None
 
 
 def test_validate_batch_request_item_overrides_resource(

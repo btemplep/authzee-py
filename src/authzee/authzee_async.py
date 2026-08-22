@@ -2741,7 +2741,7 @@ class AuthzeeAsync:
         self,
         batch_request: AuthzeeBatchRequest,
         config: AuthzeeConfigOverride | None=None
-    ) -> GenericResult:
+    ) -> ValidateBatchRequestResult:
         """Validate a batch authorization request without evaluating it.
 
         Parameters
@@ -2818,10 +2818,17 @@ class AuthzeeAsync:
 
         Returns
         -------
-        GenericResult
+        ValidateBatchRequestResult
             ```python
             {
-                "error": None
+                "error": None,
+                "batch": [
+                    None,
+                    { # or None
+                        "error_type": "request",
+                        "message": "Description of what went wrong for this batch item."
+                    }
+                ]
             }
             ```
 
@@ -2832,7 +2839,8 @@ class AuthzeeAsync:
                 "error": {
                     "error_type": "request",
                     "message": "Description of what went wrong."
-                }
+                },
+                "batch": []
             }
             ```
 

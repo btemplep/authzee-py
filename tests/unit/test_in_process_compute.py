@@ -783,7 +783,8 @@ def test_in_process_validate_batch_request_invalid_batch_item(seeded_compute):
             config=config
         )
     )
-    assert result['error'] is not None
+    assert result['error'] is None
+    assert result['batch'][0] is not None
 
 
 def test_in_process_audit(seeded_compute):
