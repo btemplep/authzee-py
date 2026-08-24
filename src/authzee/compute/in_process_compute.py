@@ -7,7 +7,7 @@ __all__ = [
     "InProcessCompute"
 ]
 
-from asyncio import Task, create_task, gather
+from asyncio import as_completed, create_task, gather, Task
 from typing import Any, Callable, Dict, List, Type
 
 import jsonschema_rs
@@ -131,24 +131,178 @@ class InProcessCompute(ComputeModule):
         if result['error'] is not None:
             return result
 
-        context_def_task = create_task(
-            self._storage.get_context_def(
-                request['context_type'],
-                config['get_identity_def']
-            )
-        )
-        resource_def_task = create_task(
-            self._storage.get_resource_def(
-                request['resource_type'],
-                config['get_resource_def']
-            )
-        )
-        identity_def_tasks = [
-            create_task(self._storage.get_identity_def(it, config['get_identity_def']))
-            for it in request['identities']
-        ]
+        context_def: ContextDef = None
+        cd_page_ref = None
+        cd_task: Task = None
+        cd_stop = False
+        id_lookup: Dict[str, IdentityDef] = {id_type: None for id_type in request['identities']}
+        id_page_ref = None
+        id_task: Task = None
+        id_stop = False
+        resource_def: ResourceDef = None
+        rd_page_ref = None
+        rd_task: Task = None
+        rd_stop = False
+        while (
+            cd_stop is False
+            or id_stop is False
+            or rd_stop is None
+        ):
+            if cd_stop is False:
+                if config['use_list_context_defs'] is True:
+                    if cd_task is None:
+                        cd_task = create_task(
+                            self._storage.list_context_defs(
+                                page_ref=None,
+                                config=config['list_context_defs']
+                            )
+                        )
+                    else:
+                        cd_page: ContextDefsPage = await cd_task
+                        if cd_page['error'] is not None:
+                            # TODO cancel all tasks
+                            return {
+                                "error": cd_page['error']
+                            }
 
-        context_def = (await context_def_task)['context_def']
+                        cd_page_ref = cd_page['next_page_ref']
+                        for cd in cd_page['context_defs']:
+                            if cd['context_type'] == request['context_type']:
+                                context_def = cd
+                                cd_stop = True
+                                break
+
+                        if cd_page_ref is None:
+                            cd_stop = True
+                        elif cd_stop is False:
+                            cd_task = create_task(
+                                self._storage.list_context_defs(
+                                    page_ref=cd_page_ref,
+                                    config=config['list_context_defs']
+                                )
+                            )
+
+                else:
+                    if cd_task is None:
+                        cd_task = create_task(
+                            self._storage.get_context_def(
+                                request['context_type'],
+                                config['get_identity_def']
+                            )
+                        )
+                    else:
+                        cd_result: ContextDefResult = await cd_task
+                        if (
+                            cd_result['error'] is not None
+                            and cd_result['error']['error_type'] != "resource_not_found"
+                        ):
+                            # TODO cancel all tasks
+                            return {
+                                "error": cd_result['error']
+                            }
+
+                        context_def = cd_result['context_def']
+                        cd_stop = True
+
+            if id_stop is False:
+                if config['use_list_identity_defs'] is True:
+                    if id_task is None:
+                        id_task = create_task(
+                            self._storage.list_identity_defs(
+                                page_ref=None,
+                                config=config['list_identity_defs']
+                            )
+                        )
+                    else:
+                        id_page: IdentityDefsPage = await id_task
+                        id_page_ref = id_page['next_page_ref']
+                        for id in id_page['identity_defs']:
+                            if id['identity_type'] in request['identities']:
+                                id_lookup[id['identity_type']] = id
+                                id_stop = True
+                                for id in id_lookup.values():
+                                    if id is None:
+                                        id_stop = False
+                                        break
+
+                        if id_page_ref is None:
+                            id_stop = True
+                        elif id_stop is False:
+                            id_task = create_task(
+                                self._storage.list_identity_defs(
+                                    page_ref=id_page_ref,
+                                    config=config['list_identity_defs']
+                                )
+                            )
+
+                else:
+                    if id_task is None:
+                        id_task = [
+                            create_task(self._storage.get_identity_def(it, config['get_identity_def']))
+                            for it in request['identities']
+                        ]
+                    else:
+                        cancel_tasks
+                        for t in as_completed(id_task):
+                            idr: IdentityDefResult = await t
+                            if idr['error'] is not None:
+                                if idr['error']['error_type'] != "resource_not_found":
+                                    # TODO cancel all tasks
+                                    return {
+                                        "error": idr['error']
+                                    }
+
+                                else:
+                                    # TOD cancel all IDR tasks
+                                    break
+
+                        id_stop = True
+
+            if rd_stop is False:
+                if config['use_list_resource_defs'] is True:
+                    if rd_task is None:
+                        rd_task = create_task(
+                            self._storage.list_resource_defs(
+                                page_ref=None,
+                                config=config['list_resource_defs']
+                            )
+                        )
+                    else:
+                        rd_page: ResourceDefsPage = await rd_task
+                        if rd_page['error'] is not None:
+                            # TODO cancel all tasks
+                            return {
+                                "error": rd_page['error']
+                            }
+
+                        rd_page_ref = rd_page['next_page_ref']
+                        for rd in rd_page['resource_defs']:
+                            if rd['resource_type'] == request['resource_type']:
+                                resource_def = rd
+                                rd_stop = True
+
+                        if rd_page_ref is None:
+                            rd_stop = True
+                        elif rd_stop is False:
+                            rd_task = create_task(
+                                self._storage.list_resource_defs(
+                                    page_ref=rd_page_ref,
+                                    config=config['list_resource_defs']
+                                )
+                            )
+
+                else:
+                    if rd_task is None:
+                        rd_task = create_task(
+                            self._storage.get_resource_def(
+                                request['resource_type'],
+                                config['get_identity_def']
+                            )
+                        )
+                    else:
+                        resource_def = (await rd_task)['resource_def']
+                        rd_stop = True
+
         if context_def is None:
             return {
                 "error": {
@@ -168,7 +322,6 @@ class InProcessCompute(ComputeModule):
                 }
             }
 
-        resource_def = (await resource_def_task)['resource_def']
         if resource_def is None:
             return {
                 "error": {
@@ -200,9 +353,8 @@ class InProcessCompute(ComputeModule):
                 }
             }
 
-        for id_task, i_type in zip(identity_def_tasks, request['identities']):
-            identity_def = (await id_task)['identity_def']
-            if identity_def is None:
+        for i_type, id in id_lookup.items():
+            if id is None:
                 return {
                     "error": {
                         "error_type": "request",
@@ -210,12 +362,12 @@ class InProcessCompute(ComputeModule):
                     }
                 }
 
-            id_validator = jsonschema_rs.validator_for(identity_def['schema'])
-            for id, i in zip(
+            identity_validator = jsonschema_rs.validator_for(id['schema'])
+            for identity, i in zip(
                 request['identities'][i_type],
                 range(len(request['identities'][i_type]))
             ):
-                if id_validator.is_valid(id) is False:
+                if identity_validator.is_valid(identity) is False:
                     return {
                         "error": {
                             "error_type": "request",

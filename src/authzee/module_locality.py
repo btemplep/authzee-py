@@ -1,8 +1,8 @@
 """See [](authzee.module_locality.ModuleLocality)"""
 
 __all__ = [
-    "ModuleLocality",
-    "locality_compatibility"
+    "locality_compatibility",
+    "ModuleLocality"
 ]
 
 from enum import Enum
