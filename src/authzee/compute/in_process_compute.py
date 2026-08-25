@@ -7,8 +7,8 @@ __all__ = [
     "InProcessCompute"
 ]
 
-from asyncio import as_completed, create_task, gather, Task
-from typing import Any, Callable, Dict, List, Type
+from asyncio import as_completed, create_task, gather, sleep, Task
+from typing import Any, Callable, Dict, Iterable, List, Type
 
 import jsonschema_rs
 
@@ -47,6 +47,25 @@ from authzee.types.config import (
 class InProcessCompute(ComputeModule):
 
 
+    def __init__(self):
+        super().__init__()
+        self._bg_cancel_tasks: set[Task] = set()
+
+
+    def _bg_cancel(self, t: Task | Iterable[Task]) -> None:
+        if isinstance(t, Task) is True:
+            t = [t]
+
+        for task in t:
+            task.done()
+            if task.done() is True:
+                continue
+
+            self._bg_cancel_tasks.add(task)
+            task.add_done_callback(self._bg_cancel_tasks.discard)
+            task.cancel()
+        
+
     async def start(
         self,
         execute: Callable[[str, Any], Any],
@@ -72,6 +91,11 @@ class InProcessCompute(ComputeModule):
 
     async def shutdown(self, config: ComputeShutdownConfig) -> GenericResult:
         await self._storage.shutdown(config['storage'])
+        while True:
+            if len(self._bg_cancel_tasks) > 0:
+                await sleep(1)
+            else:
+                break
 
         return {
             "error": None
@@ -131,13 +155,14 @@ class InProcessCompute(ComputeModule):
         if result['error'] is not None:
             return result
 
+        all_tasks: set[Task] = set()
         context_def: ContextDef = None
         cd_page_ref = None
         cd_task: Task = None
         cd_stop = False
         id_lookup: Dict[str, IdentityDef] = {id_type: None for id_type in request['identities']}
         id_page_ref = None
-        id_task: Task = None
+        id_task: Task | set[Task] = None
         id_stop = False
         resource_def: ResourceDef = None
         rd_page_ref = None
@@ -157,10 +182,13 @@ class InProcessCompute(ComputeModule):
                                 config=config['list_context_defs']
                             )
                         )
+                        all_tasks.add(cd_task)
+                        cd_task.add_done_callback(all_tasks.discard)
                     else:
                         cd_page: ContextDefsPage = await cd_task
                         if cd_page['error'] is not None:
-                            # TODO cancel all tasks
+                            self._bg_cancel_tasks(all_tasks)
+
                             return {
                                 "error": cd_page['error']
                             }
@@ -181,6 +209,8 @@ class InProcessCompute(ComputeModule):
                                     config=config['list_context_defs']
                                 )
                             )
+                            all_tasks.add(cd_task)
+                            cd_task.add_done_callback(all_tasks.discard)
 
                 else:
                     if cd_task is None:
@@ -190,13 +220,16 @@ class InProcessCompute(ComputeModule):
                                 config['get_identity_def']
                             )
                         )
+                        all_tasks.add(cd_task)
+                        cd_task.add_done_callback(all_tasks.discard)
                     else:
                         cd_result: ContextDefResult = await cd_task
                         if (
                             cd_result['error'] is not None
                             and cd_result['error']['error_type'] != "resource_not_found"
                         ):
-                            # TODO cancel all tasks
+                            self._bg_cancel_tasks(all_tasks)
+
                             return {
                                 "error": cd_result['error']
                             }
@@ -213,6 +246,8 @@ class InProcessCompute(ComputeModule):
                                 config=config['list_identity_defs']
                             )
                         )
+                        all_tasks.add(id_task)
+                        id_task.add_done_callback(all_tasks.discard)
                     else:
                         id_page: IdentityDefsPage = await id_task
                         id_page_ref = id_page['next_page_ref']
@@ -234,26 +269,31 @@ class InProcessCompute(ComputeModule):
                                     config=config['list_identity_defs']
                                 )
                             )
+                            all_tasks.add(id_task)
+                            id_task.add_done_callback(all_tasks.discard)
 
                 else:
                     if id_task is None:
-                        id_task = [
+                        id_task = {
                             create_task(self._storage.get_identity_def(it, config['get_identity_def']))
                             for it in request['identities']
-                        ]
+                        }
+                        all_tasks.update(id_task)
+                        for t in id_task:
+                            t.add_done_callback(all_tasks.discard)
                     else:
-                        cancel_tasks
                         for t in as_completed(id_task):
                             idr: IdentityDefResult = await t
                             if idr['error'] is not None:
                                 if idr['error']['error_type'] != "resource_not_found":
-                                    # TODO cancel all tasks
+                                    self._bg_cancel_tasks(all_tasks)
+
                                     return {
                                         "error": idr['error']
                                     }
 
                                 else:
-                                    # TOD cancel all IDR tasks
+                                    self._bg_cancel_tasks(id_task)
                                     break
 
                         id_stop = True
@@ -267,10 +307,13 @@ class InProcessCompute(ComputeModule):
                                 config=config['list_resource_defs']
                             )
                         )
+                        all_tasks.add(rd_task)
+                        rd_task.add_done_callback(all_tasks.discard)
                     else:
                         rd_page: ResourceDefsPage = await rd_task
                         if rd_page['error'] is not None:
-                            # TODO cancel all tasks
+                            self._bg_cancel_tasks(all_tasks)
+
                             return {
                                 "error": rd_page['error']
                             }
@@ -280,6 +323,7 @@ class InProcessCompute(ComputeModule):
                             if rd['resource_type'] == request['resource_type']:
                                 resource_def = rd
                                 rd_stop = True
+                                break
 
                         if rd_page_ref is None:
                             rd_stop = True
@@ -290,6 +334,8 @@ class InProcessCompute(ComputeModule):
                                     config=config['list_resource_defs']
                                 )
                             )
+                            all_tasks.add(rd_task)
+                            rd_task.add_done_callback(all_tasks.discard)
 
                 else:
                     if rd_task is None:
@@ -299,8 +345,21 @@ class InProcessCompute(ComputeModule):
                                 config['get_identity_def']
                             )
                         )
+                        all_tasks.add(rd_task)
+                        rd_task.add_done_callback(all_tasks.discard)
                     else:
-                        resource_def = (await rd_task)['resource_def']
+                        rd_result: ResourceDefResult = await rd_task
+                        if (
+                            rd_result['error'] is not None
+                            and rd_result['error']['error_type'] != "resource_not_found"
+                        ):
+                            self._bg_cancel_tasks(all_tasks)
+
+                            return {
+                                "error": rd_result['error']
+                            }
+
+                        resource_def = rd_result['resource_def']
                         rd_stop = True
 
         if context_def is None:
