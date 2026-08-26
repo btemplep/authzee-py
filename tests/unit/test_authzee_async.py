@@ -1219,26 +1219,6 @@ def test_raise_errors_grant_error():
         )
 
 
-def test_compute_storage_kwargs_override():
-    """Test that compute_storage_kwargs is accepted."""
-    storage_dict = {}
-    authz = AuthzeeAsync(
-        execute=jmespath_execute,
-        compute_type=InProcessCompute,
-        compute_kwargs={},
-        storage_type=DictStorage,
-        storage_kwargs={
-            "storage_dict": storage_dict
-        },
-        compute_storage_kwargs={
-            "storage_dict": storage_dict
-        }
-    )
-    asyncio.run(authz.construct())
-    result = asyncio.run(authz.start())
-    assert result['error'] is None
-
-
 def test_put_context_def_overwrite(authz, context_def):
     """Putting the same context_type twice should succeed (upsert)."""
     asyncio.run(authz.put_context_def(context_def))
@@ -1604,25 +1584,6 @@ def test_batch_authorize_validation_failure_raises(storage_dict):
                 }
             )
         )
-
-
-def test_compute_storage_kwargs_override(storage_dict):
-    """Test that compute_storage_kwargs overrides storage_kwargs for compute."""
-    a = AuthzeeAsync(
-        execute=jmespath_execute,
-        compute_type=InProcessCompute,
-        compute_kwargs={},
-        storage_type=DictStorage,
-        storage_kwargs={
-            "storage_dict": storage_dict
-        },
-        compute_storage_kwargs={
-            "storage_dict": storage_dict
-        }
-    )
-    asyncio.run(a.construct())
-    result = asyncio.run(a.start())
-    assert result['error'] is None
 
 
 def test_validate_batch_request_valid(seeded_authz):

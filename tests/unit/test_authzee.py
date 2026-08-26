@@ -1099,26 +1099,6 @@ def test_raise_errors_grant_error():
         )
 
 
-def test_compute_storage_kwargs_override():
-    """Test that compute_storage_kwargs is accepted."""
-    storage_dict = {}
-    authz = Authzee(
-        execute=jmespath_execute,
-        compute_type=InProcessCompute,
-        compute_kwargs={},
-        storage_type=DictStorage,
-        storage_kwargs={
-            "storage_dict": storage_dict
-        },
-        compute_storage_kwargs={
-            "storage_dict": storage_dict
-        }
-    )
-    authz.construct()
-    result = authz.start()
-    assert result['error'] is None
-
-
 def test_put_context_def_overwrite(authz, context_def):
     """Putting the same context_type twice should succeed (upsert)."""
     authz.put_context_def(context_def)

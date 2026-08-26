@@ -440,8 +440,23 @@ def test_in_process_validate_request_valid(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_request(
@@ -485,8 +500,23 @@ def test_in_process_validate_request_unknown_context_type(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_request(
@@ -521,8 +551,23 @@ def test_in_process_validate_request_invalid_context_data(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_request(
@@ -554,8 +599,23 @@ def test_in_process_validate_request_unknown_resource_type(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_request(
@@ -587,8 +647,23 @@ def test_in_process_validate_request_invalid_resource_data(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_request(
@@ -620,8 +695,23 @@ def test_in_process_validate_request_invalid_action(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_request(
@@ -653,8 +743,23 @@ def test_in_process_validate_request_unknown_identity_type(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_request(
@@ -686,8 +791,23 @@ def test_in_process_validate_request_invalid_identity_data(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_request(
@@ -727,8 +847,23 @@ def test_in_process_validate_batch_request_valid(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_batch_request(
@@ -780,8 +915,23 @@ def test_in_process_validate_batch_request_invalid_batch_item(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_batch_request(
@@ -815,8 +965,23 @@ def test_in_process_audit(seeded_compute):
     config = {
         "validate_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -857,8 +1022,23 @@ def test_in_process_authorize_allowed(seeded_compute):
     config = {
         "validate_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -894,8 +1074,23 @@ def test_in_process_authorize_denied(seeded_compute):
     config = {
         "validate_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -932,8 +1127,23 @@ def test_in_process_authorize_implicit_deny(seeded_compute):
     config = {
         "validate_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -984,8 +1194,23 @@ def test_in_process_batch_audit(seeded_compute):
     config = {
         "validate_batch_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -1039,8 +1264,23 @@ def test_in_process_batch_authorize_mixed(seeded_compute):
     config = {
         "validate_batch_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -1090,8 +1330,23 @@ def test_in_process_batch_authorize_deny(seeded_compute):
     config = {
         "validate_batch_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -1140,8 +1395,23 @@ def test_in_process_batch_authorize_implicit_deny(seeded_compute):
     config = {
         "validate_batch_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -1317,8 +1587,23 @@ def test_in_process_audit_storage_failure(seeded_failing_compute):
     config = {
         "validate_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -1356,8 +1641,23 @@ def test_in_process_authorize_storage_failure(seeded_failing_compute):
     config = {
         "validate_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -1401,8 +1701,23 @@ def test_in_process_batch_audit_storage_failure(seeded_failing_compute):
     config = {
         "validate_batch_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -1447,8 +1762,23 @@ def test_in_process_batch_authorize_storage_failure(seeded_failing_compute):
     config = {
         "validate_batch_request": {
             "get_context_def": {},
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
             "get_identity_def": {},
-            "get_resource_def": {}
+            "use_list_identity_defs": True,
+            "list_identity_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            },
+            "get_resource_def": {},
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+                "use_cache": True
+            }
         },
         "list_grants": {
             "page_size": 100,
@@ -1716,8 +2046,23 @@ def test_in_process_validate_batch_request_base_request_invalid(seeded_compute):
     }
     config = {
         "get_context_def": {},
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
         "get_identity_def": {},
-        "get_resource_def": {}
+        "use_list_identity_defs": True,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        },
+        "get_resource_def": {},
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": True
+        }
     }
     result = asyncio.run(
         seeded_compute.validate_batch_request(

@@ -8,7 +8,6 @@ __all__ = [
 ]
 
 import datetime
-from typing import List
 from uuid import uuid4
 
 from authzee.module_locality import ModuleLocality
@@ -358,7 +357,7 @@ class DictStorage(StorageModule):
         else:
             start_index = int(page_ref)
 
-        grants: List[Grant] = list(self._storage_dict['grants_lut'].values())
+        grants: list[Grant] = list(self._storage_dict['grants_lut'].values())
         if effect is not None:
             grants = [g for g in grants if g['effect'] == effect]
 
@@ -386,7 +385,7 @@ class DictStorage(StorageModule):
         else:
             start_index = int(page_ref)
 
-        grants: List[Grant] = list(self._storage_dict['grants_lut'].values())
+        grants: list[Grant] = list(self._storage_dict['grants_lut'].values())
         if effect is not None:
             grants = [g for g in grants if g['effect'] == effect]
 

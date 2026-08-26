@@ -1,6 +1,13 @@
 {
     "autoDocstring.docstringFormat": "numpy",
     "python.defaultInterpreterPath": "./venv/bin/python",
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "cmd": "./venv/bin/cleer inspect --log-level DEBUG ${file}"
+            }
+        ]
+    },
     "cSpell.words": [
         "afunc",
         "aioboto",

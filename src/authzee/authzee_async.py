@@ -6,7 +6,7 @@ __all__ = [
 
 from asyncio import gather
 import datetime
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Type
 
 from authzee.compute.compute_module import ComputeModule
 from authzee.config import default_config, override_config
@@ -28,14 +28,12 @@ class AuthzeeAsync:
         JSON query function.
     compute_type : Type[ComputeModule]
         Compute Module Type.
-    compute_kwargs : Dict[str, Any]
+    compute_kwargs : dict[str, Any]
         Compute module KWArgs used to create instances.
     storage_type : Type[StorageModule]
         Storage Module Type.
-    storage_kwargs : Dict[str, Any]
+    storage_kwargs : dict[str, Any]
         Storage module KWArgs used to create instances.
-    compute_storage_kwargs : Dict[str, Any], optional
-        Override storage module KWArgs that the compute module will use.  May only include KWArgs you want to override.
     config : AuthzeeConfigOverride, optional
         Authzee configuration. May only include config keys you want to override.
 
@@ -188,10 +186,9 @@ class AuthzeeAsync:
         self,
         execute: Callable[[str, Any], Any],
         compute_type: Type[ComputeModule],
-        compute_kwargs: Dict[str, Any],
+        compute_kwargs: dict[str, Any],
         storage_type: Type[StorageModule],
-        storage_kwargs: Dict[str, Any],
-        compute_storage_kwargs: Dict[str, Any]=None,
+        storage_kwargs: dict[str, Any],
         config: AuthzeeConfigOverride=None
     ):
         self._execute = execute
@@ -199,7 +196,6 @@ class AuthzeeAsync:
         self._compute_kwargs = compute_kwargs
         self._storage_type = storage_type
         self._storage_kwargs = storage_kwargs
-        self._compute_storage_kwargs = storage_kwargs if compute_storage_kwargs is None else storage_kwargs | compute_storage_kwargs
         self._config: AuthzeeConfig = override_config(config, default_config)
         self._compute: ComputeModule = None
         self._storage: StorageModule = None
@@ -287,7 +283,7 @@ class AuthzeeAsync:
             self._compute.start(
                 execute=self._execute,
                 storage_type=self._storage_type,
-                storage_kwargs=self._compute_storage_kwargs,
+                storage_kwargs=self._storage_kwargs,
                 config=config['start']['compute_start']
             ),
             self._storage.start(config['start']['storage_start'])

@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
-## [0.1.0a6] - 2026-08-22
+## [0.1.0a6] - 2026-08-25
 
 Support for Authzee spec 0.5.0.
 
@@ -33,9 +33,21 @@ Support for Authzee spec 0.5.0.
 
 ### Changed
 
+- Updated typing for Python 3.11+
+    - `List[X]` → `list[X]`, `Dict[X, Y]` → `dict[X, Y]`, `Union[X, Y]` → `X | Y`
+    - Removed `List`, `Dict`, `Union` from typing imports
 - `validate_batch_request` now returns `ValidateBatchRequestResult` with `{error, batch}` instead of `GenericResult`
     - `batch` contains per-item validation errors (or None for valid items)
 - `validate_batch_request_result_schema` renamed `batch_errors` field to `batch`
+- `validate_request` in `InProcessCompute` now respects the full `ValidateRequestConfig`
+    - Uses `use_list_context_defs`, `use_list_identity_defs`, `use_list_resource_defs` config options
+- `validate_batch_request` in `InProcessCompute` now returns per-item errors in `batch` instead of failing fast
+
+### Removed
+
+- `compute_storage_kwargs` parameter from `Authzee` and `AuthzeeAsync`
+    - Compute module now receives `storage_kwargs` directly
+    - If different storage kwargs are needed, create a separate Authzee instance with `InProcessCompute`
 
 
 ## [0.1.0a5] - 2026-08-19

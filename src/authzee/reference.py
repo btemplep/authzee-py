@@ -52,20 +52,20 @@ __all__ = [
     "validate_resource_defs"
 ]
 
-from typing import Callable, Dict, List, Union
+from typing import Callable
 
 import jsonschema_rs
 
 
-AnyJSON = Union[
-    bool,
-    str,
-    int,
-    float,
-    None,
-    list,
-    dict
-]
+AnyJSON = (
+    bool
+    | str
+    | int
+    | float
+    | None
+    | list
+    | dict
+)
 
 _type_regex = "^[A-Za-z0-9_]*$"
 _type_schema = {
@@ -690,8 +690,8 @@ batch_authorize_result_schema = {
 
 
 def validate_context_defs(
-    context_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    context_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     context_types = set()
     for c_def in context_defs:
         try:
@@ -731,8 +731,8 @@ def validate_context_defs(
 
 
 def validate_identity_defs(
-    identity_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    identity_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     id_types = []
     for id_def in identity_defs:
         try:
@@ -772,8 +772,8 @@ def validate_identity_defs(
 
 
 def validate_resource_defs(
-    resource_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    resource_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     r_types = set()
     for r_def in resource_defs:
         try:
@@ -812,7 +812,7 @@ def validate_resource_defs(
     }
 
 
-def validate_grants(grants: List[Dict[str, AnyJSON]]) -> Dict[str, AnyJSON]:
+def validate_grants(grants: list[dict[str, AnyJSON]]) -> dict[str, AnyJSON]:
     for g in grants:
         try:
             jsonschema_rs.validate(grant_schema, g)
@@ -830,7 +830,7 @@ def validate_grants(grants: List[Dict[str, AnyJSON]]) -> Dict[str, AnyJSON]:
 
 
 def _validate_request_identities(
-    identities: Dict[str, AnyJSON],
+    identities: dict[str, AnyJSON],
     identity_lut: dict
 ) -> str | None:
     for i_type in identities:
@@ -893,11 +893,11 @@ def _validate_request_context(
 
 
 def validate_request(
-    request: Dict[str, AnyJSON],
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    request: dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     try:
         jsonschema_rs.validate(request_schema, request)
     except jsonschema_rs.ValidationError as exc:
@@ -953,11 +953,11 @@ def validate_request(
 
 
 def validate_batch_request(
-    batch_request: Dict[str, AnyJSON],
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    batch_request: dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     try:
         jsonschema_rs.validate(batch_request_schema, batch_request)
     except jsonschema_rs.ValidationError as exc:
@@ -1071,10 +1071,10 @@ def validate_batch_request(
 
 
 def evaluate_one(
-    request: Dict[str, AnyJSON],
-    grant: Dict[str, AnyJSON],
+    request: dict[str, AnyJSON],
+    grant: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     result = {
         "is_applicable": False,
         "query_result": None,
@@ -1107,12 +1107,12 @@ def evaluate_one(
 
 
 def audit(
-    request: Dict[str, AnyJSON],
-    grants: List[Dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
+    grants: list[dict[str, AnyJSON]],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[
+) -> dict[
     str,
-    List[Dict[str, AnyJSON]]
+    list[dict[str, AnyJSON]]
 ]:
     result = {
         "results": [],
@@ -1133,10 +1133,10 @@ def audit(
 
 
 def authorize(
-    request: Dict[str, AnyJSON],
-    grants: List[Dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
+    grants: list[dict[str, AnyJSON]],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     allow_grants = []
     deny_grants = []
     for g in grants:
@@ -1174,13 +1174,13 @@ def authorize(
 
 
 def _validate(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
     is_batch: bool
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     c_val = validate_context_defs(context_defs)
     if c_val['error'] is not None:
         return c_val
@@ -1227,13 +1227,13 @@ def _validate(
 
 
 def audit_workflow(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     val = _validate(
         context_defs,
         identity_defs,
@@ -1252,13 +1252,13 @@ def audit_workflow(
 
 
 def authorize_workflow(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     val = _validate(
         context_defs,
         identity_defs,
@@ -1279,12 +1279,12 @@ def authorize_workflow(
 
 
 def batch_audit(
-    batch_request: Dict[str, AnyJSON],
-    grants: List[Dict[str, AnyJSON]],
+    batch_request: dict[str, AnyJSON],
+    grants: list[dict[str, AnyJSON]],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[
+) -> dict[
     str,
-    List[Dict[str, AnyJSON]]
+    list[dict[str, AnyJSON]]
 ]:
     batch_results = []
     for item in batch_request['batch']:
@@ -1322,12 +1322,12 @@ def batch_audit(
 
 
 def batch_authorize(
-    batch_request: Dict[str, AnyJSON],
-    grants: List[Dict[str, AnyJSON]],
+    batch_request: dict[str, AnyJSON],
+    grants: list[dict[str, AnyJSON]],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[
+) -> dict[
     str,
-    List[Dict[str, AnyJSON]]
+    list[dict[str, AnyJSON]]
 ]:
     results = []
     for item in batch_request['batch']:
@@ -1353,13 +1353,13 @@ def batch_authorize(
 
 
 def batch_audit_workflow(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    batch_request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    batch_request: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     val = _validate(
         context_defs,
         identity_defs,
@@ -1405,13 +1405,13 @@ def batch_audit_workflow(
 
 
 def batch_authorize_workflow(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    batch_request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    batch_request: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     val = _validate(
         context_defs,
         identity_defs,

@@ -6,7 +6,7 @@ __all__ = [
 
 import asyncio
 import datetime
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Type
 
 from authzee.authzee_async import AuthzeeAsync
 from authzee.compute.compute_module import ComputeModule
@@ -24,14 +24,12 @@ class Authzee:
         JSON query function.
     compute_type : Type[ComputeModule]
         Compute Module Type.
-    compute_kwargs : Dict[str, Any]
+    compute_kwargs : dict[str, Any]
         Compute module KWArgs used to create instances.
     storage_type : Type[StorageModule]
         Storage Module Type.
-    storage_kwargs : Dict[str, Any]
+    storage_kwargs : dict[str, Any]
         Storage module KWArgs used to create instances.
-    compute_storage_kwargs : Dict[str, Any], optional
-        Override storage module KWArgs that the compute module will use.  May only include KWArgs you want to override.
     config : AuthzeeConfigOverride, optional
         Authzee configuration. May only include config keys you want to override.
 
@@ -187,10 +185,9 @@ class Authzee:
         self,
         execute: Callable[[str, Any], Any],
         compute_type: Type[ComputeModule],
-        compute_kwargs: Dict[str, Any],
+        compute_kwargs: dict[str, Any],
         storage_type: Type[StorageModule],
-        storage_kwargs: Dict[str, Any],
-        compute_storage_kwargs: Dict[str, Any]=None,
+        storage_kwargs: dict[str, Any],
         config: AuthzeeConfigOverride=None
     ):
         self._authzee_async = AuthzeeAsync(
@@ -199,7 +196,6 @@ class Authzee:
             compute_kwargs=compute_kwargs,
             storage_type=storage_type,
             storage_kwargs=storage_kwargs,
-            compute_storage_kwargs=compute_storage_kwargs,
             config=config
         )
 
