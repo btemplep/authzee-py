@@ -11,10 +11,10 @@ import pytest
 
 from authzee import (
     Authzee,
-    DictStorage,
-    InProcessCompute,
     authzee_specification_version,
+    DictStorage,
     exceptions,
+    InProcessCompute,
     jmespath_execute,
     paginator
 )

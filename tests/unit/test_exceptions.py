@@ -8,14 +8,14 @@ from authzee.exceptions import (
     AuthzeeSpecError,
     ComputeError,
     DefinitionError,
+    _exception_map,
     GrantError,
     LocalityIncompatibilityError,
     NotImplementedError as AuthzeeNotImplementedError,
     ParallelPaginationNotSupported,
     RequestError,
     ResourceNotFoundError,
-    StorageError,
-    _exception_map
+    StorageError
 )
 
 
