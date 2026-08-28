@@ -7,7 +7,8 @@ __all__ = [
     "InProcessCompute"
 ]
 
-from asyncio import as_completed, create_task, gather, sleep, Task
+from asyncio import as_completed, create_task, gather, Task
+import copy
 from typing import Any, Callable, Type
 
 import jsonschema_rs
@@ -122,6 +123,93 @@ class InProcessCompute(ComputeModule):
         return validate_grant(grant)
 
 
+    def _validate_request_from_cache(
+        self,
+        request: AuthzeeRequest | BatchItem,
+        cd_lookup: dict[str, ContextDef | None],
+        id_lookup: dict[str, IdentityDef | None],
+        rd_lookup: dict[str, IdentityDef | None]
+    ) -> GenericResult:
+        """Must validate schema and pull of defs before this.
+        """
+        if "context_type" in request:
+            cd = cd_lookup[request['context_type']]
+            if cd is None:
+                return {
+                    "error": {
+                        "error_type": "request",
+                        "message": f"context_type '{request['context_type']}' is not a registered context type."
+                    }
+                }
+
+            if (
+                jsonschema_rs.validator_for(cd['schema']).is_valid(request['context'])
+                is False
+            ):
+                return {
+                    "error": {
+                        "error_type": "request",
+                        "message": f"The given context is not valid against the '{request['context_type']}' context type."
+                    }
+                }
+
+        if "resource_type" in request:
+            rd = rd_lookup[request['resource_type']]
+            if rd is None:
+                return {
+                    "error": {
+                        "error_type": "request",
+                        "message": f"resource_type '{request['resource_type']}' is not a registered resource type."
+                    }
+                }
+
+            if (
+                jsonschema_rs.validator_for(rd['schema']).is_valid(request['resource'])
+                is False
+            ):
+                return {
+                    "error": {
+                        "error_type": "request",
+                        "message": f"The given resource is not valid against the '{request['resource_type']}' resource type."
+                    }
+                }
+
+            if request['action'] not in rd['actions']:
+                return {
+                    "error": {
+                        "error_type": "request",
+                        "message": f"The given resource action is not valid for the '{request['resource_type']}' resource type."
+                    }
+                }
+
+        if "identities" in request:
+            for i_type, id in id_lookup.items():
+                if id is None:
+                    return {
+                        "error": {
+                            "error_type": "request",
+                            "message": f"identity_type '{i_type}' is not a registered identity type."
+                        }
+                    }
+
+                identity_validator = jsonschema_rs.validator_for(id['schema'])
+                for identity, i in zip(
+                    request['identities'][i_type],
+                    range(len(request['identities'][i_type]))
+                ):
+                    if identity_validator.is_valid(identity) is False:
+                        return {
+                            "error": {
+                                "error_type": "request",
+                                "message": f"The given identity in '{i_type}[{i}]' is not valid against the '{i_type}' identity type."
+                            }
+                        }
+
+        return {
+            "error": None
+        }
+
+
     async def validate_request(
         self,
         request: AuthzeeRequest,
@@ -131,22 +219,22 @@ class InProcessCompute(ComputeModule):
         if result['error'] is not None:
             return result
 
-        context_def: ContextDef = None
+        context_def: ContextDef | None = None
         cd_page_ref = None
         cd_task: Task = None
         cd_stop = False
-        id_lookup: dict[str, IdentityDef] = {id_type: None for id_type in request['identities']}
+        id_lookup: dict[str, IdentityDef | None] = {id_type: None for id_type in request['identities']}
         id_page_ref = None
-        id_task: Task | set[Task] = None
+        id_task: Task | list[Task] = None
         id_stop = False
-        resource_def: ResourceDef = None
+        resource_def: ResourceDef | None = None
         rd_page_ref = None
         rd_task: Task = None
         rd_stop = False
         while (
             cd_stop is False
             or id_stop is False
-            or rd_stop is None
+            or rd_stop is False
         ):
             if cd_stop is False:
                 if config['use_list_context_defs'] is True:
@@ -186,18 +274,24 @@ class InProcessCompute(ComputeModule):
                         cd_task = create_task(
                             self._storage.get_context_def(
                                 request['context_type'],
-                                config['get_identity_def']
+                                config['get_context_def']
                             )
                         )
                     else:
                         cd_result: ContextDefResult = await cd_task
-                        if (
-                            cd_result['error'] is not None
-                            and cd_result['error']['error_type'] != "resource_not_found"
-                        ):
-                            return {
-                                "error": cd_result['error']
-                            }
+                        if cd_result['error'] is not None:
+                            if cd_result['error']['error_type'] == "resource_not_found":
+                                return {
+                                    "error": {
+                                        "error_type": "request",
+                                        "message": f"context_type '{request['context_type']}' is not a registered context type."
+                                    }
+                                }
+
+                            else:
+                                return {
+                                    "error": cd_result['error']
+                                }
 
                         context_def = cd_result['context_def']
                         cd_stop = True
@@ -213,6 +307,11 @@ class InProcessCompute(ComputeModule):
                         )
                     else:
                         id_page: IdentityDefsPage = await id_task
+                        if id_page['error'] is not None:
+                            return {
+                                "error": id_page['error']
+                            }
+
                         id_page_ref = id_page['next_page_ref']
                         for id in id_page['identity_defs']:
                             if id['identity_type'] in request['identities']:
@@ -235,23 +334,28 @@ class InProcessCompute(ComputeModule):
 
                 else:
                     if id_task is None:
-                        id_task = {
-                            create_task(self._storage.get_identity_def(it, config['get_identity_def']))
-                            for it in request['identities']
-                        }
+                        id_task = [
+                            create_task(self._storage.get_identity_def(i_type, config['get_identity_def']))
+                            for i_type in id_lookup
+                        ]
                     else:
-                        for t in as_completed(id_task):
-                            idr: IdentityDefResult = await t
-                            if idr['error'] is not None:
-                                if idr['error']['error_type'] != "resource_not_found":
+                        id_results: list[IdentityDefResult] = await gather(*id_task)
+                        for id_result, i_type in zip(id_results, id_lookup):
+                            if id_result['error'] is not None:
+                                if id_result['error']['error_type'] == "resource_not_found":
                                     return {
-                                        "error": idr['error']
+                                        "error": {
+                                            "error_type": "request",
+                                            "message": f"identity_type '{i_type}' is not a registered identity type."
+                                        }
                                     }
 
                                 else:
-                                    # remove references to tasks so GC cleans
-                                    id_task = None
-                                    break
+                                    return {
+                                        "error": id_result['error']
+                                    }
+
+                            id_lookup[i_type] = id_result['identity_def']
 
                         id_stop = True
 
@@ -293,97 +397,38 @@ class InProcessCompute(ComputeModule):
                         rd_task = create_task(
                             self._storage.get_resource_def(
                                 request['resource_type'],
-                                config['get_identity_def']
+                                config['get_resource_def']
                             )
                         )
                     else:
                         rd_result: ResourceDefResult = await rd_task
-                        if (
-                            rd_result['error'] is not None
-                            and rd_result['error']['error_type'] != "resource_not_found"
-                        ):
-                            return {
-                                "error": rd_result['error']
-                            }
+                        if rd_result['error'] is not None:
+                            if rd_result['error']['error_type'] == "resource_not_found":
+                                return {
+                                    "error": {
+                                        "error_type": "request",
+                                        "message": f"resource_type '{request['resource_type']}' is not a registered resource type."
+                                    }
+                                }
+
+                            else:
+                                return {
+                                    "error": rd_result['error']
+                                }
 
                         resource_def = rd_result['resource_def']
                         rd_stop = True
 
-        if context_def is None:
-            return {
-                "error": {
-                    "error_type": "request",
-                    "message": f"context_type '{request['context_type']}' is not a registered context type."
-                }
+        return self._validate_request_from_cache(
+            request=request,
+            cd_lookup={
+                request['context_type']: context_def
+            },
+            id_lookup=id_lookup,
+            rd_lookup={
+                request['resource_type']: resource_def
             }
-
-        if (
-            jsonschema_rs.validator_for(context_def['schema']).is_valid(request['context'])
-            is False
-        ):
-            return {
-                "error": {
-                    "error_type": "request",
-                    "message": f"The given context is not valid against the '{request['context_type']}' context type."
-                }
-            }
-
-        if resource_def is None:
-            return {
-                "error": {
-                    "error_type": "request",
-                    "message": f"resource_type '{request['resource_type']}' is not a registered resource type."
-                }
-            }
-
-        if (
-            jsonschema_rs.validator_for(
-                resource_def['schema']
-            ).is_valid(
-                request['resource']
-            )
-            is False
-        ):
-            return {
-                "error": {
-                    "error_type": "request",
-                    "message": f"The given resource is not valid against the '{request['resource_type']}' resource type."
-                }
-            }
-
-        if request['action'] not in resource_def['actions']:
-            return {
-                "error": {
-                    "error_type": "request",
-                    "message": f"The given resource action is not valid for the '{request['resource_type']}' resource type."
-                }
-            }
-
-        for i_type, id in id_lookup.items():
-            if id is None:
-                return {
-                    "error": {
-                        "error_type": "request",
-                        "message": f"identity_type '{i_type}' is not a registered identity type."
-                    }
-                }
-
-            identity_validator = jsonschema_rs.validator_for(id['schema'])
-            for identity, i in zip(
-                request['identities'][i_type],
-                range(len(request['identities'][i_type]))
-            ):
-                if identity_validator.is_valid(identity) is False:
-                    return {
-                        "error": {
-                            "error_type": "request",
-                            "message": f"The given identity in '{i_type}[{i}]' is not valid against the '{i_type}' identity type."
-                        }
-                    }
-
-        return {
-            "error": None
-        }
+        )
 
 
     async def validate_batch_request(
@@ -398,38 +443,291 @@ class InProcessCompute(ComputeModule):
                 "batch": []
             }
 
-        base_request: AuthzeeBatchRequest = batch_request.copy()
-        base_request.pop("batch")
-        base_result = await self.validate_request(request=base_request, config=config)
-        if base_result['error'] is not None:
+        #first collect lookups for context defs, identity defs and resource defs
+        cd_lookup: dict[str, ContextDef] = {
+            batch_request['context_type']: None
+        }
+        id_lookup: dict[str, IdentityDef] = {id_type: None for id_type in batch_request['identities']}
+        rd_lookup: dict[str, ResourceDef] = {
+            batch_request['resource_type']: None
+        }
+        for item in batch_request['batch']:
+            if (
+                "context_type" in item
+                and item['context_type'] not in cd_lookup
+            ):
+                cd_lookup[item['context_type']] = None
+
+            if "identities" in item:
+                for i_type in item['identities']:
+                    if i_type not in id_lookup:
+                        id_lookup[i_type] = None
+
+            if (
+                "resource_type" in item
+                and item['resource_type'] not in rd_lookup
+            ):
+                rd_lookup[item['resource_type']] = None
+
+        cd_page_ref = None
+        cd_task: Task | list[Task] = None
+        cd_stop = False
+        id_page_ref = None
+        id_task: Task | list[Task] = None
+        id_stop = False
+        rd_page_ref = None
+        rd_task: Task | list[Task] = None
+        rd_stop = False
+        while (
+            cd_stop is False
+            or id_stop is False
+            or rd_stop is False
+        ):
+            if cd_stop is False:
+                if config['use_list_context_defs'] is True:
+                    if cd_task is None:
+                        cd_task = create_task(
+                            self._storage.list_context_defs(
+                                page_ref=None,
+                                config=config['list_context_defs']
+                            )
+                        )
+                    else:
+                        cd_page: ContextDefsPage = await cd_task
+                        if cd_page['error'] is not None:
+                            return {
+                                "batch": [],
+                                "error": cd_page['error']
+                            }
+
+                        cd_page_ref = cd_page['next_page_ref']
+                        for cd in cd_page['context_defs']:
+                            if cd['context_type'] in cd_lookup:
+                                cd_lookup[cd['context_type']] = cd
+                                cd_stop = True
+                                for cd in cd_lookup.values():
+                                    if cd is None:
+                                        cd_stop = False
+                                        break
+
+                        if cd_page_ref is None:
+                            cd_stop = True
+                        elif cd_stop is False:
+                            cd_task = create_task(
+                                self._storage.list_context_defs(
+                                    page_ref=cd_page_ref,
+                                    config=config['list_context_defs']
+                                )
+                            )
+
+                else:
+                    if cd_task is None:
+                        cd_task = [
+                            create_task(self._storage.get_context_def(c_type, config['get_context_def']))
+                            for c_type in cd_lookup
+                        ]
+                    else:
+                        cd_results: list[ContextDefResult] = await gather(*cd_task)
+                        for cd_result, c_type in zip(cd_results, cd_lookup):
+                            if cd_result['error'] is None:
+                                cd_lookup[c_type] = cd_result['context_def']
+                            elif c_type == batch_request['context_type']:
+                                # if it's a root request level error, then return base errors
+                                if cd_result['error']['error_type'] == "resource_not_found":
+                                    return {
+                                        "batch": [],
+                                        "error": {
+                                            "error_type": "request",
+                                            "message": f"context_type '{batch_request['context_type']}' is not a registered context type."
+                                        }
+                                    }
+
+                                else:
+                                    return {
+                                        "batch": [],
+                                        "error": cd_result['error']
+                                    }
+
+                        cd_stop = True
+
+            if id_stop is False:
+                if config['use_list_identity_defs'] is True:
+                    if id_task is None:
+                        id_task = create_task(
+                            self._storage.list_identity_defs(
+                                page_ref=None,
+                                config=config['list_identity_defs']
+                            )
+                        )
+                    else:
+                        id_page: IdentityDefsPage = await id_task
+                        if id_page['error'] is not None:
+                            return {
+                                "batch": [],
+                                "error": id_page['error']
+                            }
+
+                        id_page_ref = id_page['next_page_ref']
+                        for id in id_page['identity_defs']:
+                            if id['identity_type'] in id_lookup:
+                                id_lookup[id['identity_type']] = id
+                                id_stop = True
+                                for id in id_lookup.values():
+                                    if id is None:
+                                        id_stop = False
+                                        break
+
+                        if id_page_ref is None:
+                            id_stop = True
+                        elif id_stop is False:
+                            id_task = create_task(
+                                self._storage.list_identity_defs(
+                                    page_ref=id_page_ref,
+                                    config=config['list_identity_defs']
+                                )
+                            )
+
+                else:
+                    if id_task is None:
+                        id_task = [
+                            create_task(self._storage.get_identity_def(i_type, config['get_identity_def']))
+                            for i_type in id_lookup
+                        ]
+                    else:
+                        id_results: list[IdentityDefResult] = await gather(*id_task)
+                        for id_result, i_type in zip(id_results, id_lookup):
+                            if id_result['error'] is None:
+                                id_lookup[i_type] = id_result['identity_def']
+                            elif i_type in batch_request['identities']:
+                                # if it's a root request level error, then return base errors
+                                if id_result['error']['error_type'] == "resource_not_found":
+                                    return {
+                                        "batch": [],
+                                        "error": {
+                                            "error_type": "request",
+                                            "message": f"identity_type '{i_type}' is not a registered identity type."
+                                        }
+                                    }
+
+                                else:
+                                    return {
+                                        "batch": [],
+                                        "error": id_result['error']
+                                    }
+
+                        id_stop = True
+
+            if rd_stop is False:
+                if config['use_list_resource_defs'] is True:
+                    if rd_task is None:
+                        rd_task = create_task(
+                            self._storage.list_resource_defs(
+                                page_ref=None,
+                                config=config['list_resource_defs']
+                            )
+                        )
+                    else:
+                        rd_page: ContextDefsPage = await rd_task
+                        if rd_page['error'] is not None:
+                            return {
+                                "batch": [],
+                                "error": rd_page['error']
+                            }
+
+                        rd_page_ref = rd_page['next_page_ref']
+                        for rd in rd_page['resource_defs']:
+                            if rd['resource_type'] in rd_lookup:
+                                rd_lookup[rd['resource_type']] = rd
+                                rd_stop = True
+                                for rd in rd_lookup.values():
+                                    if rd is None:
+                                        rd_stop = False
+                                        break
+
+                        if rd_page_ref is None:
+                            rd_stop = True
+                        elif rd_stop is False:
+                            rd_task = create_task(
+                                self._storage.list_resource_defs(
+                                    page_ref=rd_page_ref,
+                                    config=config['list_resource_defs']
+                                )
+                            )
+
+                else:
+                    if rd_task is None:
+                        rd_task = [
+                            create_task(self._storage.get_resource_def(r_type, config['get_resource_def']))
+                            for r_type in rd_lookup
+                        ]
+                    else:
+                        rd_results: list[ContextDefResult] = await gather(*rd_task)
+                        for rd_result, r_type in zip(rd_results, rd_lookup):
+                            if rd_result['error'] is None:
+                                rd_lookup[r_type] = rd_result['resource_def']
+                            elif r_type == batch_request['resource_type']:
+                                # if it's a root request level error, then return base errors
+                                if rd_result['error']['error_type'] == "resource_not_found":
+                                    return {
+                                        "batch": [],
+                                        "error": {
+                                            "error_type": "request",
+                                            "message": f"resource_type '{batch_request['resource_type']}' is not a registered resource type."
+                                        }
+                                    }
+
+                                else:
+                                    return {
+                                        "batch": [],
+                                        "error": rd_result['error']
+                                    }
+
+                        rd_stop = True
+
+        val = self._validate_request_from_cache(
+            request=batch_request,
+            cd_lookup=cd_lookup,
+            id_lookup=id_lookup,
+            rd_lookup=rd_lookup
+        )
+        if val['error'] is not None:
             return {
-                "error": base_result['error'],
-                "batch": []
+                "batch": [],
+                "error": val['error']
             }
 
-        batch_tasks: list[Task] = []
-        for item in batch_request['batch']:
-            batch_tasks.append(
-                create_task(
-                    self.validate_request(
-                        request=base_request | item,
-                        config=config
-                    )
+        result = {
+            "batch": [],
+            "error": None
+        }
+        for b in batch_request['batch']:
+            request = copy.deepcopy(b)
+            if "context_type" in request or "context" in request:
+                if "context" not in request:
+                    request['context'] = batch_request['context']
+
+                if "context_type" not in request:
+                    request['context_type'] = batch_request['context_type']
+
+            if "resource_type" in request or "resource" in request:
+                # must copy because we add to the original
+                request['action'] = batch_request['action']
+                if "resource_type" not in request:
+                    request['resource_type'] = batch_request['resource_type']
+
+                if "resource" not in request:
+                    request['resource'] = batch_request['resource']
+
+            result['batch'].append(
+                self._validate_request_from_cache(
+                    request=request,
+                    cd_lookup=cd_lookup,
+                    id_lookup=id_lookup,
+                    rd_lookup=rd_lookup
                 )
             )
 
-        batch_results: list[GenericResult] = await gather(*batch_tasks)
-        batch: list = []
-        for bt_result in batch_results:
-            if bt_result['error'] is not None:
-                batch.append(bt_result['error'])
-            else:
-                batch.append(None)
-
-        return {
-            "error": None,
-            "batch": batch
-        }
+        return result
 
 
     async def audit(
