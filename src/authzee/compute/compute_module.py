@@ -7,7 +7,7 @@ __all__ = [
     "ComputeModule"
 ]
 
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Type
 
 from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
@@ -38,7 +38,7 @@ class ComputeModule:
         self,
         execute: Callable[[str, Any], Any],
         storage_type: Type[StorageModule],
-        storage_kwargs: Dict[str, Any],
+        storage_kwargs: dict[str, Any],
         config: ComputeStartConfig
     ) -> GenericResult:
         """Start up compute module.
@@ -125,7 +125,7 @@ class ComputeModule:
         self,
         batch_request: AuthzeeBatchRequest,
         config: ValidateBatchRequestConfig
-    ) -> GenericResult:
+    ) -> ValidateBatchRequestResult:
         """Validate a batch request.
         """
         raise NotImplementedError()

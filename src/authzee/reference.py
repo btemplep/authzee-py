@@ -48,23 +48,24 @@ __all__ = [
     "validate_grants",
     "validate_identity_defs",
     "validate_request",
+    "validate_request_result_schema",
     "validate_resource_defs"
 ]
 
-from typing import Callable, Dict, List, Union
+from typing import Callable
 
 import jsonschema_rs
 
 
-AnyJSON = Union[
-    bool,
-    str,
-    int,
-    float,
-    None,
-    list,
-    dict
-]
+AnyJSON = (
+    bool
+    | str
+    | int
+    | float
+    | None
+    | list
+    | dict
+)
 
 _type_regex = "^[A-Za-z0-9_]*$"
 _type_schema = {
@@ -97,7 +98,6 @@ _schema_schema = {
         "https://json-schema.org/draft/2020-12/vocab/content": True
     },
     "$dynamicAnchor": "meta",
-
     "title": "Core and Validation specifications meta-schema",
     "allOf": [
         {
@@ -577,19 +577,30 @@ batch_request_schema = {
         }
     }
 }
-validate_batch_request_result_schema = {
+validate_request_result_schema = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "Request Validation Result",
     "description": "Request Validation Result schema.",
     "type": "object",
     "additionalProperties": False,
     "required": [
+        "error"
+    ],
+    "properties": {
+        "error": generic_error_schema
+    }
+}
+validate_batch_request_result_schema = {
+    "description": "Batch request Validation Result schema.",
+    "type": "object",
+    "additionalProperties": False,
+    "required": [
         "error",
-        "batch_errors"
+        "batch"
     ],
     "properties": {
         "error": generic_error_schema,
-        "batch_errors": {
+        "batch": {
             "type": "array",
             "description": "Each result corresponds to the batch request item of the same index.",
             "items": generic_error_schema
@@ -679,8 +690,8 @@ batch_authorize_result_schema = {
 
 
 def validate_context_defs(
-    context_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    context_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     context_types = set()
     for c_def in context_defs:
         try:
@@ -720,8 +731,8 @@ def validate_context_defs(
 
 
 def validate_identity_defs(
-    identity_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    identity_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     id_types = []
     for id_def in identity_defs:
         try:
@@ -761,8 +772,8 @@ def validate_identity_defs(
 
 
 def validate_resource_defs(
-    resource_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    resource_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     r_types = set()
     for r_def in resource_defs:
         try:
@@ -801,7 +812,7 @@ def validate_resource_defs(
     }
 
 
-def validate_grants(grants: List[Dict[str, AnyJSON]]) -> Dict[str, AnyJSON]:
+def validate_grants(grants: list[dict[str, AnyJSON]]) -> dict[str, AnyJSON]:
     for g in grants:
         try:
             jsonschema_rs.validate(grant_schema, g)
@@ -819,7 +830,7 @@ def validate_grants(grants: List[Dict[str, AnyJSON]]) -> Dict[str, AnyJSON]:
 
 
 def _validate_request_identities(
-    identities: Dict[str, AnyJSON],
+    identities: dict[str, AnyJSON],
     identity_lut: dict
 ) -> str | None:
     for i_type in identities:
@@ -882,11 +893,11 @@ def _validate_request_context(
 
 
 def validate_request(
-    request: Dict[str, AnyJSON],
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    request: dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     try:
         jsonschema_rs.validate(request_schema, request)
     except jsonschema_rs.ValidationError as exc:
@@ -942,11 +953,11 @@ def validate_request(
 
 
 def validate_batch_request(
-    batch_request: Dict[str, AnyJSON],
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]]
-) -> Dict[str, AnyJSON]:
+    batch_request: dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]]
+) -> dict[str, AnyJSON]:
     try:
         jsonschema_rs.validate(batch_request_schema, batch_request)
     except jsonschema_rs.ValidationError as exc:
@@ -955,7 +966,7 @@ def validate_batch_request(
                 "error_type": "request",
                 "message": f"The batch request is not valid. Schema Error: {exc}"
             },
-            "batch_errors": []
+            "batch": []
         }
 
     identity_lut = {i['identity_type']: i for i in identity_defs}
@@ -972,7 +983,7 @@ def validate_batch_request(
                 "error_type": "request",
                 "message": err
             },
-            "batch_errors": []
+            "batch": []
         }
 
     err = _validate_request_resource(
@@ -987,7 +998,7 @@ def validate_batch_request(
                 "error_type": "request",
                 "message": err
             },
-            "batch_errors": []
+            "batch": []
         }
 
     err = _validate_request_context(
@@ -1001,10 +1012,10 @@ def validate_batch_request(
                 "error_type": "request",
                 "message": err
             },
-            "batch_errors": []
+            "batch": []
         }
 
-    batch_errors = []
+    batch = []
     for item in batch_request['batch']:
         item_err = None
         if (
@@ -1016,9 +1027,12 @@ def validate_batch_request(
                 identity_lut=identity_lut
             )
 
-        if item_err is None and (
-            item.get("resource_type", None) is not None
-            or item.get("resource", None) is not None
+        if (
+            item_err is None
+            and (
+                item.get("resource_type", None) is not None
+                or item.get("resource", None) is not None
+            )
         ):
             item_err = _validate_request_resource(
                 resource_type=item.get("resource_type", batch_request['resource_type']),
@@ -1027,9 +1041,12 @@ def validate_batch_request(
                 resource_lut=resource_lut
             )
 
-        if item_err is None and (
-            item.get("context_type", None) is not None
-            or item.get("context", None) is not None
+        if (
+            item_err is None
+            and (
+                item.get("context_type", None) is not None
+                or item.get("context", None) is not None
+            )
         ):
             item_err = _validate_request_context(
                 context_type=item.get("context_type", batch_request['context_type']),
@@ -1038,26 +1055,26 @@ def validate_batch_request(
             )
 
         if item_err is not None:
-            batch_errors.append(
+            batch.append(
                 {
                     "error_type": "request",
                     "message": item_err
                 }
             )
         else:
-            batch_errors.append(None)
+            batch.append(None)
 
     return {
         "error": None,
-        "batch_errors": batch_errors
+        "batch": batch
     }
 
 
 def evaluate_one(
-    request: Dict[str, AnyJSON],
-    grant: Dict[str, AnyJSON],
+    request: dict[str, AnyJSON],
+    grant: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     result = {
         "is_applicable": False,
         "query_result": None,
@@ -1090,10 +1107,13 @@ def evaluate_one(
 
 
 def audit(
-    request: Dict[str, AnyJSON],
-    grants: List[Dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
+    grants: list[dict[str, AnyJSON]],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, List[Dict[str, AnyJSON]]]:
+) -> dict[
+    str,
+    list[dict[str, AnyJSON]]
+]:
     result = {
         "results": [],
         "error": None
@@ -1113,10 +1133,10 @@ def audit(
 
 
 def authorize(
-    request: Dict[str, AnyJSON],
-    grants: List[Dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
+    grants: list[dict[str, AnyJSON]],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     allow_grants = []
     deny_grants = []
     for g in grants:
@@ -1154,13 +1174,13 @@ def authorize(
 
 
 def _validate(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
     is_batch: bool
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     c_val = validate_context_defs(context_defs)
     if c_val['error'] is not None:
         return c_val
@@ -1189,7 +1209,7 @@ def _validate(
 
         return {
             "error": None,
-            "batch_errors": req_val['batch_errors']
+            "batch": req_val['batch']
         }
 
     req_val = validate_request(
@@ -1207,13 +1227,13 @@ def _validate(
 
 
 def audit_workflow(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     val = _validate(
         context_defs,
         identity_defs,
@@ -1232,13 +1252,13 @@ def audit_workflow(
 
 
 def authorize_workflow(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    request: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     val = _validate(
         context_defs,
         identity_defs,
@@ -1259,10 +1279,13 @@ def authorize_workflow(
 
 
 def batch_audit(
-    batch_request: Dict[str, AnyJSON],
-    grants: List[Dict[str, AnyJSON]],
+    batch_request: dict[str, AnyJSON],
+    grants: list[dict[str, AnyJSON]],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, List[Dict[str, AnyJSON]]]:
+) -> dict[
+    str,
+    list[dict[str, AnyJSON]]
+]:
     batch_results = []
     for item in batch_request['batch']:
         request = {
@@ -1299,10 +1322,13 @@ def batch_audit(
 
 
 def batch_authorize(
-    batch_request: Dict[str, AnyJSON],
-    grants: List[Dict[str, AnyJSON]],
+    batch_request: dict[str, AnyJSON],
+    grants: list[dict[str, AnyJSON]],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, List[Dict[str, AnyJSON]]]:
+) -> dict[
+    str,
+    list[dict[str, AnyJSON]]
+]:
     results = []
     for item in batch_request['batch']:
         results.append(
@@ -1327,13 +1353,13 @@ def batch_authorize(
 
 
 def batch_audit_workflow(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    batch_request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    batch_request: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     val = _validate(
         context_defs,
         identity_defs,
@@ -1353,9 +1379,9 @@ def batch_audit_workflow(
     batch = []
     batch_results_indexes = []
     for error, request, i in zip(
-        val['batch_errors'],
+        val['batch'],
         batch_request['batch'],
-        range(len(val['batch_errors']))
+        range(len(val['batch']))
     ):
         if error is None:
             batch_results.append(None)
@@ -1379,13 +1405,13 @@ def batch_audit_workflow(
 
 
 def batch_authorize_workflow(
-    context_defs: List[Dict[str, AnyJSON]],
-    identity_defs: List[Dict[str, AnyJSON]],
-    resource_defs: List[Dict[str, AnyJSON]],
-    grants: List[Dict[str, AnyJSON]],
-    batch_request: Dict[str, AnyJSON],
+    context_defs: list[dict[str, AnyJSON]],
+    identity_defs: list[dict[str, AnyJSON]],
+    resource_defs: list[dict[str, AnyJSON]],
+    grants: list[dict[str, AnyJSON]],
+    batch_request: dict[str, AnyJSON],
     execute: Callable[[str, AnyJSON], AnyJSON]
-) -> Dict[str, AnyJSON]:
+) -> dict[str, AnyJSON]:
     val = _validate(
         context_defs,
         identity_defs,
@@ -1404,9 +1430,9 @@ def batch_authorize_workflow(
     batch = []
     batch_results_indexes = []
     for error, request, i in zip(
-        val['batch_errors'],
+        val['batch'],
         batch_request['batch'],
-        range(len(val['batch_errors']))
+        range(len(val['batch']))
     ):
         if error is None:
             batch_results.append(None)

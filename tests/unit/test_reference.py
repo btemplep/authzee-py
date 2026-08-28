@@ -558,7 +558,7 @@ def test_validate_batch_request_item_invalid_identity(
         identity_defs,
         resource_defs
     )
-    assert r['batch_errors'][0] is not None
+    assert r['batch'][0] is not None
 
 
 def test_validate_batch_request_item_overrides_resource(
@@ -710,11 +710,7 @@ def test_evaluate_one_query_failure_applicable_on_failure(
 
 
 def test_audit_applicable_grant(admin_request, allow_grant):
-    r = audit(
-        admin_request,
-        [allow_grant],
-        execute
-    )
+    r = audit(admin_request, [allow_grant], execute)
     assert r['results'][0]['is_applicable'] is True
     assert r['error'] is None
 
@@ -724,11 +720,7 @@ def test_audit_no_applicable_grant(guest_request, allow_grant):
 
 
 def test_audit_failure_recorded(admin_request, allow_grant):
-    r = audit(
-        admin_request,
-        [allow_grant],
-        failing_execute
-    )
+    r = audit(admin_request, [allow_grant], failing_execute)
     assert r['results'][0]['is_applicable'] is False
     assert r['results'][0]['failure'] is not None
 
@@ -740,11 +732,7 @@ def test_audit_empty_grants(admin_request):
 
 
 def test_authorize_allow_grant(admin_request, allow_grant):
-    r = authorize(
-        admin_request,
-        [allow_grant],
-        execute
-    )
+    r = authorize(admin_request, [allow_grant], execute)
     assert r['is_authorized'] is True
     assert r['grant'] == allow_grant
 
@@ -760,11 +748,7 @@ def test_authorize_deny_grant(banned_request, allow_grant, deny_grant):
 
 
 def test_authorize_no_applicable_grant(guest_request, allow_grant):
-    r = authorize(
-        guest_request,
-        [allow_grant],
-        execute
-    )
+    r = authorize(guest_request, [allow_grant], execute)
     assert r['is_authorized'] is False
     assert r['grant'] is None
     assert "implicitly denied" in r['message']
@@ -779,21 +763,13 @@ def test_authorize_deny_checked_before_allow(
         **deny_grant,
         "query": "request.identities.User[0].role == 'admin'"
     }
-    r = authorize(
-        admin_request,
-        [allow_grant, deny],
-        execute
-    )
+    r = authorize(admin_request, [allow_grant, deny], execute)
     assert r['is_authorized'] is False
     assert r['grant']['effect'] == "deny"
 
 
 def test_batch_audit_basic(base_batch, allow_grant):
-    r = batch_audit(
-        base_batch,
-        [allow_grant],
-        execute
-    )
+    r = batch_audit(base_batch, [allow_grant], execute)
     assert len(r['batch']) == 1
     assert r['batch'][0]['results'][0]['is_applicable'] is True
 
@@ -829,11 +805,7 @@ def test_batch_audit_multiple_items(base_batch, allow_grant):
 
 
 def test_batch_authorize_basic(base_batch, allow_grant):
-    r = batch_authorize(
-        base_batch,
-        [allow_grant],
-        execute
-    )
+    r = batch_authorize(base_batch, [allow_grant], execute)
     assert r['batch'][0]['is_authorized'] is True
 
 

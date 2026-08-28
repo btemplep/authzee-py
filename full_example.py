@@ -33,7 +33,6 @@ authz = Authzee(
     storage_kwargs={ # KWArgs for storage module instances
         "storage_dict": storage_dict
     },
-    compute_storage_kwargs=None, # Optional override storage KWArgs for compute module
     config={ # Optional AuthzeeConfigOverride
         "authzee": {
             "raise_errors": True # raise exceptions on errors

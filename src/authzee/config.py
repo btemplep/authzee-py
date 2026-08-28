@@ -82,9 +82,9 @@ default_config: AuthzeeConfig = {
         "get_context_def": {
             "use_cache": True
         },
-        "use_list_context_defs": True,
+        "use_list_context_defs": False,
         "list_context_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
         "get_identity_def": {
@@ -92,15 +92,15 @@ default_config: AuthzeeConfig = {
         },
         "use_list_identity_defs": True,
         "list_identity_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
         "get_resource_def": {
             "use_cache": True
         },
-        "use_list_resource_defs": True,
+        "use_list_resource_defs": False,
         "list_resource_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         }
     },
@@ -110,7 +110,7 @@ default_config: AuthzeeConfig = {
         },
         "use_list_context_defs": True,
         "list_context_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
         "get_identity_def": {
@@ -118,7 +118,7 @@ default_config: AuthzeeConfig = {
         },
         "use_list_identity_defs": True,
         "list_identity_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
         "get_resource_def": {
@@ -126,7 +126,7 @@ default_config: AuthzeeConfig = {
         },
         "use_list_resource_defs": True,
         "list_resource_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         }
     },
@@ -135,9 +135,9 @@ default_config: AuthzeeConfig = {
             "get_context_def": {
                 "use_cache": True
             },
-            "use_list_context_defs": True,
+            "use_list_context_defs": False,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -145,15 +145,15 @@ default_config: AuthzeeConfig = {
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
                 "use_cache": True
             },
-            "use_list_resource_defs": True,
+            "use_list_resource_defs": False,
             "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
@@ -169,7 +169,7 @@ default_config: AuthzeeConfig = {
             },
             "use_list_context_defs": True,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -177,7 +177,7 @@ default_config: AuthzeeConfig = {
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
@@ -185,7 +185,7 @@ default_config: AuthzeeConfig = {
             },
             "use_list_resource_defs": True,
             "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
@@ -199,9 +199,9 @@ default_config: AuthzeeConfig = {
             "get_context_def": {
                 "use_cache": True
             },
-            "use_list_context_defs": True,
+            "use_list_context_defs": False,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -209,23 +209,23 @@ default_config: AuthzeeConfig = {
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
                 "use_cache": True
             },
-            "use_list_resource_defs": True,
+            "use_list_resource_defs": False,
             "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
         "list_grants": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
-        "parallel_paging": True,
+        "parallel_paging": False,
         "list_grant_refs": {
             "page_size": 10,
             "use_cache": True
@@ -238,7 +238,7 @@ default_config: AuthzeeConfig = {
             },
             "use_list_context_defs": True,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -246,7 +246,7 @@ default_config: AuthzeeConfig = {
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
@@ -254,41 +254,15 @@ default_config: AuthzeeConfig = {
             },
             "use_list_resource_defs": True,
             "list_resource_defs": {
-                "page_size": 100,
-                "use_cache": True
-            }
-        },
-        "validate_request": {
-            "get_context_def": {
-                "use_cache": True
-            },
-            "use_list_context_defs": True,
-            "list_context_defs": {
-                "page_size": 100,
-                "use_cache": True
-            },
-            "get_identity_def": {
-                "use_cache": True
-            },
-            "use_list_identity_defs": True,
-            "list_identity_defs": {
-                "page_size": 100,
-                "use_cache": True
-            },
-            "get_resource_def": {
-                "use_cache": True
-            },
-            "use_list_resource_defs": True,
-            "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
         "list_grants": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
-        "parallel_paging": True,
+        "parallel_paging": False,
         "list_grant_refs": {
             "page_size": 10,
             "use_cache": True

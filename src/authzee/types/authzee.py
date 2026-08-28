@@ -29,10 +29,11 @@ __all__ = [
     "ResourceDefResult",
     "ResourceDefsPage",
     "StorageLatch",
-    "StorageLatchResult"
+    "StorageLatchResult",
+    "ValidateBatchRequestResult"
 ]
 
-from typing import Any, Dict, List, Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
 
 AnyJSON = (
@@ -106,7 +107,7 @@ class ContextDef(TypedDict):
     ```
     """
     context_type: str
-    schema: Dict[str, AnyJSON]
+    schema: dict[str, AnyJSON]
 
 
 class ContextDefResult(TypedDict):
@@ -170,7 +171,7 @@ class ContextDefsPage(TypedDict):
     }
     ```
     """
-    context_defs: List[ContextDef]
+    context_defs: list[ContextDef]
     next_page_ref: str | None
     error: AuthzeeError | None
 
@@ -261,7 +262,7 @@ class IdentityDefsPage(TypedDict):
     }
     ```
     """
-    identity_defs: List[IdentityDef]
+    identity_defs: list[IdentityDef]
     next_page_ref: str | None
     error: AuthzeeError | None
 
@@ -291,7 +292,7 @@ class ResourceDef(TypedDict):
     ```
     """
     resource_type: str
-    actions: List[str]
+    actions: list[str]
     schema: dict
 
 
@@ -362,7 +363,7 @@ class ResourceDefsPage(TypedDict):
     }
     ```
     """
-    resource_defs: List[ResourceDef]
+    resource_defs: list[ResourceDef]
     next_page_ref: str | None
     error: AuthzeeError | None
 
@@ -398,13 +399,13 @@ class Grant(TypedDict):
     grant_uuid: str
     name: str
     description: str
-    tags: Dict[str, str]
+    tags: dict[str, str]
     effect: Literal["allow", "deny"]
-    actions: List[str]
+    actions: list[str]
     query: str
     equality: AnyJSON
     applicable_on_failure: bool
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
 
 class GrantResult(TypedDict):
@@ -476,7 +477,7 @@ class GrantsPage(TypedDict):
     }
     ```
     """
-    grants: List[Grant]
+    grants: list[Grant]
     next_page_ref: str | None
     error: AuthzeeError | None
 
@@ -501,7 +502,7 @@ class PageRefsPage(TypedDict):
     }
     ```
     """
-    page_refs: List[str]
+    page_refs: list[str]
     next_page_ref: str | None
     error: AuthzeeError | None
 
@@ -580,15 +581,15 @@ class AuthzeeRequest(TypedDict):
     }
     ```
     """
-    identities: Dict[
+    identities: dict[
         str,
-        List[Dict[str, AnyJSON]]
+        list[dict[str, AnyJSON]]
     ]
     action: str
     resource_type: str
-    resource: Dict[str, AnyJSON]
+    resource: dict[str, AnyJSON]
     context_type: str
-    context: Dict[str, AnyJSON]
+    context: dict[str, AnyJSON]
 
 
 class BatchItem(TypedDict, total=False):
@@ -618,14 +619,14 @@ class BatchItem(TypedDict, total=False):
     }
     ```
     """
-    identities: Dict[
+    identities: dict[
         str,
-        List[Dict[str, AnyJSON]]
+        list[dict[str, AnyJSON]]
     ] | None
     resource_type: str | None
-    resource: Dict[str, AnyJSON] | None
+    resource: dict[str, AnyJSON] | None
     context_type: str | None
-    context: Dict[str, AnyJSON] | None
+    context: dict[str, AnyJSON] | None
 
 
 class AuthzeeBatchRequest(TypedDict):
@@ -665,16 +666,40 @@ class AuthzeeBatchRequest(TypedDict):
     }
     ```
     """
-    identities: Dict[
+    identities: dict[
         str,
-        List[Dict[str, AnyJSON]]
+        list[dict[str, AnyJSON]]
     ]
     action: str
     resource_type: str
-    resource: Dict[str, AnyJSON]
+    resource: dict[str, AnyJSON]
     context_type: str
-    context: Dict[str, AnyJSON]
-    batch: List[BatchItem]
+    context: dict[str, AnyJSON]
+    batch: list[BatchItem]
+
+
+class ValidateBatchRequestResult(TypedDict):
+    """Result for validating a batch request.
+
+    Examples
+    --------
+    ```python
+    {
+        "error": { # OR None
+            "error_type": "request",
+            "message": "This is a batch level error, and the whole think fails,
+        },
+        "batch": [
+            None,
+            { # OR None
+                "error_type": "request",
+                "message": "This is an error for the batch item."
+            }
+        ]
+    }
+    """
+    error: AuthzeeError | None
+    batch: list[GenericResult]
 
 
 class ExecuteResult(TypedDict):
@@ -782,7 +807,7 @@ class AuditResultPage(TypedDict):
     }
     ```
     """
-    results: List[AuditResultItem]
+    results: list[AuditResultItem]
     next_page_ref: str | None
     error: AuthzeeError | None
 
@@ -847,7 +872,7 @@ class BatchAuditResultItem(TypedDict):
     }
     ```
     """
-    results: List[EvaluateResult]
+    results: list[EvaluateResult]
     error: AuthzeeError | None
 
 
@@ -896,8 +921,8 @@ class BatchAuditResultPage(TypedDict):
     }
     ```
     """
-    grants: List[Grant]
-    batch: List[BatchAuditResultItem]
+    grants: list[Grant]
+    batch: list[BatchAuditResultItem]
     next_page_ref: str | None
     error: AuthzeeError | None
 
@@ -939,5 +964,5 @@ class BatchAuthorizeResult(TypedDict):
     }
     ```
     """
-    batch: List[AuthorizeResult]
+    batch: list[AuthorizeResult]
     error: AuthzeeError | None

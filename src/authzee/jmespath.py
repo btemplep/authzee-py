@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 import re
-from typing import Any, Dict, List, Union
+from typing import Any
 
 
 try:
@@ -91,22 +91,25 @@ class CustomJMESPathFunctions(functions.Functions):
     )
     def _func_inner_join(
         self,
-        lhs: List[Any],
-        rhs: List[Any],
+        lhs: list[Any],
+        rhs: list[Any],
         expr: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         result = []
         for l in lhs:
             for r in rhs:
                 # expref.visit(expref.expression, element) # this is how they do it internal to jmespath python??
-                if search(
-                    expr,
-                    {
-                        "lhs": l,
-                        "rhs": r
-                    },
-                    options=self._custom_options
-                ) is True:
+                if (
+                    search(
+                        expr,
+                        {
+                            "lhs": l,
+                            "rhs": r
+                        },
+                        options=self._custom_options
+                    )
+                    is True
+                ):
                     result.append(
                         {
                             "lhs": l,
@@ -136,10 +139,10 @@ class CustomJMESPathFunctions(functions.Functions):
     )
     def _func_left_join(
         self,
-        lhs: List[Any],
-        rhs: List[Any],
+        lhs: list[Any],
+        rhs: list[Any],
         expr: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         result = []
         for l in lhs:
             lhs_match = False
@@ -190,10 +193,10 @@ class CustomJMESPathFunctions(functions.Functions):
     )
     def _func_outer_join(
         self,
-        lhs: List[Any],
-        rhs: List[Any],
+        lhs: list[Any],
+        rhs: list[Any],
         expr: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         result = []
         unmatched_rhs = set(rhs)
         for l in lhs:
@@ -272,8 +275,8 @@ class CustomJMESPathFunctions(functions.Functions):
     )
     def _func_regex_find(
         pattern: str,
-        subject: Union[str, List[str]]
-    ) -> Union[None, str, List[Union[None, str]]]:
+        subject: str | list[str]
+    ) -> None | str | list[None | str]:
         if type(subject) is str:
             match = re.search(pattern, subject)
             if match is not None:
@@ -309,8 +312,8 @@ class CustomJMESPathFunctions(functions.Functions):
     )
     def _func_regex_find_all(
         pattern: str,
-        subject: Union[str, List[str]]
-    ) -> Union[List[str], List[List[str]]]:
+        subject: str | list[str]
+    ) -> list[str] | list[list[str]]:
         if type(subject) is str:
             return re.findall(pattern, subject)
 
@@ -337,8 +340,8 @@ class CustomJMESPathFunctions(functions.Functions):
     )
     def _func_regex_groups(
         pattern: str,
-        subject: Union[str, List[str]]
-    ) -> Union[None, List[Union[None, str]], List[Union[None, List[Union[None, str]]]]]:
+        subject: str | list[str]
+    ) -> None | list[None | str] | list[None | list[None | str]]:
         if type(subject) is str:
             match = re.search(pattern, subject)
             if match is not None:
@@ -374,8 +377,8 @@ class CustomJMESPathFunctions(functions.Functions):
     )
     def _func_regex_groups_all(
         pattern: str,
-        subject: Union[str, List[str]]
-    ) -> Union[List[str], List[List[str]]]:
+        subject: str | list[str]
+    ) -> list[str] | list[list[str]]:
         if type(subject) is str:
             return [list(m.groups()) if m is not None else None for m in re.finditer(pattern, subject)]
 

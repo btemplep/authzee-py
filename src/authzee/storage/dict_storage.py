@@ -8,7 +8,6 @@ __all__ = [
 ]
 
 import datetime
-from typing import List
 from uuid import uuid4
 
 from authzee.module_locality import ModuleLocality
@@ -45,6 +44,42 @@ from authzee.types.config import (
 
 
 class DictStorage(StorageModule):
+    """Storage module that keeps all Authzee data in a Python dict in main memory.
+
+    Context, identity, and resource definitions, grants, and storage latches are all
+    stored within the given `storage_dict`. Because the data lives in a plain dict, it
+    is only shared by objects that reference the same dict and does not persist beyond
+    the lifetime of that dict.
+
+    This storage module supports parallel pagination.
+    There is not really any penalty for using parallel pagination because it is just a python dict.
+
+    Parameters
+    ----------
+    storage_dict : dict
+        The dict used to hold all storage data. The same dict must be passed to every
+        `DictStorage` instance that should share state.
+
+    Examples
+    --------
+
+    ```python
+    from authzee import Authzee, DictStorage, InProcessCompute, jmespath_execute
+
+    storage_dict = {}
+    authz = Authzee(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        }
+    )
+    authz.construct()
+    authz.start()
+    ```
+    """
 
 
     def __init__(self, storage_dict: dict):
@@ -358,7 +393,7 @@ class DictStorage(StorageModule):
         else:
             start_index = int(page_ref)
 
-        grants: List[Grant] = list(self._storage_dict['grants_lut'].values())
+        grants: list[Grant] = list(self._storage_dict['grants_lut'].values())
         if effect is not None:
             grants = [g for g in grants if g['effect'] == effect]
 
@@ -386,7 +421,7 @@ class DictStorage(StorageModule):
         else:
             start_index = int(page_ref)
 
-        grants: List[Grant] = list(self._storage_dict['grants_lut'].values())
+        grants: list[Grant] = list(self._storage_dict['grants_lut'].values())
         if effect is not None:
             grants = [g for g in grants if g['effect'] == effect]
 

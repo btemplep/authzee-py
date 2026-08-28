@@ -6,7 +6,7 @@ See [](authzee.authzee.Authzee)
 or [](authzee.authzee_async.AuthzeeAsync) for asyncio support!
 """
 
-__version__ = "0.1.0a5"
+__version__ = "0.1.0a6"
 
 __all__ = [
     "Authzee",
@@ -28,7 +28,7 @@ from loguru import logger
 
 logger.disable("authzee")
 
-authzee_specification_version = "0.4.0"
+authzee_specification_version = "0.5.0"
 
 from authzee import exceptions, reference, types
 from authzee.authzee import Authzee

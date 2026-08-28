@@ -11,10 +11,10 @@ import pytest
 
 from authzee import (
     Authzee,
-    DictStorage,
-    InProcessCompute,
     authzee_specification_version,
+    DictStorage,
     exceptions,
+    InProcessCompute,
     jmespath_execute,
     paginator
 )
@@ -448,7 +448,8 @@ def test_delete_context_def_not_found(authz):
 
 def test_validate_context_def_with_config(authz, context_def):
     result = authz.validate_context_def(
-        context_def, config={
+        context_def,
+        config={
             "authzee": {
                 "raise_errors": True
             }
@@ -459,7 +460,8 @@ def test_validate_context_def_with_config(authz, context_def):
 
 def test_put_context_def_with_config(authz, context_def):
     result = authz.put_context_def(
-        context_def, config={
+        context_def,
+        config={
             "authzee": {
                 "raise_errors": False
             }
@@ -560,7 +562,8 @@ def test_delete_identity_def_not_found(authz):
 
 def test_validate_identity_def_with_config(authz, identity_def):
     result = authz.validate_identity_def(
-        identity_def, config={
+        identity_def,
+        config={
             "authzee": {
                 "raise_errors": True
             }
@@ -664,7 +667,8 @@ def test_delete_resource_def_not_found(authz):
 
 def test_validate_resource_def_with_config(authz, resource_def):
     result = authz.validate_resource_def(
-        resource_def, config={
+        resource_def,
+        config={
             "authzee": {
                 "raise_errors": True
             }
@@ -882,7 +886,8 @@ def test_authorize_denied_by_deny_grant(seeded_authz, deny_grant):
 
 def test_authorize_with_config(seeded_authz, auth_request):
     result = seeded_authz.authorize(
-        request=auth_request, config={
+        request=auth_request,
+        config={
             "authzee": {
                 "raise_errors": True
             }
@@ -916,7 +921,8 @@ def test_audit_paginator(seeded_authz, auth_request):
 
 def test_audit_with_config(seeded_authz, auth_request):
     result = seeded_authz.audit(
-        request=auth_request, config={
+        request=auth_request,
+        config={
             "authzee": {
                 "raise_errors": True
             }
@@ -940,7 +946,8 @@ def test_batch_authorize_all_authorized(seeded_authz, batch_request):
 
 def test_batch_authorize_with_config(seeded_authz, batch_request):
     result = seeded_authz.batch_authorize(
-        batch_request=batch_request, config={
+        batch_request=batch_request,
+        config={
             "authzee": {
                 "raise_errors": True
             }
@@ -972,7 +979,8 @@ def test_batch_audit_paginator(seeded_authz, batch_request):
 
 def test_batch_audit_with_config(seeded_authz, batch_request):
     result = seeded_authz.batch_audit(
-        batch_request=batch_request, config={
+        batch_request=batch_request,
+        config={
             "authzee": {
                 "raise_errors": True
             }
@@ -1089,26 +1097,6 @@ def test_raise_errors_grant_error():
                 "effect": "bad"
             }
         )
-
-
-def test_compute_storage_kwargs_override():
-    """Test that compute_storage_kwargs is accepted."""
-    storage_dict = {}
-    authz = Authzee(
-        execute=jmespath_execute,
-        compute_type=InProcessCompute,
-        compute_kwargs={},
-        storage_type=DictStorage,
-        storage_kwargs={
-            "storage_dict": storage_dict
-        },
-        compute_storage_kwargs={
-            "storage_dict": storage_dict
-        }
-    )
-    authz.construct()
-    result = authz.start()
-    assert result['error'] is None
 
 
 def test_put_context_def_overwrite(authz, context_def):
