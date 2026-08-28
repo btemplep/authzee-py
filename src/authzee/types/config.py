@@ -60,6 +60,7 @@ class AuthzeeBaseConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "raise_errors": True
@@ -82,6 +83,7 @@ class StorageStartConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -97,6 +99,7 @@ class ComputeStartConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "storage": {}
@@ -119,6 +122,7 @@ class StartConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "compute_start": {
@@ -147,6 +151,7 @@ class StorageShutdownConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -162,6 +167,7 @@ class ComputeShutdownConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "storage": {}
@@ -184,6 +190,7 @@ class ShutdownConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "compute_shutdown": {
@@ -212,6 +219,7 @@ class ComputeConstructConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -227,6 +235,7 @@ class StorageConstructConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -242,6 +251,7 @@ class ConstructConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "compute_construct": {},
@@ -268,6 +278,7 @@ class ComputeDestroyConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -283,6 +294,7 @@ class StorageDestroyConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -298,6 +310,7 @@ class DestroyConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "compute_destroy": {},
@@ -324,6 +337,7 @@ class ListContextDefsConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "page_size": 100,
@@ -350,6 +364,7 @@ class ListIdentityDefsConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "page_size": 100,
@@ -376,6 +391,7 @@ class ListResourceDefsConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "page_size": 100,
@@ -402,6 +418,7 @@ class ListGrantsConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "page_size": 100,
@@ -428,6 +445,7 @@ class ValidateContextDefConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -443,6 +461,7 @@ class GetContextDefConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "use_cache": False
@@ -465,6 +484,7 @@ class PutContextDefConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -480,6 +500,7 @@ class DeleteContextDefConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -495,6 +516,7 @@ class ValidateIdentityDefConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -510,6 +532,7 @@ class GetIdentityDefConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "use_cache": False
@@ -532,6 +555,7 @@ class PutIdentityDefConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -547,6 +571,7 @@ class DeleteIdentityDefConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -562,6 +587,7 @@ class ValidateResourceDefConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -577,6 +603,7 @@ class GetResourceDefConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "use_cache": False
@@ -599,6 +626,7 @@ class PutResourceDefConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -614,6 +642,7 @@ class DeleteResourceDefConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -629,6 +658,7 @@ class ValidateGrantConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -644,6 +674,7 @@ class GetGrantConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "use_cache": False
@@ -666,6 +697,7 @@ class EnactConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -681,6 +713,7 @@ class RepealConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -696,6 +729,7 @@ class CreateLatchConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -711,6 +745,7 @@ class GetLatchConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -726,6 +761,7 @@ class SetLatchConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -741,6 +777,7 @@ class DeleteLatchConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -756,6 +793,7 @@ class CleanupLatchesConfig(TypedDict):
 
     Examples
     --------
+    Example (the default is an empty dict):
     ```python
     {}
     ```
@@ -771,6 +809,7 @@ class ListGrantRefsConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "page_size": 10,
@@ -797,14 +836,15 @@ class ValidateRequestConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "get_context_def": {
             "use_cache": True
         },
-        "use_list_context_defs": True,
+        "use_list_context_defs": False,
         "list_context_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
         "get_identity_def": {
@@ -812,15 +852,15 @@ class ValidateRequestConfig(TypedDict):
         },
         "use_list_identity_defs": True,
         "list_identity_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
         "get_resource_def": {
             "use_cache": True
         },
-        "use_list_resource_defs": True,
+        "use_list_resource_defs": False,
         "list_resource_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         }
     }
@@ -866,6 +906,7 @@ class ValidateBatchRequestConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "get_context_def": {
@@ -873,7 +914,7 @@ class ValidateBatchRequestConfig(TypedDict):
         },
         "use_list_context_defs": True,
         "list_context_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
         "get_identity_def": {
@@ -881,7 +922,7 @@ class ValidateBatchRequestConfig(TypedDict):
         },
         "use_list_identity_defs": True,
         "list_identity_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
         "get_resource_def": {
@@ -889,7 +930,7 @@ class ValidateBatchRequestConfig(TypedDict):
         },
         "use_list_resource_defs": True,
         "list_resource_defs": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         }
     }
@@ -935,15 +976,16 @@ class AuditConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "validate_request": {
             "get_context_def": {
                 "use_cache": True
             },
-            "use_list_context_defs": True,
+            "use_list_context_defs": False,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -951,15 +993,15 @@ class AuditConfig(TypedDict):
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
                 "use_cache": True
             },
-            "use_list_resource_defs": True,
+            "use_list_resource_defs": False,
             "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
@@ -989,6 +1031,7 @@ class BatchAuditConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "validate_batch_request": {
@@ -997,7 +1040,7 @@ class BatchAuditConfig(TypedDict):
             },
             "use_list_context_defs": True,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -1005,7 +1048,7 @@ class BatchAuditConfig(TypedDict):
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
@@ -1013,7 +1056,7 @@ class BatchAuditConfig(TypedDict):
             },
             "use_list_resource_defs": True,
             "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
@@ -1043,15 +1086,16 @@ class AuthorizeConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "validate_request": {
             "get_context_def": {
                 "use_cache": True
             },
-            "use_list_context_defs": True,
+            "use_list_context_defs": False,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -1059,23 +1103,23 @@ class AuthorizeConfig(TypedDict):
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
                 "use_cache": True
             },
-            "use_list_resource_defs": True,
+            "use_list_resource_defs": False,
             "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
         "list_grants": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
-        "parallel_paging": True,
+        "parallel_paging": False,
         "list_grant_refs": {
             "page_size": 10,
             "use_cache": True
@@ -1108,6 +1152,7 @@ class BatchAuthorizeConfig(TypedDict):
 
     Examples
     --------
+    Example showing the default values:
     ```python
     {
         "validate_batch_request": {
@@ -1116,7 +1161,7 @@ class BatchAuthorizeConfig(TypedDict):
             },
             "use_list_context_defs": True,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -1124,7 +1169,7 @@ class BatchAuthorizeConfig(TypedDict):
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
@@ -1132,41 +1177,15 @@ class BatchAuthorizeConfig(TypedDict):
             },
             "use_list_resource_defs": True,
             "list_resource_defs": {
-                "page_size": 100,
-                "use_cache": True
-            }
-        },
-        "validate_request": {
-            "get_context_def": {
-                "use_cache": True
-            },
-            "use_list_context_defs": True,
-            "list_context_defs": {
-                "page_size": 100,
-                "use_cache": True
-            },
-            "get_identity_def": {
-                "use_cache": True
-            },
-            "use_list_identity_defs": True,
-            "list_identity_defs": {
-                "page_size": 100,
-                "use_cache": True
-            },
-            "get_resource_def": {
-                "use_cache": True
-            },
-            "use_list_resource_defs": True,
-            "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
         "list_grants": {
-            "page_size": 100,
+            "page_size": 1000,
             "use_cache": True
         },
-        "parallel_paging": True,
+        "parallel_paging": False,
         "list_grant_refs": {
             "page_size": 10,
             "use_cache": True
@@ -1178,8 +1197,6 @@ class BatchAuthorizeConfig(TypedDict):
     ----------
     validate_batch_request : ValidateBatchRequestConfig
         Config for validating batch requests during authorization.
-    validate_request : ValidateRequestConfig
-        Config for validating requests during authorization.
     list_grants : ListGrantsConfig
         Config for listing grants during authorization.
     parallel_paging : bool
@@ -1188,7 +1205,6 @@ class BatchAuthorizeConfig(TypedDict):
         Config for listing grant references during authorization.
     """
     validate_batch_request: ValidateBatchRequestConfig
-    validate_request: ValidateRequestConfig
     list_grants: ListGrantsConfig
     parallel_paging: bool
     list_grant_refs: ListGrantRefsConfig
@@ -1289,9 +1305,9 @@ class AuthzeeConfig(TypedDict):
             "get_context_def": {
                 "use_cache": True
             },
-            "use_list_context_defs": True,
+            "use_list_context_defs": False,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -1299,15 +1315,15 @@ class AuthzeeConfig(TypedDict):
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
                 "use_cache": True
             },
-            "use_list_resource_defs": True,
+            "use_list_resource_defs": False,
             "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
@@ -1317,7 +1333,7 @@ class AuthzeeConfig(TypedDict):
             },
             "use_list_context_defs": True,
             "list_context_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_identity_def": {
@@ -1325,7 +1341,7 @@ class AuthzeeConfig(TypedDict):
             },
             "use_list_identity_defs": True,
             "list_identity_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
             "get_resource_def": {
@@ -1333,7 +1349,7 @@ class AuthzeeConfig(TypedDict):
             },
             "use_list_resource_defs": True,
             "list_resource_defs": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             }
         },
@@ -1342,9 +1358,9 @@ class AuthzeeConfig(TypedDict):
                 "get_context_def": {
                     "use_cache": True
                 },
-                "use_list_context_defs": True,
+                "use_list_context_defs": False,
                 "list_context_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 },
                 "get_identity_def": {
@@ -1352,15 +1368,15 @@ class AuthzeeConfig(TypedDict):
                 },
                 "use_list_identity_defs": True,
                 "list_identity_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 },
                 "get_resource_def": {
                     "use_cache": True
                 },
-                "use_list_resource_defs": True,
+                "use_list_resource_defs": False,
                 "list_resource_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 }
             },
@@ -1376,7 +1392,7 @@ class AuthzeeConfig(TypedDict):
                 },
                 "use_list_context_defs": True,
                 "list_context_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 },
                 "get_identity_def": {
@@ -1384,7 +1400,7 @@ class AuthzeeConfig(TypedDict):
                 },
                 "use_list_identity_defs": True,
                 "list_identity_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 },
                 "get_resource_def": {
@@ -1392,7 +1408,7 @@ class AuthzeeConfig(TypedDict):
                 },
                 "use_list_resource_defs": True,
                 "list_resource_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 }
             },
@@ -1406,9 +1422,9 @@ class AuthzeeConfig(TypedDict):
                 "get_context_def": {
                     "use_cache": True
                 },
-                "use_list_context_defs": True,
+                "use_list_context_defs": False,
                 "list_context_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 },
                 "get_identity_def": {
@@ -1416,23 +1432,23 @@ class AuthzeeConfig(TypedDict):
                 },
                 "use_list_identity_defs": True,
                 "list_identity_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 },
                 "get_resource_def": {
                     "use_cache": True
                 },
-                "use_list_resource_defs": True,
+                "use_list_resource_defs": False,
                 "list_resource_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 }
             },
             "list_grants": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
-            "parallel_paging": True,
+            "parallel_paging": False,
             "list_grant_refs": {
                 "page_size": 10,
                 "use_cache": True
@@ -1445,7 +1461,7 @@ class AuthzeeConfig(TypedDict):
                 },
                 "use_list_context_defs": True,
                 "list_context_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 },
                 "get_identity_def": {
@@ -1453,7 +1469,7 @@ class AuthzeeConfig(TypedDict):
                 },
                 "use_list_identity_defs": True,
                 "list_identity_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 },
                 "get_resource_def": {
@@ -1461,41 +1477,15 @@ class AuthzeeConfig(TypedDict):
                 },
                 "use_list_resource_defs": True,
                 "list_resource_defs": {
-                    "page_size": 100,
-                    "use_cache": True
-                }
-            },
-            "validate_request": {
-                "get_context_def": {
-                    "use_cache": True
-                },
-                "use_list_context_defs": True,
-                "list_context_defs": {
-                    "page_size": 100,
-                    "use_cache": True
-                },
-                "get_identity_def": {
-                    "use_cache": True
-                },
-                "use_list_identity_defs": True,
-                "list_identity_defs": {
-                    "page_size": 100,
-                    "use_cache": True
-                },
-                "get_resource_def": {
-                    "use_cache": True
-                },
-                "use_list_resource_defs": True,
-                "list_resource_defs": {
-                    "page_size": 100,
+                    "page_size": 1000,
                     "use_cache": True
                 }
             },
             "list_grants": {
-                "page_size": 100,
+                "page_size": 1000,
                 "use_cache": True
             },
-            "parallel_paging": True,
+            "parallel_paging": False,
             "list_grant_refs": {
                 "page_size": 10,
                 "use_cache": True

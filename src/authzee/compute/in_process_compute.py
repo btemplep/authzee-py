@@ -7,7 +7,7 @@ __all__ = [
     "InProcessCompute"
 ]
 
-from asyncio import as_completed, create_task, gather, Task
+from asyncio import create_task, gather, Task
 import copy
 from typing import Any, Callable, Type
 
@@ -46,6 +46,43 @@ from authzee.types.config import (
 
 
 class InProcessCompute(ComputeModule):
+    """Compute module that processes authorization requests in the local process.
+
+    All compute is performed within the same process and `asyncio` event loop as the
+    caller. It uses the given execute function to evaluate grant queries and a
+    [](authzee.storage.storage_module.StorageModule) instance to retrieve definitions
+    and grants. Request and batch-request validation caching is self contained per
+    request.
+
+    This module takes no constructor arguments. It is not meant to be instantiated or
+    started directly. Instead, pass the class to the [](authzee.authzee.Authzee) (or
+    [](authzee.authzee_async.AuthzeeAsync)) app as `compute_type`, and the app manages
+    its lifecycle.
+
+    Parameters
+    ----------
+    None
+
+    Examples
+    --------
+
+    ```python
+    from authzee import Authzee, DictStorage, InProcessCompute, jmespath_execute
+
+    storage_dict = {}
+    authz = Authzee(
+        execute=jmespath_execute,
+        compute_type=InProcessCompute,
+        compute_kwargs={},
+        storage_type=DictStorage,
+        storage_kwargs={
+            "storage_dict": storage_dict
+        }
+    )
+    authz.construct()
+    authz.start()
+    ```
+    """
 
 
     async def start(

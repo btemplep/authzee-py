@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
-## [0.1.0a6] - 2026-08-25
+## [0.1.0a6] - TBD
 
 Support for Authzee spec 0.5.0.
 
@@ -42,6 +42,9 @@ Support for Authzee spec 0.5.0.
 - `validate_request` in `InProcessCompute` now respects the full `ValidateRequestConfig`
     - Uses `use_list_context_defs`, `use_list_identity_defs`, `use_list_resource_defs` config options
 - `validate_batch_request` in `InProcessCompute` now returns per-item errors in `batch` instead of failing fast
+- `InProcessCompute`
+    - Updated `validate_request` and `validate_batch_request` to be much more efficient, and fully support all config options for `get_*` vs `list_*`.
+- Default config - parallel paging set to false by default.
 
 ### Removed
 

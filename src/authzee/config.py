@@ -225,7 +225,7 @@ default_config: AuthzeeConfig = {
             "page_size": 1000,
             "use_cache": True
         },
-        "parallel_paging": True,
+        "parallel_paging": False,
         "list_grant_refs": {
             "page_size": 10,
             "use_cache": True
@@ -262,7 +262,7 @@ default_config: AuthzeeConfig = {
             "page_size": 1000,
             "use_cache": True
         },
-        "parallel_paging": True,
+        "parallel_paging": False,
         "list_grant_refs": {
             "page_size": 10,
             "use_cache": True
