@@ -7,9 +7,9 @@ __all__ = [
     "StorageModule"
 ]
 
+from abc import ABC, abstractmethod
 import datetime
 
-from authzee.exceptions import NotImplementedError
 from authzee.module_locality import ModuleLocality
 from authzee.types.authzee import *
 from authzee.types.config import (
@@ -42,13 +42,10 @@ from authzee.types.config import (
 )
 
 
-class StorageModule:
+class StorageModule(ABC):
 
 
-    def __init__(self):
-        pass
-
-
+    @abstractmethod
     async def start(self, config: StorageStartConfig) -> GenericResult:
         """Start up storage module.
 
@@ -65,30 +62,34 @@ class StorageModule:
         }
 
 
+    @abstractmethod
     async def shutdown(self, config: StorageShutdownConfig) -> GenericResult:
         """Shutdown storage module.
 
         - clean up runtime resources
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def construct(self, config: StorageConstructConfig) -> GenericResult:
         """Construct backend resources for storage.
 
         - one time setup
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def destroy(self, config: StorageDestroyConfig) -> GenericResult:
         """Tear down backend resources.
 
         - destructive - may lose all long lasting storage resources
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def list_context_defs(
         self,
         page_ref: str | None,
@@ -98,9 +99,10 @@ class StorageModule:
 
         Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def get_context_def(
         self,
         context_type: str,
@@ -108,9 +110,10 @@ class StorageModule:
     ) -> ContextDefResult:
         """Get a context definition by type.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def put_context_def(
         self,
         context_def: ContextDef,
@@ -118,9 +121,10 @@ class StorageModule:
     ) -> GenericResult:
         """Add a new Context Definition or update an existing one.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def delete_context_def(
         self,
         context_type: str,
@@ -128,9 +132,10 @@ class StorageModule:
     ) -> GenericResult:
         """Delete a context definition by type.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def list_identity_defs(
         self,
         page_ref: str | None,
@@ -140,9 +145,10 @@ class StorageModule:
 
         Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def get_identity_def(
         self,
         identity_type: str,
@@ -150,9 +156,10 @@ class StorageModule:
     ) -> IdentityDefResult:
         """Get an identity definition by type.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def put_identity_def(
         self,
         identity_def: IdentityDef,
@@ -160,9 +167,10 @@ class StorageModule:
     ) -> GenericResult:
         """Add a new Identity Definition or update an existing one.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def delete_identity_def(
         self,
         identity_type: str,
@@ -170,9 +178,10 @@ class StorageModule:
     ) -> GenericResult:
         """Delete an identity definition by type.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def list_resource_defs(
         self,
         page_ref: str | None,
@@ -182,9 +191,10 @@ class StorageModule:
 
         Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def get_resource_def(
         self,
         resource_type: str,
@@ -192,9 +202,10 @@ class StorageModule:
     ) -> ResourceDefResult:
         """Get a resource definition by type.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def put_resource_def(
         self,
         resource_def: ResourceDef,
@@ -202,9 +213,10 @@ class StorageModule:
     ) -> GenericResult:
         """Add a new Resource Definition or update an existing one.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def delete_resource_def(
         self,
         resource_type: str,
@@ -212,15 +224,17 @@ class StorageModule:
     ) -> GenericResult:
         """Delete a resource definition by type.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def enact(self, grant: Grant, config: EnactConfig) -> GenericResult:
         """Add a new grant.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def repeal(
         self,
         grant_uuid: str,
@@ -229,9 +243,10 @@ class StorageModule:
     ) -> GenericResult:
         """Delete a grant.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def get_grant(
         self,
         grant_uuid: str,
@@ -239,9 +254,10 @@ class StorageModule:
     ) -> GrantResult:
         """Get a grant by UUID.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def list_grants(
         self,
         effect: str | None,
@@ -253,9 +269,10 @@ class StorageModule:
 
         Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def list_grant_refs(
         self,
         effect: str | None,
@@ -270,15 +287,17 @@ class StorageModule:
         For some storage modules this may not be possible.
         Check the `parallel_paging` attribute on the storage module after `start()` is complete.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def create_latch(self, config: CreateLatchConfig) -> StorageLatchResult:
         """Create a new [storage latch](#storage-latches).
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def get_latch(
         self,
         storage_latch_uuid: str,
@@ -286,9 +305,10 @@ class StorageModule:
     ) -> StorageLatchResult:
         """Get a [storage latch](#storage-latches) by UUID.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def set_latch(
         self,
         storage_latch_uuid: str,
@@ -296,9 +316,10 @@ class StorageModule:
     ) -> StorageLatchResult:
         """Set a [storage latch](#storage-latches) by UUID.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def delete_latch(
         self,
         storage_latch_uuid: str,
@@ -306,9 +327,10 @@ class StorageModule:
     ) -> GenericResult:
         """Delete a [storage latch](#storage-latches) by UUID.
         """
-        raise NotImplementedError()
+        ...
 
 
+    @abstractmethod
     async def cleanup_latches(
         self,
         before: datetime.datetime,
@@ -318,4 +340,4 @@ class StorageModule:
 
         - operations should clean up their own latches, but in case of a failure this can be used to clean up zombie latches.
         """
-        raise NotImplementedError()
+        ...

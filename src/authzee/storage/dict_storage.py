@@ -451,7 +451,7 @@ class DictStorage(StorageModule):
         latch = {
             "storage_latch_uuid": latch_uuid,
             "is_set": False,
-            "created_at": datetime.datetime.now(tz=datetime.timezone.utc)
+            "created_at": datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
         }
         self._storage_dict['latches_lut'][latch_uuid] = latch
 
@@ -523,8 +523,9 @@ class DictStorage(StorageModule):
         config: CleanupLatchesConfig
     ) -> GenericResult:
         new_lut = {}
+        before_str = before.astimezone(datetime.UTC).isoformat()
         for lu, l in self._storage_dict['latches_lut'].items():
-            if l['created_at'] > before:
+            if l['created_at'] > before_str:
                 new_lut[lu] = l
 
         self._storage_dict['latches_lut'] = new_lut

@@ -22,6 +22,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
+## [Unreleased] - YYYY-MM-DD
+
+### Added
+- `SQLStorage` - SQL based storage module.
+
+### Changed
+- `ComputeModule` and `StorageModule` base classes now inherit from ABC. 
+
+### Deprecated
+
+### Removed
+- `NotImplementedError` since base classes now use auto checks from ABC.
+
+### Fixed
+
+### Security 
+
+
 ## [0.1.0a6] - 2026-08-27
 
 Support for Authzee spec 0.5.0.
