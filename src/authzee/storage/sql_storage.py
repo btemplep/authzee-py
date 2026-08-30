@@ -9,16 +9,19 @@ import json
 from typing import Any, Literal
 from uuid import UUID
 
-from sqlalchemy.types import JSON
+from sqlalchemy import delete, event, select
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine
+)
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.types import JSON
 
-from sqlalchemy import delete, event, select
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
-
-from authzee.storage.storage_module import StorageModule
 from authzee.exceptions import StorageError
 from authzee.module_locality import ModuleLocality
+from authzee.storage.storage_module import StorageModule
 from authzee.types.authzee import *
 from authzee.types.config import (
     CleanupLatchesConfig,
@@ -50,7 +53,6 @@ from authzee.types.config import (
 )
 
 
-
 class Base(AsyncAttrs, DeclarativeBase):
     type_annotation_map = {
         dict[str, Any]: JSON,
@@ -61,21 +63,18 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 class ContextDefDB(Base):
     __tablename__ = "context_defs"
-
     context_type: Mapped[str] = mapped_column(primary_key=True, nullable=False)
     schema: Mapped[dict[str, Any]] = mapped_column(nullable=False)
 
 
 class IdentityDefDB(Base):
     __tablename__ = "identity_defs"
-
     identity_type: Mapped[str] = mapped_column(primary_key=True, nullable=False)
     schema: Mapped[dict[str, Any]]
 
 
 class ResourceDefDB(Base):
     __tablename__ = "resource_defs"
-
     resource_type: Mapped[str] = mapped_column(primary_key=True, nullable=False)
     actions: Mapped[list[str]] = mapped_column(nullable=False)
     schema: Mapped[dict[str, Any]] = mapped_column(nullable=False)
@@ -83,7 +82,6 @@ class ResourceDefDB(Base):
 
 class GrantDB(Base):
     __tablename__ = "grants"
-
     grant_uuid: Mapped[UUID] = mapped_column(primary_key=True, nullable=False)
     name: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
@@ -98,11 +96,9 @@ class GrantDB(Base):
 
 class StorageLatchDB(Base):
     __tablename__ = "storage_latches"
-
     storage_latch_uuid: Mapped[UUID] = mapped_column(primary_key=True, nullable=False)
     is_set: Mapped[bool] = mapped_column(nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(nullable=False)
-
 
 
 class SQLStorage(StorageModule):
@@ -113,53 +109,75 @@ class SQLStorage(StorageModule):
     Parameters
     ----------
     sqlalchemy_async_engine_kwargs : dict[str, Any]
-        SQLAlchemy Async Engine keyword args. 
+        SQLAlchemy Async Engine keyword args.
         https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#sqlalchemy.ext.asyncio.create_async_engine
     """
 
 
-    def __init__(
-        self,
-        *,
-        sqlalchemy_async_engine_kwargs: dict[str, Any]
-    ):
+    def __init__(self, *, sqlalchemy_async_engine_kwargs: dict[str, Any]):
         self._sqlalchemy_async_engine_kwargs = sqlalchemy_async_engine_kwargs
         self.has_parallel_paging = True
         self.locality = ModuleLocality.NETWORK
-        url = sqlalchemy_async_engine_kwargs['url']
+        url: str = sqlalchemy_async_engine_kwargs['url']
         if url.endswith("://:memory:") is True:
             self.locality = ModuleLocality.PROCESS
-        
+
         if (
             url.startswith("sqlite") is True
             or "://localhost" in url
             or "://127.0.0.1" in url
         ):
             self.locality = ModuleLocality.SYSTEM
-    
+
 
     async def start(self, config: StorageStartConfig) -> GenericResult:
-        self._engine = create_async_engine(**self._sqlalchemy_async_engine_kwargs)
-        self._async_sessionmaker: async_sessionmaker[AsyncSession] = async_sessionmaker(
-            bind=self._engine, 
-            expire_on_commit=False
-        )
+        try:
+            self._engine = create_async_engine(**self._sqlalchemy_async_engine_kwargs)
+            self._async_sessionmaker: async_sessionmaker[AsyncSession] = async_sessionmaker(
+                bind=self._engine,
+                expire_on_commit=False
+            )
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
         return {
             "error": None
         }
+
 
     async def shutdown(self, config: StorageShutdownConfig) -> GenericResult:
-        await self._engine.dispose()
+        try:
+            await self._engine.dispose()
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
         return {
             "error": None
         }
-    
+
 
     async def construct(self, config: StorageConstructConfig) -> GenericResult:
-        async with self._engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)   
+        try:
+            async with self._engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
         return {
             "error": None
@@ -167,6 +185,16 @@ class SQLStorage(StorageModule):
 
 
     async def destroy(self, config: StorageDestroyConfig) -> GenericResult:
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
         return {
             "error": None
         }
@@ -177,316 +205,400 @@ class SQLStorage(StorageModule):
         page_ref: str | None,
         config: ListContextDefsConfig
     ) -> ContextDefsPage:
-        
-
-
-    async def add_grant(self, effect: GrantEffect, grant: Grant) -> Grant:
-        """Add a grant. 
-
-        Parameters
-        ----------
-        effect : GrantEffect
-            The effect of the grant.
-        grant : Grant
-            The grant.
-
-        Returns
-        -------
-        Grant
-            The grant that has been added with additional information for the specific backend.
-        """
-        grant = self._check_uuid(grant=grant, generate_uuid=True)
-        async with self._async_sessionmaker() as session:
-            resource_action_strs = {str(action) for action in grant.actions}
-            result = await session.execute(
-                select(ResourceActionDB).where(
-                    ResourceActionDB.action.in_(resource_action_strs)
-                )
-            )
-            re_actions = set(result.scalars().fetchall())
-            grant_kwargs = {
-                "uuid": grant.uuid,
-                "name": grant.name,
-                "description": grant.description,
-                "resource_type": grant.resource_type.__name__,
-                "actions": re_actions,
-                "expression": grant.expression,
-                "context": grant.context,
-                "equality": grant.equality
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
             }
-            if effect is GrantEffect.ALLOW:
-                db_grant = AllowGrantDB(**grant_kwargs)
-            else:
-                db_grant = DenyGrantDB(**grant_kwargs)
-
-            session.add(db_grant)
-            await session.commit()
-            grant.storage_id = db_grant.storage_id
-        
-        return grant
 
 
-    async def delete_grant(self, effect: GrantEffect, uuid: str) -> None:
+    async def get_context_def(
+        self,
+        context_type: str,
+        config: GetContextDefConfig
+    ) -> ContextDefResult:
+        """Get a context definition by type.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def put_context_def(
+        self,
+        context_def: ContextDef,
+        config: PutContextDefConfig
+    ) -> GenericResult:
+        """Add a new Context Definition or update an existing one.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def delete_context_def(
+        self,
+        context_type: str,
+        config: DeleteContextDefConfig
+    ) -> GenericResult:
+        """Delete a context definition by type.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def list_identity_defs(
+        self,
+        page_ref: str | None,
+        config: ListIdentityDefsConfig
+    ) -> IdentityDefsPage:
+        """Get a page of identity definitions.
+
+        Pass the returned page reference to get the next page until a null page reference is returned.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def get_identity_def(
+        self,
+        identity_type: str,
+        config: GetIdentityDefConfig
+    ) -> IdentityDefResult:
+        """Get an identity definition by type.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def put_identity_def(
+        self,
+        identity_def: IdentityDef,
+        config: PutIdentityDefConfig
+    ) -> GenericResult:
+        """Add a new Identity Definition or update an existing one.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def delete_identity_def(
+        self,
+        identity_type: str,
+        config: DeleteIdentityDefConfig
+    ) -> GenericResult:
+        """Delete an identity definition by type.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def list_resource_defs(
+        self,
+        page_ref: str | None,
+        config: ListResourceDefsConfig
+    ) -> ResourceDefsPage:
+        """Get a page of resource definitions.
+
+        Pass the returned page reference to get the next page until a null page reference is returned.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def get_resource_def(
+        self,
+        resource_type: str,
+        config: GetResourceDefConfig
+    ) -> ResourceDefResult:
+        """Get a resource definition by type.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def put_resource_def(
+        self,
+        resource_def: ResourceDef,
+        config: PutResourceDefConfig
+    ) -> GenericResult:
+        """Add a new Resource Definition or update an existing one.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def delete_resource_def(
+        self,
+        resource_type: str,
+        config: DeleteResourceDefConfig
+    ) -> GenericResult:
+        """Delete a resource definition by type.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def enact(self, grant: Grant, config: EnactConfig) -> GenericResult:
+        """Add a new grant.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def repeal(
+        self,
+        grant_uuid: str,
+        purge: bool,
+        config: RepealConfig
+    ) -> GenericResult:
         """Delete a grant.
-
-        Parameters
-        ----------
-        effect : GrantEffect
-            The effect of the grant.
-        uuid : str
-            UUID of grant to delete.
         """
-        async with self._async_sessionmaker() as session:
-            if effect is GrantEffect.ALLOW:
-                grant_table = AllowGrantDB
-            else:
-                grant_table = DenyGrantDB
-            
-            result = await session.execute(
-                select(grant_table).where(grant_table.uuid == uuid)
-            )
-            db_grant = result.scalars().unique().one_or_none()
-            if db_grant is None:
-                raise exceptions.GrantDoesNotExistError(
-                    f"{effect.value} Grant with UUID: '{uuid}' does not exist."
-                )
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
-            await session.delete(db_grant)
-            await session.commit()
-    
 
-    async def get_raw_grants_page(
+    async def get_grant(
         self,
-        effect: GrantEffect,
-        resource_type: Optional[Type[BaseModel]] = None,
-        action: Optional[ResourceAction] = None,
-        page_size: Optional[int] = None,
-        page_ref: Optional[str] = None
-    ) -> RawGrantsPage:
-        """Retrieve a page of raw grants matching the filters.
-
-        If ``RawGrantsPage.next_page_ref`` is not ``None`` , there are more grants to retrieve.
-        To get the next page, pass ``page_ref=RawGrantsPage.next_page_ref`` .
-
-        Use ``normalize_raw_grants_page`` to convert the ``RawGrantsPage`` to a ``GrantsPage`` model.
-
-        **NOTE** - There is no guarantee of how many grants will be returned if any.
-
-        Parameters
-        ----------
-        effect : GrantEffect
-            The effect of the grant.
-        resource_type : Optional[Type[BaseModel]], optional
-            Filter by resource type.
-            By default no filter is applied.
-        action : Optional[ResourceAction], optional
-            Filter by `ResourceAction``. 
-            By default no filter is applied.
-        page_size : Optional[int], optional
-            The suggested page size to return. 
-            There is no guarantee of how much data will be returned if any.
-            The default is set on the storage backend. 
-        page_ref : Optional[str], optional
-            The reference to the next page that is returned in ``RawGrantsPage``, 
-            or one of the page references from ``StorageBackend.get_page_ref_page()`` (if parallel pagination is supported.) .
-            By default this will return the first page.
-
-        Returns
-        -------
-        RawGrantsPage
-            The page of raw grants.
+        grant_uuid: str,
+        config: GetGrantConfig
+    ) -> GrantResult:
+        """Get a grant by UUID.
         """
-        page_size = self._real_page_size(page_size=page_size)
-        async with self._async_sessionmaker() as session:
-            if effect is GrantEffect.ALLOW:
-                grant_table = AllowGrantDB
-            else:
-                grant_table = DenyGrantDB
-
-            query = select(grant_table)
-            filters = []
-            if resource_type is not None:
-                filters.append(
-                    grant_table.resource_type == resource_type.__name__
-                )
-            
-            if action is not None:
-                filters.append(
-                    grant_table.actions.any(
-                        ResourceActionDB.action == str(action)
-                    )
-                )
-
-            if page_ref is not None:
-                sql_next_page = SQLNextPageRef(**json.loads(page_ref))
-                filters.append(
-                    grant_table.storage_id > sql_next_page.next_token
-                )
-            
-            query = query.where(*filters)
-            query = query.limit(page_size)
-
-            result = await session.execute(query)
-            db_grants = result.scalars().unique().all()
-            next_page_ref = None
-            if len(db_grants) >= page_size:
-                next_page_ref = SQLNextPageRef(next_token=db_grants[-1].storage_id).model_dump_json()
-
-        return RawGrantsPage(
-            raw_grants=db_grants,
-            next_page_ref=next_page_ref
-        )
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
 
-    async def normalize_raw_grants_page(
+    async def list_grants(
         self,
-        raw_grants_page: RawGrantsPage
+        effect: str | None,
+        action: str | None,
+        page_ref: str | None,
+        config: ListGrantsConfig
     ) -> GrantsPage:
-        """Convert a ``RawGrantsPage`` to a ``GrantsPage``.
+        """Retrieve a page of grants.
 
-        Parameters
-        ----------
-        raw_grants_page : RawGrantsPage
-            Raw grants page to convert.
-
-        Returns
-        -------
-        GrantsPage
-            Normalized grants page.
+        Pass the returned page reference to get the next page until a null page reference is returned.
         """
-        grants = []
-        db_grants: list[Union[AllowGrantDB, DenyGrantDB]] = raw_grants_page.raw_grants
-        for db_grant in db_grants:
-            grants.append(
-                Grant(
-                    name=db_grant.name,
-                    description=db_grant.description,
-                    resource_type=self._resource_type_lookup[db_grant.resource_type],
-                    actions={
-                        self._resource_action_lookup[action.action] for action in db_grant.actions
-                    },
-                    expression=db_grant.expression,
-                    context=db_grant.context,
-                    equality=db_grant.equality,
-                    storage_id=str(db_grant.storage_id),
-                    uuid=db_grant.uuid
-                )
-            )
-
-        return GrantsPage(
-            grants=grants,
-            next_page_ref=raw_grants_page.next_page_ref
-        )
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
 
-    async def create_flag(self) -> StorageFlag:
-        """Create a new shared flag in the storage backend.
+    async def list_grant_refs(
+        self,
+        effect: str | None,
+        action: str | None,
+        page_ref: str | None,
+        config: ListGrantRefsConfig
+    ) -> PageRefsPage:
+        """Retrieve a page of grant page references for parallel pagination.
 
-        Returns
-        -------
-        StorageFlag
-            New storage flag. 
+        Pass the returned page reference to get the next page until a null page reference is returned.
+
+        For some storage modules this may not be possible.
+        Check the `parallel_paging` attribute on the storage module after `start()` is complete.
         """
-        new_flag = StorageFlag()
-        async with self._async_sessionmaker() as session:
-            db_flag = StorageFlagDB(**new_flag.model_dump())
-            session.add(db_flag)
-            await session.commit()
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
-        return new_flag
 
-
-    async def get_flag(self, uuid: str) -> StorageFlag:
-        """Retrieve flag by UUID.
-
-        Parameters
-        ----------
-        uuid : str
-            Storage flag UUID.
-
-        Returns
-        -------
-        StorageFlag
-            The storage flag with the given UUID.
-        
-        Raises
-        ------
-        authzee.exceptions.StorageFlagNotFoundError
-            The storage flag with the given UUID was not found.
+    async def create_latch(self, config: CreateLatchConfig) -> StorageLatchResult:
+        """Create a new [storage latch](#storage-latches).
         """
-        async with self._async_sessionmaker() as session:
-            query = select(StorageFlagDB).where(StorageFlagDB.uuid == uuid)
-            result = await session.execute(query)
-            db_flag = result.scalars().unique().one_or_none()
-            if  db_flag is None:
-                raise exceptions.StorageFlagNotFoundError(
-                    f"The storage flag with UUID '{uuid}' was not found!"
-                )
-        
-            await session.commit()
-    
-        return StorageFlag.model_validate(db_flag, from_attributes=True)
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
 
-    async def set_flag(self, uuid: str) -> StorageFlag:
-        """set a flag for a given UUID. 
-
-        Parameters
-        ----------
-        uuid : str
-            Storage flag UUID.
-
-        Returns
-        -------
-        StorageFlag
-            The storage flag with the given UUID and the flag set.
-        
-        Raises
-        ------
-        authzee.exceptions.StorageFlagNotFoundError
-            The storage flag with the given UUID was not found.
+    async def get_latch(
+        self,
+        storage_latch_uuid: str,
+        config: GetLatchConfig
+    ) -> StorageLatchResult:
+        """Get a [storage latch](#storage-latches) by UUID.
         """
-        async with self._async_sessionmaker() as session:
-            query = select(StorageFlagDB).where(StorageFlagDB.uuid == uuid)
-            result = await session.execute(query)
-            db_flag = result.scalars().unique().one_or_none()
-            if  db_flag is None:
-                raise exceptions.StorageFlagNotFoundError(
-                    f"The storage flag with UUID '{uuid}' was not found!"
-                )
-        
-            db_flag.is_set = True
-            await session.commit()
-    
-        return StorageFlag.model_validate(db_flag, from_attributes=True)
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
 
-    async def delete_flag(self, uuid: str) -> None:
-        """Delete a storage flag by UUID.
-
-        Parameters
-        ----------
-        uuid : str
-            Storage flag UUID.
+    async def set_latch(
+        self,
+        storage_latch_uuid: str,
+        config: SetLatchConfig
+    ) -> StorageLatchResult:
+        """Set a [storage latch](#storage-latches) by UUID.
         """
-        async with self._async_sessionmaker() as session:
-            await session.execute(
-                delete(StorageFlagDB).where(StorageFlagDB.uuid == uuid)
-            )
-            await session.commit()
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
 
 
-    async def cleanup_flags(self, earlier_than: datetime.datetime) -> None:
-        """Delete zombie storage flags from before a certain point in time.
-
-        Parameters
-        ----------
-        earlier_than : datetime.datetime
-            Delete flags created earlier than this date. 
-            Naive datetimes are assumed to be UTC. 
+    async def delete_latch(
+        self,
+        storage_latch_uuid: str,
+        config: DeleteLatchConfig
+    ) -> GenericResult:
+        """Delete a [storage latch](#storage-latches) by UUID.
         """
-        async with self._async_sessionmaker() as session:
-            await session.execute(
-                delete(StorageFlagDB).where(StorageFlagDB.created_at < earlier_than)
-            )
-            await session.commit()
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
+
+
+    async def cleanup_latches(
+        self,
+        before: datetime.datetime,
+        config: CleanupLatchesConfig
+    ) -> GenericResult:
+        """Delete all latches before the specified datetime.
+
+        - operations should clean up their own latches, but in case of a failure this can be used to clean up zombie latches.
+        """
+        try:
+            pass
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": "storage",
+                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+                }
+            }
