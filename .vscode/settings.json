@@ -51,6 +51,7 @@
         "loguru",
         "lrange",
         "maxdepth",
+        "mcls",
         "modindex",
         "Multiprocess",
         "noindex",

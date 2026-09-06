@@ -7,8 +7,10 @@ __all__ = [
     "StorageModule"
 ]
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 import datetime
+import functools
+from typing import Any, Callable
 
 from authzee.module_locality import ModuleLocality
 from authzee.types.authzee import *
@@ -42,7 +44,47 @@ from authzee.types.config import (
 )
 
 
-class StorageModule(ABC):
+def _generic_result_handler(func, error_type):
+    @functools.wraps(func)
+    async def wrapper(self, *args, **kwargs) -> GenericResult:
+        try:
+            return await func(self, *args, **kwargs)
+
+        except Exception as exc:
+            return {
+                "error": {
+                    "error_type": error_type,
+                    "message": f"[{exc.__class__.__qualname__}] {exc}"
+                }
+            }
+
+    return wrapper
+
+
+class _ModuleMeta(ABCMeta):
+    _error_type: str = "unknown"
+    _handler_map: dict[str, Callable] = {}
+
+
+    def __new__(mcls, name: str, bases, namespace: dict[str, Any]):
+        for attr_name, attr_value in namespace.items():
+            if (
+                attr_name in mcls._handler_map
+                and getattr(attr_value, "__isabstractmethod__", False) is False
+            ):
+                namespace[attr_name] = mcls._handler_map[attr_name](attr_value, mcls._error_type)
+
+        return super().__new__(mcls, name, bases, namespace)
+
+
+class _StorageMeta(_ModuleMeta):
+    _error_type: str = "storage"
+    _handler_map: dict[str, Callable] = {
+        "list_context_defs": _generic_result_handler
+    }
+
+
+class StorageModule(metaclass=_StorageMeta):
 
 
     @abstractmethod
