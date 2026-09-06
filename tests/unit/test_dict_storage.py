@@ -134,7 +134,13 @@ class _ConcreteStorageModule(StorageModule):
         return await super().get_grant(grant_uuid=grant_uuid, config=config)
 
 
-    async def list_grants(self, effect, action, page_ref, config):
+    async def list_grants(
+        self,
+        effect,
+        action,
+        page_ref,
+        config
+    ):
         return await super().list_grants(
             effect=effect,
             action=action,
@@ -143,7 +149,13 @@ class _ConcreteStorageModule(StorageModule):
         )
 
 
-    async def list_grant_refs(self, effect, action, page_ref, config):
+    async def list_grant_refs(
+        self,
+        effect,
+        action,
+        page_ref,
+        config
+    ):
         return await super().list_grant_refs(
             effect=effect,
             action=action,

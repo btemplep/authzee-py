@@ -539,11 +539,10 @@ class DictStorage(StorageModule):
 async def main():
     my_dict = {}
     store = DictStorage(storage_dict=my_dict)
-    result = await store.list_context_defs(
-        page_ref=None,
-        config={}
-    )
+    result = await store.list_context_defs(page_ref=None, config={})
     print(result)
 
+
 import asyncio
+
 asyncio.run(main())

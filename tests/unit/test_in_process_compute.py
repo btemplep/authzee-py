@@ -321,7 +321,11 @@ class _ConcreteComputeModule(ComputeModule):
 
 
     async def batch_audit(self, batch_request, page_ref, config):
-        return await super().batch_audit(batch_request=batch_request, page_ref=page_ref, config=config)
+        return await super().batch_audit(
+            batch_request=batch_request,
+            page_ref=page_ref,
+            config=config
+        )
 
 
     async def batch_authorize(self, batch_request, config):

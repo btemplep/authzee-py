@@ -63,26 +63,30 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 class ContextDefDB(Base):
     __tablename__ = "context_defs"
-    context_type: Mapped[str] = mapped_column(primary_key=True, nullable=False)
+    internal_id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
+    context_type: Mapped[str] = mapped_column(unique=True, nullable=False)
     schema: Mapped[dict[str, Any]] = mapped_column(nullable=False)
 
 
 class IdentityDefDB(Base):
     __tablename__ = "identity_defs"
-    identity_type: Mapped[str] = mapped_column(primary_key=True, nullable=False)
+    internal_id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
+    identity_type: Mapped[str] = mapped_column(unique=True, nullable=False)
     schema: Mapped[dict[str, Any]]
 
 
 class ResourceDefDB(Base):
     __tablename__ = "resource_defs"
-    resource_type: Mapped[str] = mapped_column(primary_key=True, nullable=False)
+    internal_id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
+    resource_type: Mapped[str] = mapped_column(unique=True, nullable=False)
     actions: Mapped[list[str]] = mapped_column(nullable=False)
     schema: Mapped[dict[str, Any]] = mapped_column(nullable=False)
 
 
 class GrantDB(Base):
     __tablename__ = "grants"
-    grant_uuid: Mapped[UUID] = mapped_column(primary_key=True, nullable=False)
+    internal_id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
+    grant_uuid: Mapped[UUID] = mapped_column(unique=True, nullable=False)
     name: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
     tags: Mapped[dict[str, str]] = mapped_column(nullable=False)
@@ -96,7 +100,8 @@ class GrantDB(Base):
 
 class StorageLatchDB(Base):
     __tablename__ = "storage_latches"
-    storage_latch_uuid: Mapped[UUID] = mapped_column(primary_key=True, nullable=False)
+    internal_id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
+    storage_latch_uuid: Mapped[UUID] = mapped_column(unique=True, nullable=False)
     is_set: Mapped[bool] = mapped_column(nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(nullable=False)
 
@@ -131,19 +136,13 @@ class SQLStorage(StorageModule):
 
 
     async def start(self, config: StorageStartConfig) -> GenericResult:
-        try:
-            self._engine = create_async_engine(**self._sqlalchemy_async_engine_kwargs)
-            self._async_sessionmaker: async_sessionmaker[AsyncSession] = async_sessionmaker(
-                bind=self._engine,
-                expire_on_commit=False
-            )
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        self._engine = create_async_engine(**self._sqlalchemy_async_engine_kwargs)
+        self._async_sessionmaker: async_sessionmaker[AsyncSession] = async_sessionmaker(
+            bind=self._engine,
+            expire_on_commit=False
+        )
+        self.locality = ModuleLocality.NETWORK
+        self.has_parallel_paging = False
 
         return {
             "error": None
@@ -151,15 +150,7 @@ class SQLStorage(StorageModule):
 
 
     async def shutdown(self, config: StorageShutdownConfig) -> GenericResult:
-        try:
-            await self._engine.dispose()
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        await self._engine.dispose()
 
         return {
             "error": None
@@ -167,17 +158,8 @@ class SQLStorage(StorageModule):
 
 
     async def construct(self, config: StorageConstructConfig) -> GenericResult:
-        try:
-            async with self._engine.begin() as conn:
+        async with self._engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
-
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
 
         return {
             "error": None
@@ -185,15 +167,9 @@ class SQLStorage(StorageModule):
 
 
     async def destroy(self, config: StorageDestroyConfig) -> GenericResult:
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._engine.begin() as conn:
+            await conn.run_sync(Base.metadata.reflect)
+            await conn.run_sync(Base.metadata.drop_all)
 
         return {
             "error": None
@@ -205,15 +181,31 @@ class SQLStorage(StorageModule):
         page_ref: str | None,
         config: ListContextDefsConfig
     ) -> ContextDefsPage:
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+        async with self._async_sessionmaker() as db_sess:
+            query = select(ContextDefDB).limit(config["page_size"]).order_by(ContextDefDB.internal_id)
+            if page_ref is not None:
+                query = query.where(ContextDefDB.internal_id > int(page_ref))
+            
+            context_defs: list[ContextDefDB] = (await db_sess.execute()).scalars().all()
+
+        next_page_ref = None
+        if len(context_defs) > 0:
+            next_page_ref = str(context_defs[-1].internal_id)
+
+        result: ContextDefsPage = {
+            "context_defs": [],
+            "next_page_ref": next_page_ref,
+            "error": None
+        }
+        for cd in context_defs:
+            result['context_defs'].append(
+                {
+                    "context_type": cd.context_type,
+                    "schema": cd.schema
                 }
-            }
+            )
+
+        return result
 
 
     async def get_context_def(
@@ -257,8 +249,6 @@ class SQLStorage(StorageModule):
         context_type: str,
         config: DeleteContextDefConfig
     ) -> GenericResult:
-        """Delete a context definition by type.
-        """
         try:
             pass
         except Exception as exc:
@@ -275,10 +265,6 @@ class SQLStorage(StorageModule):
         page_ref: str | None,
         config: ListIdentityDefsConfig
     ) -> IdentityDefsPage:
-        """Get a page of identity definitions.
-
-        Pass the returned page reference to get the next page until a null page reference is returned.
-        """
         try:
             pass
         except Exception as exc:
