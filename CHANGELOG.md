@@ -27,8 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `SQLStorage` - SQL based storage module.
 - `StorageModule` and `ComputeModule` now automatically translate exceptions raised in their methods into the method's expected result body.
-    - Uses new `_StorageMeta` / `_ComputeMeta` metaclasses (built on a shared `_ModuleMeta`).
-    - A raised exception is caught and returned as the correctly shaped result body with `error` populated and `error_type` set to `"storage"` or `"compute"` depending on where it originated.
 - Full class and method docstrings for `StorageModule` and `ComputeModule`, including success and error return examples, call examples with the full config body, and notes on the automatic exception translation.
     - `ComputeModule` docstring notes that a compute module must handle all errors returned from storage.
 - Class docstrings for `InProcessCompute` and `DictStorage`.
