@@ -518,7 +518,7 @@ class StorageLatch(TypedDict):
     {
         "storage_latch_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
         "is_set": False,
-        "created_at": "2026-04-26T16:21:10.521220"
+        "created_at": "2026-04-26T16:21:10.521220Z"
     }
     ```
     """
@@ -539,7 +539,7 @@ class StorageLatchResult(TypedDict):
         "storage_latch": {
             "storage_latch_uuid": "0da5dfc6-c919-4bd6-b80f-a351a9ac8d27",
             "is_set": False,
-            "created_at": "2026-04-26T16:21:10.521220"
+            "created_at": "2026-04-26T16:21:10.521220Z"
         },
         "error": { # or None
             "error_type": "<type>",

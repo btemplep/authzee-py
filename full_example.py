@@ -10,10 +10,10 @@ from uuid import uuid4
 from authzee import (
     AuditResultPage,
     Authzee,
+    authzee_specification_version,
     BatchAuditResultPage,
     DictStorage,
     InProcessCompute,
-    authzee_specification_version,
     jmespath_execute,
     paginator
 )

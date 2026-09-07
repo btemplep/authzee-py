@@ -21,6 +21,7 @@ from compute_module_test_base import *
 from authzee.compute.compute_module import ComputeModule
 from authzee.compute.in_process_compute import InProcessCompute
 from authzee.jmespath import jmespath_execute
+from authzee.module_locality import ModuleLocality
 from authzee.storage.dict_storage import DictStorage
 
 
@@ -247,99 +248,133 @@ def fail_on_allow_compute(compute, storage_dict):
     return compute
 
 
-def test_compute_module_shutdown_raises():
-    cm = ComputeModule()
+def test_compute_module_cannot_instantiate_abstract():
     with pytest.raises(TypeError):
-        asyncio.run(cm.shutdown(config={}))
+        ComputeModule()
 
 
-def test_compute_module_construct_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(cm.construct(config={}))
+class _ConcreteComputeModule(ComputeModule):
+    """Minimal concrete ComputeModule that defers to the abstract base bodies.
+
+    Used to exercise the base-class method bodies for coverage. Every method
+    calls ``super()`` so the base implementation runs.
+    """
 
 
-def test_compute_module_destroy_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(cm.destroy(config={}))
-
-
-def test_compute_module_validate_context_def_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(
-            cm.validate_context_def(context_def={}, config={})
+    async def start(
+        self,
+        execute,
+        storage_type,
+        storage_kwargs,
+        config
+    ):
+        return await super().start(
+            execute=execute,
+            storage_type=storage_type,
+            storage_kwargs=storage_kwargs,
+            config=config
         )
 
 
-def test_compute_module_validate_identity_def_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(
-            cm.validate_identity_def(identity_def={}, config={})
+    async def shutdown(self, config):
+        return await super().shutdown(config=config)
+
+
+    async def construct(self, config):
+        return await super().construct(config=config)
+
+
+    async def destroy(self, config):
+        return await super().destroy(config=config)
+
+
+    async def validate_context_def(self, context_def, config):
+        return await super().validate_context_def(context_def=context_def, config=config)
+
+
+    async def validate_identity_def(self, identity_def, config):
+        return await super().validate_identity_def(identity_def=identity_def, config=config)
+
+
+    async def validate_resource_def(self, resource_def, config):
+        return await super().validate_resource_def(resource_def=resource_def, config=config)
+
+
+    async def validate_grant(self, grant, config):
+        return await super().validate_grant(grant=grant, config=config)
+
+
+    async def validate_request(self, request, config):
+        return await super().validate_request(request=request, config=config)
+
+
+    async def validate_batch_request(self, batch_request, config):
+        return await super().validate_batch_request(batch_request=batch_request, config=config)
+
+
+    async def audit(self, request, page_ref, config):
+        return await super().audit(request=request, page_ref=page_ref, config=config)
+
+
+    async def authorize(self, request, config):
+        return await super().authorize(request=request, config=config)
+
+
+    async def batch_audit(self, batch_request, page_ref, config):
+        return await super().batch_audit(
+            batch_request=batch_request,
+            page_ref=page_ref,
+            config=config
         )
 
 
-def test_compute_module_validate_resource_def_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(
-            cm.validate_resource_def(resource_def={}, config={})
+    async def batch_authorize(self, batch_request, config):
+        return await super().batch_authorize(batch_request=batch_request, config=config)
+
+
+def test_compute_module_base_start_sets_defaults():
+    cm = _ConcreteComputeModule()
+
+    async def run():
+        await cm.start(
+            execute=jmespath_execute,
+            storage_type=DictStorage,
+            storage_kwargs={},
+            config={}
         )
 
-
-def test_compute_module_validate_grant_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(cm.validate_grant(grant={}, config={}))
+    asyncio.run(run())
+    assert cm.locality == ModuleLocality.PROCESS
+    assert cm.has_parallel_paging is False
 
 
-def test_compute_module_validate_request_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(cm.validate_request(request={}, config={}))
+def test_compute_module_base_methods_return_none():
+    cm = _ConcreteComputeModule()
 
-
-def test_compute_module_validate_batch_request_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(
-            cm.validate_batch_request(batch_request={}, config={})
-        )
-
-
-def test_compute_module_audit_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(
-            cm.audit(
+    async def run():
+        return [
+            await cm.shutdown(config={}),
+            await cm.construct(config={}),
+            await cm.destroy(config={}),
+            await cm.validate_context_def(context_def={}, config={}),
+            await cm.validate_identity_def(identity_def={}, config={}),
+            await cm.validate_resource_def(resource_def={}, config={}),
+            await cm.validate_grant(grant={}, config={}),
+            await cm.validate_request(request={}, config={}),
+            await cm.validate_batch_request(batch_request={}, config={}),
+            await cm.audit(
                 request={},
                 page_ref=None,
                 config={}
-            )
-        )
-
-
-def test_compute_module_authorize_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(cm.authorize(request={}, config={}))
-
-
-def test_compute_module_batch_audit_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(
-            cm.batch_audit(
+            ),
+            await cm.authorize(request={}, config={}),
+            await cm.batch_audit(
                 batch_request={},
                 page_ref=None,
                 config={}
-            )
-        )
+            ),
+            await cm.batch_authorize(batch_request={}, config={})
+        ]
 
-
-def test_compute_module_batch_authorize_raises():
-    cm = ComputeModule()
-    with pytest.raises(TypeError):
-        asyncio.run(cm.batch_authorize(batch_request={}, config={}))
+    results = asyncio.run(run())
+    assert all(r is None for r in results)

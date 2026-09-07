@@ -9,7 +9,6 @@ __all__ = [
     "DefinitionError",
     "GrantError",
     "LocalityIncompatibilityError",
-    "NotImplementedError",
     "ParallelPaginationNotSupported",
     "RequestError",
     "ResourceNotFoundError",
@@ -70,20 +69,6 @@ class LocalityIncompatibilityError(AuthzeeSDKError):
     pass
 
 
-class NotImplementedError(AuthzeeSDKError):
-    """The given method is not implemented for this class.
-    """
-
-
-    def __init__(
-        self,
-        msg: str="This method is not implemented.",
-        *args,
-        **kwargs
-    ):
-        super().__init__(msg, *args, **kwargs)
-
-
 class ParallelPaginationNotSupported(AuthzeeSDKError):
     """Parallel pagination is not supported.
     """
@@ -112,7 +97,6 @@ _exception_map = {
     "grant": GrantError,
     "request": RequestError,
     "locality_incompatibility": LocalityIncompatibilityError,
-    "not_implemented": NotImplementedError,
     "parallel_pagination_not_supported": ParallelPaginationNotSupported,
     "compute": ComputeError,
     "storage": StorageError,

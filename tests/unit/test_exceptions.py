@@ -11,7 +11,6 @@ from authzee.exceptions import (
     _exception_map,
     GrantError,
     LocalityIncompatibilityError,
-    NotImplementedError as AuthzeeNotImplementedError,
     ParallelPaginationNotSupported,
     RequestError,
     ResourceNotFoundError,
@@ -95,28 +94,6 @@ def test_locality_incompatibility_error():
     assert isinstance(exc, AuthzeeSDKError)
 
 
-def test_not_implemented_error_default_message():
-    result = {
-        "error": {
-            "error_type": "not_implemented",
-            "message": "This method is not implemented."
-        }
-    }
-    exc = AuthzeeNotImplementedError(result=result)
-    assert "not implemented" in exc.message.lower()
-
-
-def test_not_implemented_error_custom_message():
-    result = {
-        "error": {
-            "error_type": "not_implemented",
-            "message": "Custom msg"
-        }
-    }
-    exc = AuthzeeNotImplementedError("Custom msg", result=result)
-    assert exc.message == "Custom msg"
-
-
 def test_parallel_pagination_not_supported():
     result = {
         "error": {
@@ -167,7 +144,6 @@ def test_exception_map_contains_expected_keys():
         "grant",
         "request",
         "locality_incompatibility",
-        "not_implemented",
         "parallel_pagination_not_supported",
         "compute",
         "storage",

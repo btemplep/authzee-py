@@ -484,12 +484,33 @@ class PutContextDefConfig(TypedDict):
 
     Examples
     --------
-    Example (the default is an empty dict):
+    Example showing the default values:
     ```python
-    {}
+    {
+        "get_context_def": {
+            "use_cache": False
+        },
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_context_def : GetContextDefConfig
+        Config for getting a context definition.
+    use_list_context_defs : bool
+        Whether to use list context defs instead of getting a single context definition.
+    list_context_defs : ListContextDefsConfig
+        Config for listing context definitions.
     """
-    pass
+    get_context_def: GetContextDefConfig
+    use_list_context_defs: bool
+    list_context_defs: ListContextDefsConfig
 
 
 class DeleteContextDefConfig(TypedDict):
@@ -500,12 +521,33 @@ class DeleteContextDefConfig(TypedDict):
 
     Examples
     --------
-    Example (the default is an empty dict):
+    Example showing the default values:
     ```python
-    {}
+    {
+        "get_context_def": {
+            "use_cache": False
+        },
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_context_def : GetContextDefConfig
+        Config for getting a context definition.
+    use_list_context_defs : bool
+        Whether to use list context defs instead of getting a single context definition.
+    list_context_defs : ListContextDefsConfig
+        Config for listing context definitions.
     """
-    pass
+    get_context_def: GetContextDefConfig
+    use_list_context_defs: bool
+    list_context_defs: ListContextDefsConfig
 
 
 class ValidateIdentityDefConfig(TypedDict):
@@ -555,12 +597,33 @@ class PutIdentityDefConfig(TypedDict):
 
     Examples
     --------
-    Example (the default is an empty dict):
+    Example showing the default values:
     ```python
-    {}
+    {
+        "get_identity_def": {
+            "use_cache": False
+        },
+        "use_list_identity_defs": False,
+        "list_identity_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_identity_def : GetIdentityDefConfig
+        Config for getting an identity definition.
+    use_list_identity_defs : bool
+        Whether to use list identity defs instead of getting a single identity definition.
+    list_identity_defs : ListIdentityDefsConfig
+        Config for listing identity definitions.
     """
-    pass
+    get_identity_def: GetIdentityDefConfig
+    use_list_identity_defs: bool
+    list_identity_defs: ListIdentityDefsConfig
 
 
 class DeleteIdentityDefConfig(TypedDict):
@@ -571,12 +634,33 @@ class DeleteIdentityDefConfig(TypedDict):
 
     Examples
     --------
-    Example (the default is an empty dict):
+    Example showing the default values:
     ```python
-    {}
+    {
+        "get_identity_def": {
+            "use_cache": False
+        },
+        "use_list_identity_defs": False,
+        "list_identity_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_identity_def : GetIdentityDefConfig
+        Config for getting an identity definition.
+    use_list_identity_defs : bool
+        Whether to use list identity defs instead of getting a single identity definition.
+    list_identity_defs : ListIdentityDefsConfig
+        Config for listing identity definitions.
     """
-    pass
+    get_identity_def: GetIdentityDefConfig
+    use_list_identity_defs: bool
+    list_identity_defs: ListIdentityDefsConfig
 
 
 class ValidateResourceDefConfig(TypedDict):
@@ -626,12 +710,33 @@ class PutResourceDefConfig(TypedDict):
 
     Examples
     --------
-    Example (the default is an empty dict):
+    Example showing the default values:
     ```python
-    {}
+    {
+        "get_resource_def": {
+            "use_cache": False
+        },
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_resource_def : GetResourceDefConfig
+        Config for getting a resource definition.
+    use_list_resource_defs : bool
+        Whether to use list resource defs instead of getting a single resource definition.
+    list_resource_defs : ListResourceDefsConfig
+        Config for listing resource definitions.
     """
-    pass
+    get_resource_def: GetResourceDefConfig
+    use_list_resource_defs: bool
+    list_resource_defs: ListResourceDefsConfig
 
 
 class DeleteResourceDefConfig(TypedDict):
@@ -642,12 +747,33 @@ class DeleteResourceDefConfig(TypedDict):
 
     Examples
     --------
-    Example (the default is an empty dict):
+    Example showing the default values:
     ```python
-    {}
+    {
+        "get_resource_def": {
+            "use_cache": False
+        },
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_resource_def : GetResourceDefConfig
+        Config for getting a resource definition.
+    use_list_resource_defs : bool
+        Whether to use list resource defs instead of getting a single resource definition.
+    list_resource_defs : ListResourceDefsConfig
+        Config for listing resource definitions.
     """
-    pass
+    get_resource_def: GetResourceDefConfig
+    use_list_resource_defs: bool
+    list_resource_defs: ListResourceDefsConfig
 
 
 class ValidateGrantConfig(TypedDict):
@@ -713,12 +839,33 @@ class RepealConfig(TypedDict):
 
     Examples
     --------
-    Example (the default is an empty dict):
+    Example showing the default values:
     ```python
-    {}
+    {
+        "get_grant": {
+            "use_cache": False
+        },
+        "use_list_grants": False,
+        "list_grants": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_grant : GetGrantConfig
+        Config for getting a grant.
+    use_list_grants : bool
+        Whether to use list grants instead of getting a single grant.
+    list_grants : ListGrantsConfig
+        Config for listing grants.
     """
-    pass
+    get_grant: GetGrantConfig
+    use_list_grants: bool
+    list_grants: ListGrantsConfig
 
 
 class CreateLatchConfig(TypedDict):
@@ -1264,8 +1411,28 @@ class AuthzeeConfig(TypedDict):
         "get_context_def": {
             "use_cache": False
         },
-        "put_context_def": {},
-        "delete_context_def": {},
+        "put_context_def": {
+            "get_context_def": {
+                "use_cache": False
+            },
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
+        "delete_context_def": {
+            "get_context_def": {
+                "use_cache": False
+            },
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
         "validate_identity_def": {},
         "list_identity_defs": {
             "page_size": 100,
@@ -1274,8 +1441,28 @@ class AuthzeeConfig(TypedDict):
         "get_identity_def": {
             "use_cache": False
         },
-        "put_identity_def": {},
-        "delete_identity_def": {},
+        "put_identity_def": {
+            "get_identity_def": {
+                "use_cache": False
+            },
+            "use_list_identity_defs": False,
+            "list_identity_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
+        "delete_identity_def": {
+            "get_identity_def": {
+                "use_cache": False
+            },
+            "use_list_identity_defs": False,
+            "list_identity_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
         "validate_resource_def": {},
         "list_resource_defs": {
             "page_size": 100,
@@ -1284,8 +1471,28 @@ class AuthzeeConfig(TypedDict):
         "get_resource_def": {
             "use_cache": False
         },
-        "put_resource_def": {},
-        "delete_resource_def": {},
+        "put_resource_def": {
+            "get_resource_def": {
+                "use_cache": False
+            },
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
+        "delete_resource_def": {
+            "get_resource_def": {
+                "use_cache": False
+            },
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
         "validate_grant": {},
         "list_grants": {
             "page_size": 100,
@@ -1295,7 +1502,17 @@ class AuthzeeConfig(TypedDict):
             "use_cache": False
         },
         "enact": {},
-        "repeal": {},
+        "repeal": {
+            "get_grant": {
+                "use_cache": False
+            },
+            "use_list_grants": False,
+            "list_grants": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
         "list_grant_refs": {
             "page_size": 10,
             "use_cache": False

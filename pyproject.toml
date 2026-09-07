@@ -43,8 +43,10 @@ dependencies = [
 
 [project.optional-dependencies]
 jmespath = ["jmespath"]
-all = ["authzee[jmespath]"]
+sql = ["SQLAlchemy"]
+all = ["authzee[jmespath,sql]"]
 dev = [
+    "aiosqlite",
     "build",
     "coverage",
     "moto[s3,server]",
