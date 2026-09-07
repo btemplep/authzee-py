@@ -87,13 +87,13 @@ class StorageModule(metaclass=_StorageMeta):
     storage layer:
 
     - The nested `get_*` / `use_list_*` / `list_*` sub-configs inside the put and
-      delete definition configs and the repeal config - specifically
-      `PutContextDefConfig`, `DeleteContextDefConfig`, `PutIdentityDefConfig`,
-      `DeleteIdentityDefConfig`, `PutResourceDefConfig`, `DeleteResourceDefConfig`,
-      and `RepealConfig`. A storage module puts, deletes, or repeals the target
-      directly by its type or UUID; those nested sub-configs describe an optional
-      "look the target up first via a get or a list" step that belongs to the
-      orchestration layer, not to storage. Subclasses should ignore them.
+    delete definition configs and the repeal config - specifically
+    `PutContextDefConfig`, `DeleteContextDefConfig`, `PutIdentityDefConfig`,
+    `DeleteIdentityDefConfig`, `PutResourceDefConfig`, `DeleteResourceDefConfig`,
+    and `RepealConfig`. A storage module puts, deletes, or repeals the target
+    directly by its type or UUID; those nested sub-configs describe an optional
+    "look the target up first via a get or a list" step that belongs to the
+    orchestration layer, not to storage. Subclasses should ignore them.
 
     Any config type not listed above is used by the corresponding storage method
     where its keys map to that method's behavior.

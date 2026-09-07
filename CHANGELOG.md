@@ -22,10 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
-## [Unreleased] - YYYY-MM-DD
+## [0.1.0a7] - 2026-09-07
 
 ### Added
 - `SQLStorage` - SQL based storage module.
+- `MPCompute` - Multiprocess compute module that offloads compute operations to a worker process pool.
 - `StorageModule` and `ComputeModule` now automatically translate exceptions raised in their methods into the method's expected result body.
 - Full class and method docstrings for `StorageModule` and `ComputeModule`, including success and error return examples, call examples with the full config body, and notes on the automatic exception translation.
     - `ComputeModule` docstring notes that a compute module must handle all errors returned from storage.
@@ -35,8 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ComputeModule` and `StorageModule` base classes now inherit from ABC. 
 - `DictStorage` now stores storage latch `created_at` as an ISO 8601 string instead of a `datetime` object.
 
-### Deprecated
-
 ### Removed
 - `NotImplementedError` since base classes now use auto checks from ABC.
 
@@ -45,8 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `get_context_def` / `get_resource_def` now use their own config instead of `get_identity_def`.
     - The non-list (`get_*`) identity lookup in `validate_request` now populates the identity lookup and returns the correct identity error message.
     - `validate_batch_request` no longer raises `KeyError` on the non-list identity lookup path and no longer silently succeeds for an unregistered root definition in the list path.
-
-### Security 
 
 
 ## [0.1.0a6] - 2026-08-27

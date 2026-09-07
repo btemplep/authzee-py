@@ -90,15 +90,15 @@ class ComputeModule(metaclass=_ComputeMeta):
     than implemented on compute:
 
     - The definition and grant persistence and retrieval configs:
-      `GetContextDefConfig`, `PutContextDefConfig`, `DeleteContextDefConfig`,
-      `GetIdentityDefConfig`, `PutIdentityDefConfig`, `DeleteIdentityDefConfig`,
-      `GetResourceDefConfig`, `PutResourceDefConfig`, `DeleteResourceDefConfig`,
-      `GetGrantConfig`, `EnactConfig`, and `RepealConfig`, along with the
-      standalone `ListContextDefsConfig`, `ListIdentityDefsConfig`,
-      `ListResourceDefsConfig`, `ListGrantsConfig`, and `ListGrantRefsConfig` as
-      top-level (non-embedded) configs.
+    `GetContextDefConfig`, `PutContextDefConfig`, `DeleteContextDefConfig`,
+    `GetIdentityDefConfig`, `PutIdentityDefConfig`, `DeleteIdentityDefConfig`,
+    `GetResourceDefConfig`, `PutResourceDefConfig`, `DeleteResourceDefConfig`,
+    `GetGrantConfig`, `EnactConfig`, and `RepealConfig`, along with the
+    standalone `ListContextDefsConfig`, `ListIdentityDefsConfig`,
+    `ListResourceDefsConfig`, `ListGrantsConfig`, and `ListGrantRefsConfig` as
+    top-level (non-embedded) configs.
     - The storage latch configs: `CreateLatchConfig`, `GetLatchConfig`,
-      `SetLatchConfig`, `DeleteLatchConfig`, and `CleanupLatchesConfig`.
+    `SetLatchConfig`, `DeleteLatchConfig`, and `CleanupLatchesConfig`.
 
     A compute module does still cause several of these storage calls to run (for
     example listing grants during an audit or authorize); when it does, it uses the
