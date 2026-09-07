@@ -41,8 +41,26 @@ default_config: AuthzeeConfig = {
     "get_context_def": {
         "use_cache": False
     },
-    "put_context_def": {},
-    "delete_context_def": {},
+    "put_context_def": {
+        "get_context_def": {
+            "use_cache": False
+        },
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": False
+        }
+    },
+    "delete_context_def": {
+        "get_context_def": {
+            "use_cache": False
+        },
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+            "use_cache": False
+        }
+    },
     "validate_identity_def": {},
     "list_identity_defs": {
         "page_size": 100,
@@ -51,8 +69,26 @@ default_config: AuthzeeConfig = {
     "get_identity_def": {
         "use_cache": False
     },
-    "put_identity_def": {},
-    "delete_identity_def": {},
+    "put_identity_def": {
+        "get_identity_def": {
+            "use_cache": False
+        },
+        "use_list_identity_defs": False,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": False
+        }
+    },
+    "delete_identity_def": {
+        "get_identity_def": {
+            "use_cache": False
+        },
+        "use_list_identity_defs": False,
+        "list_identity_defs": {
+            "page_size": 1000,
+            "use_cache": False
+        }
+    },
     "validate_resource_def": {},
     "list_resource_defs": {
         "page_size": 100,
@@ -61,8 +97,26 @@ default_config: AuthzeeConfig = {
     "get_resource_def": {
         "use_cache": False
     },
-    "put_resource_def": {},
-    "delete_resource_def": {},
+    "put_resource_def": {
+        "get_resource_def": {
+            "use_cache": False
+        },
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": False
+        }
+    },
+    "delete_resource_def": {
+        "get_resource_def": {
+            "use_cache": False
+        },
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+            "use_cache": False
+        }
+    },
     "validate_grant": {},
     "list_grants": {
         "page_size": 100,
@@ -72,7 +126,16 @@ default_config: AuthzeeConfig = {
         "use_cache": False
     },
     "enact": {},
-    "repeal": {},
+    "repeal": {
+        "get_grant": {
+            "use_cache": False
+        },
+        "use_list_grants": False,
+        "list_grants": {
+            "page_size": 1000,
+            "use_cache": False
+        }
+    },
     "list_grant_refs": {
         "page_size": 10,
         "use_cache": False

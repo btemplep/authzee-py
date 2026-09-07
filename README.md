@@ -29,6 +29,7 @@ Authzee is a highly expressive grant-based authorization engine. Check out the [
 - [Development](#development)
     - [Compute and Storage Module Development](#compute-and-storage-module-development)
         - [Return Values and Error Handling](#return-values-and-error-handling)
+        - [Configuration](#configuration)
     - [Module Caching](#module-caching)
 
 
@@ -47,9 +48,9 @@ pip install authzee[jmespath,sql-storage]
 Extra dependencies available/needed:
 
 - `jmespath` - needed if using the built in jmespath execute functions
-- `sql-storage` - needed for `SQLStorage` class
-- `dev` - development dependencies 
+- `sql` - needed for `SQLStorage` class
 - `all` - for all extra dependencies except for `dev`
+- `dev` - development dependencies 
 
 
 ## Tutorial
@@ -525,6 +526,17 @@ You do not have to wrap every method body in a try/except. `ComputeModule` and `
 A compute module retrieves definitions and grants from a storage module. Since storage methods return errors in their result body rather than raising, a compute module **must** check the `error` field of every storage result it receives and handle it - typically by short-circuiting and returning its own result body with that error propagated (its `error_type` will already be `"storage"`, identifying where the failure originated). Do not ignore storage errors or assume storage calls always succeed.
 
 See the `ComputeModule` and `StorageModule` class and method docstrings for per-method return shapes and success/error examples.
+
+#### Configuration
+
+Every method receives a per-call `config` (a `dict`). A module does **not** have to provide or honor a value for every key its config type allows - a config type describes every option that *could* apply to that call across all module implementations, so any key a given module does not understand can simply be ignored. But a module **should** utilize the config keys that map to behavior it actually implements (for example `page_size` and `use_cache` on list methods, or `use_cache` on get methods), so callers can tune those behaviors.
+
+Each base class documents the config it does **not** use:
+
+- `StorageModule` does not use the nested `get_*` / `use_list_*` / `list_*` sub-configs inside the put and delete definition configs and the repeal config (`PutContextDefConfig`, `DeleteContextDefConfig`, `PutIdentityDefConfig`, `DeleteIdentityDefConfig`, `PutResourceDefConfig`, `DeleteResourceDefConfig`, `RepealConfig`). A storage module acts on the target directly by type or UUID; those nested sub-configs describe an optional "look the target up first" step that belongs to the orchestration layer, not storage.
+- `ComputeModule` does not use the storage-only definition/grant persistence and retrieval configs (get/put/delete definition configs, `GetGrantConfig`, `EnactConfig`, `RepealConfig`, and the standalone `List*Config` types) or the storage latch configs, since a compute module has no corresponding operation. When a compute operation does trigger a storage call (such as listing grants during an audit or authorize), it uses the sub-config embedded in the compute config it received rather than a standalone top-level config.
+
+See the `ComputeModule` and `StorageModule` class docstrings for the full, exact list of unused config.
 
 ### Module Caching
 

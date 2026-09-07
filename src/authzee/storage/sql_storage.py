@@ -5,11 +5,10 @@ __all__ = [
 ]
 
 import datetime
-import json
 from typing import Any, Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from sqlalchemy import delete, event, select
+from sqlalchemy import DateTime, delete, select
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -57,6 +56,7 @@ class Base(AsyncAttrs, DeclarativeBase):
     type_annotation_map = {
         dict[str, Any]: JSON,
         dict[str, str]: JSON,
+        list[str]: JSON,
         Any: JSON
     }
 
@@ -92,7 +92,7 @@ class GrantDB(Base):
     tags: Mapped[dict[str, str]] = mapped_column(nullable=False)
     effect: Mapped[Literal["allow", "deny"]] = mapped_column(nullable=False)
     actions: Mapped[list[str]] = mapped_column(nullable=False)
-    name: Mapped[str] = mapped_column(nullable=False)
+    query: Mapped[str] = mapped_column(nullable=False)
     equality: Mapped[Any] = mapped_column(nullable=True)
     applicable_on_failure: Mapped[bool] = mapped_column(nullable=False)
     data: Mapped[dict[str, Any]] = mapped_column(nullable=False)
@@ -103,13 +103,14 @@ class StorageLatchDB(Base):
     internal_id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
     storage_latch_uuid: Mapped[UUID] = mapped_column(unique=True, nullable=False)
     is_set: Mapped[bool] = mapped_column(nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class SQLStorage(StorageModule):
     """Storage Module using SQL.
 
-    For best performance, use UUID7 for all UUID fields.
+    `get_*` calls do not honor configs to use list or cache.
+
 
     Parameters
     ----------
@@ -159,7 +160,7 @@ class SQLStorage(StorageModule):
 
     async def construct(self, config: StorageConstructConfig) -> GenericResult:
         async with self._engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(Base.metadata.create_all)
 
         return {
             "error": None
@@ -182,22 +183,28 @@ class SQLStorage(StorageModule):
         config: ListContextDefsConfig
     ) -> ContextDefsPage:
         async with self._async_sessionmaker() as db_sess:
-            query = select(ContextDefDB).limit(config["page_size"]).order_by(ContextDefDB.internal_id)
+            query = select(
+                ContextDefDB
+            ).limit(
+                config['page_size']
+            ).order_by(
+                ContextDefDB.internal_id
+            )
             if page_ref is not None:
                 query = query.where(ContextDefDB.internal_id > int(page_ref))
-            
-            context_defs: list[ContextDefDB] = (await db_sess.execute()).scalars().all()
+
+            db_cds: list[ContextDefDB] = (await db_sess.execute(query)).scalars().all()
 
         next_page_ref = None
-        if len(context_defs) > 0:
-            next_page_ref = str(context_defs[-1].internal_id)
+        if len(db_cds) == config['page_size']:
+            next_page_ref = str(db_cds[-1].internal_id)
 
         result: ContextDefsPage = {
             "context_defs": [],
             "next_page_ref": next_page_ref,
             "error": None
         }
-        for cd in context_defs:
+        for cd in db_cds:
             result['context_defs'].append(
                 {
                     "context_type": cd.context_type,
@@ -213,17 +220,29 @@ class SQLStorage(StorageModule):
         context_type: str,
         config: GetContextDefConfig
     ) -> ContextDefResult:
-        """Get a context definition by type.
-        """
-        try:
-            pass
-        except Exception as exc:
+        async with self._async_sessionmaker() as db_sess:
+            db_cd: ContextDefDB | None = (
+                await db_sess.execute(
+                    select(ContextDefDB).where(ContextDefDB.context_type == context_type)
+                )
+            ).scalar_one_or_none()
+
+        if db_cd is not None:
             return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
+                "context_def": {
+                    "context_type": db_cd.context_type,
+                    "schema": db_cd.schema
+                },
+                "error": None
             }
+
+        return {
+            "context_def": None,
+            "error": {
+                "error_type": "resource_not_found",
+                "message": f"Context type '{context_type}' was not found."
+            }
+        }
 
 
     async def put_context_def(
@@ -231,17 +250,31 @@ class SQLStorage(StorageModule):
         context_def: ContextDef,
         config: PutContextDefConfig
     ) -> GenericResult:
-        """Add a new Context Definition or update an existing one.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._async_sessionmaker() as db_sess:
+            db_cd: ContextDefDB | None = (
+                await db_sess.execute(
+                    select(
+                        ContextDefDB
+                    ).where(
+                        ContextDefDB.context_type == context_def['context_type']
+                    )
+                )
+            ).scalar_one_or_none()
+            if db_cd is None:
+                db_sess.add(
+                    ContextDefDB(
+                        context_type=context_def['context_type'],
+                        schema=context_def['schema']
+                    )
+                )
+            else:
+                db_cd.schema = context_def['schema']
+
+            await db_sess.commit()
+
+        return {
+            "error": None
+        }
 
 
     async def delete_context_def(
@@ -249,15 +282,15 @@ class SQLStorage(StorageModule):
         context_type: str,
         config: DeleteContextDefConfig
     ) -> GenericResult:
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._async_sessionmaker() as db_sess:
+            await db_sess.execute(
+                delete(ContextDefDB).where(ContextDefDB.context_type == context_type)
+            )
+            await db_sess.commit()
+
+        return {
+            "error": None
+        }
 
 
     async def list_identity_defs(
@@ -265,15 +298,37 @@ class SQLStorage(StorageModule):
         page_ref: str | None,
         config: ListIdentityDefsConfig
     ) -> IdentityDefsPage:
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+        async with self._async_sessionmaker() as db_sess:
+            query = select(
+                IdentityDefDB
+            ).limit(
+                config['page_size']
+            ).order_by(
+                IdentityDefDB.internal_id
+            )
+            if page_ref is not None:
+                query = query.where(IdentityDefDB.internal_id > int(page_ref))
+
+            db_ids: list[IdentityDefDB] = (await db_sess.execute(query)).scalars().all()
+
+        next_page_ref = None
+        if len(db_ids) == config['page_size']:
+            next_page_ref = str(db_ids[-1].internal_id)
+
+        result: IdentityDefsPage = {
+            "identity_defs": [],
+            "next_page_ref": next_page_ref,
+            "error": None
+        }
+        for id_def in db_ids:
+            result['identity_defs'].append(
+                {
+                    "identity_type": id_def.identity_type,
+                    "schema": id_def.schema
                 }
-            }
+            )
+
+        return result
 
 
     async def get_identity_def(
@@ -281,17 +336,29 @@ class SQLStorage(StorageModule):
         identity_type: str,
         config: GetIdentityDefConfig
     ) -> IdentityDefResult:
-        """Get an identity definition by type.
-        """
-        try:
-            pass
-        except Exception as exc:
+        async with self._async_sessionmaker() as db_sess:
+            db_id: IdentityDefDB | None = (
+                await db_sess.execute(
+                    select(IdentityDefDB).where(IdentityDefDB.identity_type == identity_type)
+                )
+            ).scalar_one_or_none()
+
+        if db_id is not None:
             return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
+                "identity_def": {
+                    "identity_type": db_id.identity_type,
+                    "schema": db_id.schema
+                },
+                "error": None
             }
+
+        return {
+            "identity_def": None,
+            "error": {
+                "error_type": "resource_not_found",
+                "message": f"Identity type '{identity_type}' was not found."
+            }
+        }
 
 
     async def put_identity_def(
@@ -299,17 +366,31 @@ class SQLStorage(StorageModule):
         identity_def: IdentityDef,
         config: PutIdentityDefConfig
     ) -> GenericResult:
-        """Add a new Identity Definition or update an existing one.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._async_sessionmaker() as db_sess:
+            db_id: IdentityDefDB | None = (
+                await db_sess.execute(
+                    select(
+                        IdentityDefDB
+                    ).where(
+                        IdentityDefDB.identity_type == identity_def['identity_type']
+                    )
+                )
+            ).scalar_one_or_none()
+            if db_id is None:
+                db_sess.add(
+                    IdentityDefDB(
+                        identity_type=identity_def['identity_type'],
+                        schema=identity_def['schema']
+                    )
+                )
+            else:
+                db_id.schema = identity_def['schema']
+
+            await db_sess.commit()
+
+        return {
+            "error": None
+        }
 
 
     async def delete_identity_def(
@@ -317,17 +398,15 @@ class SQLStorage(StorageModule):
         identity_type: str,
         config: DeleteIdentityDefConfig
     ) -> GenericResult:
-        """Delete an identity definition by type.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._async_sessionmaker() as db_sess:
+            await db_sess.execute(
+                delete(IdentityDefDB).where(IdentityDefDB.identity_type == identity_type)
+            )
+            await db_sess.commit()
+
+        return {
+            "error": None
+        }
 
 
     async def list_resource_defs(
@@ -335,19 +414,38 @@ class SQLStorage(StorageModule):
         page_ref: str | None,
         config: ListResourceDefsConfig
     ) -> ResourceDefsPage:
-        """Get a page of resource definitions.
+        async with self._async_sessionmaker() as db_sess:
+            query = select(
+                ResourceDefDB
+            ).limit(
+                config['page_size']
+            ).order_by(
+                ResourceDefDB.internal_id
+            )
+            if page_ref is not None:
+                query = query.where(ResourceDefDB.internal_id > int(page_ref))
 
-        Pass the returned page reference to get the next page until a null page reference is returned.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+            db_rds: list[ResourceDefDB] = (await db_sess.execute(query)).scalars().all()
+
+        next_page_ref = None
+        if len(db_rds) == config['page_size']:
+            next_page_ref = str(db_rds[-1].internal_id)
+
+        result: ResourceDefsPage = {
+            "resource_defs": [],
+            "next_page_ref": next_page_ref,
+            "error": None
+        }
+        for rd in db_rds:
+            result['resource_defs'].append(
+                {
+                    "resource_type": rd.resource_type,
+                    "actions": rd.actions,
+                    "schema": rd.schema
                 }
-            }
+            )
+
+        return result
 
 
     async def get_resource_def(
@@ -355,17 +453,30 @@ class SQLStorage(StorageModule):
         resource_type: str,
         config: GetResourceDefConfig
     ) -> ResourceDefResult:
-        """Get a resource definition by type.
-        """
-        try:
-            pass
-        except Exception as exc:
+        async with self._async_sessionmaker() as db_sess:
+            db_rd: ResourceDefDB | None = (
+                await db_sess.execute(
+                    select(ResourceDefDB).where(ResourceDefDB.resource_type == resource_type)
+                )
+            ).scalar_one_or_none()
+
+        if db_rd is not None:
             return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
+                "resource_def": {
+                    "resource_type": db_rd.resource_type,
+                    "actions": db_rd.actions,
+                    "schema": db_rd.schema
+                },
+                "error": None
             }
+
+        return {
+            "resource_def": None,
+            "error": {
+                "error_type": "resource_not_found",
+                "message": f"Resource type '{resource_type}' was not found."
+            }
+        }
 
 
     async def put_resource_def(
@@ -373,17 +484,33 @@ class SQLStorage(StorageModule):
         resource_def: ResourceDef,
         config: PutResourceDefConfig
     ) -> GenericResult:
-        """Add a new Resource Definition or update an existing one.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._async_sessionmaker() as db_sess:
+            db_rd: ResourceDefDB | None = (
+                await db_sess.execute(
+                    select(
+                        ResourceDefDB
+                    ).where(
+                        ResourceDefDB.resource_type == resource_def['resource_type']
+                    )
+                )
+            ).scalar_one_or_none()
+            if db_rd is None:
+                db_sess.add(
+                    ResourceDefDB(
+                        resource_type=resource_def['resource_type'],
+                        actions=resource_def['actions'],
+                        schema=resource_def['schema']
+                    )
+                )
+            else:
+                db_rd.actions = resource_def['actions']
+                db_rd.schema = resource_def['schema']
+
+            await db_sess.commit()
+
+        return {
+            "error": None
+        }
 
 
     async def delete_resource_def(
@@ -391,31 +518,38 @@ class SQLStorage(StorageModule):
         resource_type: str,
         config: DeleteResourceDefConfig
     ) -> GenericResult:
-        """Delete a resource definition by type.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._async_sessionmaker() as db_sess:
+            await db_sess.execute(
+                delete(ResourceDefDB).where(ResourceDefDB.resource_type == resource_type)
+            )
+            await db_sess.commit()
+
+        return {
+            "error": None
+        }
 
 
     async def enact(self, grant: Grant, config: EnactConfig) -> GenericResult:
-        """Add a new grant.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._async_sessionmaker() as db_sess:
+            db_sess.add(
+                GrantDB(
+                    grant_uuid=UUID(grant['grant_uuid']),
+                    name=grant['name'],
+                    description=grant['description'],
+                    tags=grant['tags'],
+                    effect=grant['effect'],
+                    actions=grant['actions'],
+                    query=grant['query'],
+                    equality=grant['equality'],
+                    applicable_on_failure=grant['applicable_on_failure'],
+                    data=grant['data']
+                )
+            )
+            await db_sess.commit()
+
+        return {
+            "error": None
+        }
 
 
     async def repeal(
@@ -424,17 +558,15 @@ class SQLStorage(StorageModule):
         purge: bool,
         config: RepealConfig
     ) -> GenericResult:
-        """Delete a grant.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._async_sessionmaker() as db_sess:
+            await db_sess.execute(
+                delete(GrantDB).where(GrantDB.grant_uuid == UUID(grant_uuid))
+            )
+            await db_sess.commit()
+
+        return {
+            "error": None
+        }
 
 
     async def get_grant(
@@ -442,17 +574,26 @@ class SQLStorage(StorageModule):
         grant_uuid: str,
         config: GetGrantConfig
     ) -> GrantResult:
-        """Get a grant by UUID.
-        """
-        try:
-            pass
-        except Exception as exc:
+        async with self._async_sessionmaker() as db_sess:
+            db_grant: GrantDB | None = (
+                await db_sess.execute(
+                    select(GrantDB).where(GrantDB.grant_uuid == UUID(grant_uuid))
+                )
+            ).scalar_one_or_none()
+
+        if db_grant is not None:
             return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
+                "grant": self._grant_from_db(db_grant),
+                "error": None
             }
+
+        return {
+            "grant": None,
+            "error": {
+                "error_type": "resource_not_found",
+                "message": f"Grant with UUID '{grant_uuid}' was not found."
+            }
+        }
 
 
     async def list_grants(
@@ -462,19 +603,32 @@ class SQLStorage(StorageModule):
         page_ref: str | None,
         config: ListGrantsConfig
     ) -> GrantsPage:
-        """Retrieve a page of grants.
+        async with self._async_sessionmaker() as db_sess:
+            query = select(GrantDB).limit(config['page_size']).order_by(GrantDB.internal_id)
+            if effect is not None:
+                query = query.where(GrantDB.effect == effect)
 
-        Pass the returned page reference to get the next page until a null page reference is returned.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+            if action is not None:
+                query = query.where(GrantDB.actions.contains(action))
+
+            if page_ref is not None:
+                query = query.where(GrantDB.internal_id > int(page_ref))
+
+            db_grants: list[GrantDB] = (await db_sess.execute(query)).scalars().all()
+
+        next_page_ref = None
+        if len(db_grants) == config['page_size']:
+            next_page_ref = str(db_grants[-1].internal_id)
+
+        result: GrantsPage = {
+            "grants": [],
+            "next_page_ref": next_page_ref,
+            "error": None
+        }
+        for db_grant in db_grants:
+            result['grants'].append(self._grant_from_db(db_grant))
+
+        return result
 
 
     async def list_grant_refs(
@@ -484,36 +638,52 @@ class SQLStorage(StorageModule):
         page_ref: str | None,
         config: ListGrantRefsConfig
     ) -> PageRefsPage:
-        """Retrieve a page of grant page references for parallel pagination.
-
-        Pass the returned page reference to get the next page until a null page reference is returned.
-
-        For some storage modules this may not be possible.
-        Check the `parallel_paging` attribute on the storage module after `start()` is complete.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
+        return {
+            "page_refs": [],
+            "next_page_ref": None,
+            "error": {
+                "error_type": "parallel_pagination_not_supported",
+                "message": "SQLStorage does not support parallel pagination."
             }
+        }
+
+
+    def _grant_from_db(self, db_grant: GrantDB) -> Grant:
+        return {
+            "grant_uuid": str(db_grant.grant_uuid),
+            "name": db_grant.name,
+            "description": db_grant.description,
+            "tags": db_grant.tags,
+            "effect": db_grant.effect,
+            "actions": db_grant.actions,
+            "query": db_grant.query,
+            "equality": db_grant.equality,
+            "applicable_on_failure": db_grant.applicable_on_failure,
+            "data": db_grant.data
+        }
 
 
     async def create_latch(self, config: CreateLatchConfig) -> StorageLatchResult:
-        """Create a new [storage latch](#storage-latches).
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        latch_uuid = uuid4()
+        created_at = datetime.datetime.now(tz=datetime.timezone.utc)
+        async with self._async_sessionmaker() as db_sess:
+            db_sess.add(
+                StorageLatchDB(
+                    storage_latch_uuid=latch_uuid,
+                    is_set=False,
+                    created_at=created_at
+                )
+            )
+            await db_sess.commit()
+
+        return {
+            "storage_latch": {
+                "storage_latch_uuid": str(latch_uuid),
+                "is_set": False,
+                "created_at": created_at.isoformat()
+            },
+            "error": None
+        }
 
 
     async def get_latch(
@@ -521,17 +691,30 @@ class SQLStorage(StorageModule):
         storage_latch_uuid: str,
         config: GetLatchConfig
     ) -> StorageLatchResult:
-        """Get a [storage latch](#storage-latches) by UUID.
-        """
-        try:
-            pass
-        except Exception as exc:
+        async with self._async_sessionmaker() as db_sess:
+            db_latch: StorageLatchDB | None = (
+                await db_sess.execute(
+                    select(
+                        StorageLatchDB
+                    ).where(
+                        StorageLatchDB.storage_latch_uuid == UUID(storage_latch_uuid)
+                    )
+                )
+            ).scalar_one_or_none()
+
+        if db_latch is not None:
             return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
+                "storage_latch": self._latch_from_db(db_latch),
+                "error": None
             }
+
+        return {
+            "storage_latch": None,
+            "error": {
+                "error_type": "resource_not_found",
+                "message": f"Storage latch with UUID '{storage_latch_uuid}' was not found."
+            }
+        }
 
 
     async def set_latch(
@@ -539,17 +722,33 @@ class SQLStorage(StorageModule):
         storage_latch_uuid: str,
         config: SetLatchConfig
     ) -> StorageLatchResult:
-        """Set a [storage latch](#storage-latches) by UUID.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
+        async with self._async_sessionmaker() as db_sess:
+            db_latch: StorageLatchDB | None = (
+                await db_sess.execute(
+                    select(
+                        StorageLatchDB
+                    ).where(
+                        StorageLatchDB.storage_latch_uuid == UUID(storage_latch_uuid)
+                    )
+                )
+            ).scalar_one_or_none()
+            if db_latch is None:
+                return {
+                    "storage_latch": None,
+                    "error": {
+                        "error_type": "resource_not_found",
+                        "message": f"Storage latch with UUID '{storage_latch_uuid}' was not found."
+                    }
                 }
-            }
+
+            db_latch.is_set = True
+            latch = self._latch_from_db(db_latch)
+            await db_sess.commit()
+
+        return {
+            "storage_latch": latch,
+            "error": None
+        }
 
 
     async def delete_latch(
@@ -557,17 +756,19 @@ class SQLStorage(StorageModule):
         storage_latch_uuid: str,
         config: DeleteLatchConfig
     ) -> GenericResult:
-        """Delete a [storage latch](#storage-latches) by UUID.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        async with self._async_sessionmaker() as db_sess:
+            await db_sess.execute(
+                delete(
+                    StorageLatchDB
+                ).where(
+                    StorageLatchDB.storage_latch_uuid == UUID(storage_latch_uuid)
+                )
+            )
+            await db_sess.commit()
+
+        return {
+            "error": None
+        }
 
 
     async def cleanup_latches(
@@ -575,16 +776,26 @@ class SQLStorage(StorageModule):
         before: datetime.datetime,
         config: CleanupLatchesConfig
     ) -> GenericResult:
-        """Delete all latches before the specified datetime.
+        async with self._async_sessionmaker() as db_sess:
+            await db_sess.execute(
+                delete(StorageLatchDB).where(StorageLatchDB.created_at < before)
+            )
+            await db_sess.commit()
 
-        - operations should clean up their own latches, but in case of a failure this can be used to clean up zombie latches.
-        """
-        try:
-            pass
-        except Exception as exc:
-            return {
-                "error": {
-                    "error_type": "storage",
-                    "message": f"[{exc.__class__.__qualname__}]: {exc}"
-                }
-            }
+        return {
+            "error": None
+        }
+
+
+    def _latch_from_db(self, db_latch: StorageLatchDB) -> StorageLatch:
+        created_at = db_latch.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=datetime.timezone.utc)
+        else:
+            created_at = created_at.astimezone(datetime.timezone.utc)
+
+        return {
+            "storage_latch_uuid": str(db_latch.storage_latch_uuid),
+            "is_set": db_latch.is_set,
+            "created_at": created_at.isoformat()
+        }

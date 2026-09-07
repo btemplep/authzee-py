@@ -462,10 +462,31 @@ class PutContextDefConfigOverride(TypedDict, total=False):
     Examples
     --------
     ```python
-    {}
+    {
+        "get_context_def": {
+            "use_cache": False
+        },
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_context_def : GetContextDefConfigOverride
+        Config override for getting a context definition.
+    use_list_context_defs : bool
+        Whether to use list context defs instead of getting a single context definition.
+    list_context_defs : ListContextDefsConfigOverride
+        Config override for listing context definitions.
     """
-    pass
+    get_context_def: GetContextDefConfigOverride
+    use_list_context_defs: bool
+    list_context_defs: ListContextDefsConfigOverride
 
 
 class DeleteContextDefConfigOverride(TypedDict, total=False):
@@ -477,10 +498,31 @@ class DeleteContextDefConfigOverride(TypedDict, total=False):
     Examples
     --------
     ```python
-    {}
+    {
+        "get_context_def": {
+            "use_cache": False
+        },
+        "use_list_context_defs": False,
+        "list_context_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_context_def : GetContextDefConfigOverride
+        Config override for getting a context definition.
+    use_list_context_defs : bool
+        Whether to use list context defs instead of getting a single context definition.
+    list_context_defs : ListContextDefsConfigOverride
+        Config override for listing context definitions.
     """
-    pass
+    get_context_def: GetContextDefConfigOverride
+    use_list_context_defs: bool
+    list_context_defs: ListContextDefsConfigOverride
 
 
 class ValidateIdentityDefConfigOverride(TypedDict, total=False):
@@ -529,10 +571,31 @@ class PutIdentityDefConfigOverride(TypedDict, total=False):
     Examples
     --------
     ```python
-    {}
+    {
+        "get_identity_def": {
+            "use_cache": False
+        },
+        "use_list_identity_defs": False,
+        "list_identity_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_identity_def : GetIdentityDefConfigOverride
+        Config override for getting an identity definition.
+    use_list_identity_defs : bool
+        Whether to use list identity defs instead of getting a single identity definition.
+    list_identity_defs : ListIdentityDefsConfigOverride
+        Config override for listing identity definitions.
     """
-    pass
+    get_identity_def: GetIdentityDefConfigOverride
+    use_list_identity_defs: bool
+    list_identity_defs: ListIdentityDefsConfigOverride
 
 
 class DeleteIdentityDefConfigOverride(TypedDict, total=False):
@@ -544,10 +607,31 @@ class DeleteIdentityDefConfigOverride(TypedDict, total=False):
     Examples
     --------
     ```python
-    {}
+    {
+        "get_identity_def": {
+            "use_cache": False
+        },
+        "use_list_identity_defs": False,
+        "list_identity_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_identity_def : GetIdentityDefConfigOverride
+        Config override for getting an identity definition.
+    use_list_identity_defs : bool
+        Whether to use list identity defs instead of getting a single identity definition.
+    list_identity_defs : ListIdentityDefsConfigOverride
+        Config override for listing identity definitions.
     """
-    pass
+    get_identity_def: GetIdentityDefConfigOverride
+    use_list_identity_defs: bool
+    list_identity_defs: ListIdentityDefsConfigOverride
 
 
 class ValidateResourceDefConfigOverride(TypedDict, total=False):
@@ -596,10 +680,31 @@ class PutResourceDefConfigOverride(TypedDict, total=False):
     Examples
     --------
     ```python
-    {}
+    {
+        "get_resource_def": {
+            "use_cache": False
+        },
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_resource_def : GetResourceDefConfigOverride
+        Config override for getting a resource definition.
+    use_list_resource_defs : bool
+        Whether to use list resource defs instead of getting a single resource definition.
+    list_resource_defs : ListResourceDefsConfigOverride
+        Config override for listing resource definitions.
     """
-    pass
+    get_resource_def: GetResourceDefConfigOverride
+    use_list_resource_defs: bool
+    list_resource_defs: ListResourceDefsConfigOverride
 
 
 class DeleteResourceDefConfigOverride(TypedDict, total=False):
@@ -611,10 +716,31 @@ class DeleteResourceDefConfigOverride(TypedDict, total=False):
     Examples
     --------
     ```python
-    {}
+    {
+        "get_resource_def": {
+            "use_cache": False
+        },
+        "use_list_resource_defs": False,
+        "list_resource_defs": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_resource_def : GetResourceDefConfigOverride
+        Config override for getting a resource definition.
+    use_list_resource_defs : bool
+        Whether to use list resource defs instead of getting a single resource definition.
+    list_resource_defs : ListResourceDefsConfigOverride
+        Config override for listing resource definitions.
     """
-    pass
+    get_resource_def: GetResourceDefConfigOverride
+    use_list_resource_defs: bool
+    list_resource_defs: ListResourceDefsConfigOverride
 
 
 class ValidateGrantConfigOverride(TypedDict, total=False):
@@ -678,10 +804,31 @@ class RepealConfigOverride(TypedDict, total=False):
     Examples
     --------
     ```python
-    {}
+    {
+        "get_grant": {
+            "use_cache": False
+        },
+        "use_list_grants": False,
+        "list_grants": {
+            "page_size": 1000,
+
+            "use_cache": False
+        }
+    }
     ```
+
+    Attributes
+    ----------
+    get_grant : GetGrantConfigOverride
+        Config override for getting a grant.
+    use_list_grants : bool
+        Whether to use list grants instead of getting a single grant.
+    list_grants : ListGrantsConfigOverride
+        Config override for listing grants.
     """
-    pass
+    get_grant: GetGrantConfigOverride
+    use_list_grants: bool
+    list_grants: ListGrantsConfigOverride
 
 
 class CleanupLatchesConfigOverride(TypedDict, total=False):
@@ -1180,8 +1327,28 @@ class AuthzeeConfigOverride(TypedDict, total=False):
         "get_context_def": {
             "use_cache": False
         },
-        "put_context_def": {},
-        "delete_context_def": {},
+        "put_context_def": {
+            "get_context_def": {
+                "use_cache": False
+            },
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
+        "delete_context_def": {
+            "get_context_def": {
+                "use_cache": False
+            },
+            "use_list_context_defs": False,
+            "list_context_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
         "validate_identity_def": {},
         "list_identity_defs": {
             "page_size": 100,
@@ -1190,8 +1357,28 @@ class AuthzeeConfigOverride(TypedDict, total=False):
         "get_identity_def": {
             "use_cache": False
         },
-        "put_identity_def": {},
-        "delete_identity_def": {},
+        "put_identity_def": {
+            "get_identity_def": {
+                "use_cache": False
+            },
+            "use_list_identity_defs": False,
+            "list_identity_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
+        "delete_identity_def": {
+            "get_identity_def": {
+                "use_cache": False
+            },
+            "use_list_identity_defs": False,
+            "list_identity_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
         "validate_resource_def": {},
         "list_resource_defs": {
             "page_size": 100,
@@ -1200,8 +1387,28 @@ class AuthzeeConfigOverride(TypedDict, total=False):
         "get_resource_def": {
             "use_cache": False
         },
-        "put_resource_def": {},
-        "delete_resource_def": {},
+        "put_resource_def": {
+            "get_resource_def": {
+                "use_cache": False
+            },
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
+        "delete_resource_def": {
+            "get_resource_def": {
+                "use_cache": False
+            },
+            "use_list_resource_defs": False,
+            "list_resource_defs": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
         "validate_grant": {},
         "list_grants": {
             "page_size": 100,
@@ -1211,7 +1418,17 @@ class AuthzeeConfigOverride(TypedDict, total=False):
             "use_cache": False
         },
         "enact": {},
-        "repeal": {},
+        "repeal": {
+            "get_grant": {
+                "use_cache": False
+            },
+            "use_list_grants": False,
+            "list_grants": {
+                "page_size": 1000,
+
+                "use_cache": False
+            }
+        },
         "list_grant_refs": {
             "page_size": 10,
             "use_cache": False

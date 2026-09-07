@@ -71,6 +71,33 @@ class StorageModule(metaclass=_StorageMeta):
     failures and rely on the metaclass to produce a correctly shaped error
     response; there is no need to wrap every method body in your own try/except.
 
+    Using per-call configuration
+    ----------------------------
+    Every method receives a per-call `config` (a `dict`). A storage module is not
+    required to honor every config key that its config type allows - a config type
+    describes every option that *could* apply to that call across all module
+    implementations, and any key a given module does not understand may simply be
+    ignored. However, a storage module **should** utilize the config keys that map
+    to behavior it actually implements (for example `page_size` and `use_cache` on
+    the list methods, or `use_cache` on the get methods), so that callers can tune
+    those behaviors.
+
+    This base `StorageModule` does **not** use the following config, and neither
+    should subclasses, because the described behavior does not belong to the
+    storage layer:
+
+    - The nested `get_*` / `use_list_*` / `list_*` sub-configs inside the put and
+      delete definition configs and the repeal config - specifically
+      `PutContextDefConfig`, `DeleteContextDefConfig`, `PutIdentityDefConfig`,
+      `DeleteIdentityDefConfig`, `PutResourceDefConfig`, `DeleteResourceDefConfig`,
+      and `RepealConfig`. A storage module puts, deletes, or repeals the target
+      directly by its type or UUID; those nested sub-configs describe an optional
+      "look the target up first via a get or a list" step that belongs to the
+      orchestration layer, not to storage. Subclasses should ignore them.
+
+    Any config type not listed above is used by the corresponding storage method
+    where its keys map to that method's behavior.
+
     Parameters
     ----------
     None

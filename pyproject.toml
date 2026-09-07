@@ -46,6 +46,7 @@ jmespath = ["jmespath"]
 sql = ["SQLAlchemy"]
 all = ["authzee[jmespath,sql]"]
 dev = [
+    "aiosqlite",
     "build",
     "coverage",
     "moto[s3,server]",

@@ -70,6 +70,41 @@ class ComputeModule(metaclass=_ComputeMeta):
     will already be `"storage"`, identifying where the failure originated). Do not
     ignore storage errors or assume storage calls always succeed.
 
+    Using per-call configuration
+    ----------------------------
+    Every method receives a per-call `config` (a `dict`). A compute module is not
+    required to honor every config key that its config type allows - a config type
+    describes every option that *could* apply to that call across all module
+    implementations, and any key a given module does not understand may simply be
+    ignored. However, a compute module **should** utilize the config keys that map
+    to behavior it actually implements. In particular, when a compute config
+    embeds storage-call sub-configs (for example the `get_*` / `use_list_*` /
+    `list_*` sub-configs in `ValidateRequestConfig` and `ValidateBatchRequestConfig`,
+    or `list_grants` / `list_grant_refs` / `parallel_paging` in the audit and
+    authorize configs), the compute module should pass those through to the
+    corresponding storage calls so callers can tune retrieval and paging.
+
+    This base `ComputeModule` does **not** use the following config, and neither
+    should subclasses, because a compute module has no corresponding operation -
+    these are storage-only operations invoked through the storage module rather
+    than implemented on compute:
+
+    - The definition and grant persistence and retrieval configs:
+      `GetContextDefConfig`, `PutContextDefConfig`, `DeleteContextDefConfig`,
+      `GetIdentityDefConfig`, `PutIdentityDefConfig`, `DeleteIdentityDefConfig`,
+      `GetResourceDefConfig`, `PutResourceDefConfig`, `DeleteResourceDefConfig`,
+      `GetGrantConfig`, `EnactConfig`, and `RepealConfig`, along with the
+      standalone `ListContextDefsConfig`, `ListIdentityDefsConfig`,
+      `ListResourceDefsConfig`, `ListGrantsConfig`, and `ListGrantRefsConfig` as
+      top-level (non-embedded) configs.
+    - The storage latch configs: `CreateLatchConfig`, `GetLatchConfig`,
+      `SetLatchConfig`, `DeleteLatchConfig`, and `CleanupLatchesConfig`.
+
+    A compute module does still cause several of these storage calls to run (for
+    example listing grants during an audit or authorize); when it does, it uses the
+    versions of those sub-configs embedded in the compute config it received, not
+    the standalone top-level configs above.
+
     Parameters
     ----------
     None
